@@ -24,8 +24,12 @@ module.exports = {
                 use: {
                     loader: "babel-loader",
                     options: {presets: ["@babel/env", "@babel/preset-react"]}
-                },
+                }
             },
+            {
+                test: /\.css$/,
+                use: ['style-loader', 'css-loader']
+            }
         ],
     },
     devServer: {

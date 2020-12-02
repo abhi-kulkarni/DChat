@@ -1,16 +1,21 @@
 import React, { Component } from "react";
+import { Row, Col } from "react-bootstrap";
 
 
 class App extends Component {
 
-    constructor(){
+    constructor() {
         super();
     }
 
-    render(){
-        return(
+    render() {
+        return ( 
             <div>
-                This is the React JS 2.
+                <Row>
+                    <Col xs={12} sm={12} md={12} lg={12}>
+                        Hello
+                    </Col>
+                </Row>
             </div>
         )
     }
