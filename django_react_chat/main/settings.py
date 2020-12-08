@@ -40,11 +40,21 @@ INSTALLED_APPS = [
     'django.contrib.sessions',
     'django.contrib.messages',
     'django.contrib.staticfiles',
+    'corsheaders',
+    'backend',
     'frontend',
     'rest_framework'
 ]
 
+REST_FRAMEWORK = {
+    'DEFAULT_AUTHENTICATION_CLASSES': [
+        'rest_framework_simplejwt.authentication.JWTAuthentication',
+     ]
+}
+
+
 MIDDLEWARE = [
+    'corsheaders.middleware.CorsMiddleware',
     'django.middleware.security.SecurityMiddleware',
     'django.contrib.sessions.middleware.SessionMiddleware',
     'django.middleware.common.CommonMiddleware',
@@ -53,6 +63,10 @@ MIDDLEWARE = [
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
 ]
+
+CORS_ALLOW_CREDENTIALS = True
+
+CORS_ORIGIN_ALLOW_ALL = True
 
 ROOT_URLCONF = 'main.urls'
 
@@ -71,6 +85,7 @@ TEMPLATES = [
         },
     },
 ]
+CSRF_COOKIE_NAME = "csrftoken"
 
 WSGI_APPLICATION = 'main.wsgi.application'
 
@@ -94,6 +109,8 @@ DATABASES = {
         }
     }
 }
+
+AUTH_USER_MODEL = "backend.User"
 
 
 # Password validation

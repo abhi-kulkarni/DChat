@@ -1,25 +1,28 @@
-import React, { Component } from "react";
-import { Row, Col } from "react-bootstrap";
+import React, {Component} from "react";
+import {Row, Col} from "react-bootstrap";
+import {Switch, Route, Link} from "react-router-dom";
+import Login from "./pages/Signin"
+import SignUp from "./pages/Signup";
+import Home from "./pages/Home";
+import './index.css'
+import {withRouter} from 'react-router-dom';
+import Layout from './components/Layout'
 
 
-class App extends Component {
+function App(props) {
 
-    constructor() {
-        super();
-    }
-
-    render() {
-        return ( 
-            <div>
-                <Row>
-                    <Col xs={12} sm={12} md={12} lg={12}>
-                        Hello
-                    </Col>
-                </Row>
-            </div>
-        )
-    }
-
+    return (
+        <div className="App">
+            <Switch>
+                <Layout>
+                    <Route exact path='/' component={Login}/>
+                    <Route path="/signin" component={Login}/>
+                    <Route path="/signup" component={SignUp}/>
+                    <Route path="/home" component={Home}/>
+                </Layout>
+            </Switch>
+        </div>
+    )
 }
 
-export default App;
+export default withRouter(App)

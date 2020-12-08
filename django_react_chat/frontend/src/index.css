@@ -1,0 +1,203 @@
+@import url('https://fonts.googleapis.com/css?family=Fira+Sans:400,500,600,700,800');
+
+* {
+  box-sizing: border-box;
+}
+body {
+  background: #f9ffe4 !important;
+  font-weight: 400;
+  font-family: 'Fira Sans', sans-serif; 
+}
+
+.cursor-pointer {
+  cursor: pointer;
+}
+
+h1,h2,h3,h4,h5,h6,label,span {
+  font-weight: 500;
+  font-family: 'Fira Sans', sans-serif;
+}
+
+body, html, .App, #root {
+  width: 100%;
+  height: 100%;
+}
+
+.navbar-light {
+  background-color: #ffffff;
+  box-shadow: 0px 14px 80px rgba(34, 35, 58, 0.2);
+}
+
+.no_padding_margin {
+  padding: 5% 0% 5% 0% !important;
+  margin: 0px !important;
+}
+
+.forgot-password,
+.forgot-password a {
+  text-decoration: none;
+  text-align: right;
+  font-size: 13px;
+  padding-top: 10px;
+  color: #7f7d7d;
+  margin: 0;
+}
+
+.forgot-password a {
+  color: #167bff;
+}
+
+.form-group {
+  margin-bottom: 0.4rem!important;
+}
+.container{
+  height: 100%!important;
+  width: 100%!important;
+}
+
+.content{
+    height:auto!important;
+    overflow-y: auto;
+    position: fixed;
+    top: 80px;
+    bottom: 80px;
+    left: 0;
+    right: 0;
+}
+
+.signup_div{
+  height: 25vh !important;
+  width: 15rem!important;
+  padding: 2rem!important;
+}
+
+.errorMessage {
+  color: red;
+  font-size: 0.75em;
+}
+
+.user_created_message_login{
+  color: forestgreen;
+  font-size: 1em;
+}
+
+.profile_edit_success_msg{
+  color: forestgreen;
+  font-size: 0.85em;
+}
+
+.form_error_message {
+  color: red;
+  font-size: 0.85em;
+}
+
+.validate_email_message {
+  color:green;
+  font-size: 0.80em;
+}
+.sign_in_error_message{
+  color:red;
+  font-size: 0.80em;
+}
+
+@media screen and (max-width: 480px) {
+  body {
+    overflow-y: scroll;
+  }
+}
+
+
+.circle {
+  position: absolute;
+  width: 40px;
+  height: 40px;
+  left: 0;
+  right: 0;
+  top: 0;
+  bottom: 0px;
+  margin: auto;
+  border: 8px solid #212e4b;
+  border-radius: 50%;
+  }
+  #vertical {
+  -webkit-transform: rotate(90deg);
+  transform: rotate(90deg);
+  -webkit-animation: spin 4s linear infinite,pulse 1s linear infinite alternate;
+  animation: spin 4s linear infinite,pulse 1s linear infinite alternate;
+  }
+  .circle:not(#vertical) {
+  -webkit-animation: spin2 4s linear infinite,pulse 1s linear infinite alternate;
+  animation: spin2 4s linear infinite,pulse 1s linear infinite alternate;
+  }
+  @-webkit-keyframes spin {
+  100% {
+      -webkit-transform: rotate(450deg);
+      transform: rotate(450deg);
+  }
+  }
+  @-webkit-keyframes spin2 {
+  100% {
+      -webkit-transform: rotate(360deg);
+      transform: rotate(360deg);
+  }
+  }
+  @keyframes spin {
+  100% {
+      -webkit-transform: rotate(450deg);
+      transform: rotate(450deg);
+  }
+  }
+  @keyframes spin2 {
+  100% {
+      -webkit-transform: rotate(360deg);
+      transform: rotate(360deg);
+  }
+  }
+  @-webkit-keyframes pulse {
+  0% {
+      width: 5px;
+      height: 200px;
+  }
+  100% {
+      width: 100px;
+      height: 5px;
+  }
+  0% {
+      width: 5px;
+      height: 200px;
+  }
+  }
+  @keyframes pulse {
+  0% {
+      width: 5px;
+      height: 200px;
+  }
+  100% {
+      width: 100px;
+      height: 5px;
+  }
+  0% {
+      width: 5px;
+      height: 200px;
+  }
+}
+
+#reset_password_tabs-tab-email {
+  padding: 10px 10px !important;
+}
+
+#overlay {
+  display: none;
+  background: #ffffff;
+  color: #666666;
+  position: fixed;
+  height: 100%;
+  width: 100%;
+  z-index: 5000;
+  top: 0;
+  left: 0;
+  float: left;
+  text-align: center;
+  padding-top: 25%;
+  opacity: .80;
+}

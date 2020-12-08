@@ -1,6 +1,14 @@
 const path = require('path');
 var mode = process.env.NODE_ENV || 'development';
-
+var query = {
+    disable: true,
+    optipng: {
+      optimizationLevel: true
+    },
+    gifsicle: {
+      interlaced: true
+    }
+};
 module.exports = {
     entry: [path.resolve("/home/abhishek/Projects/django-react-chat/django_react_chat/frontend/src/index.js")],
     output: {
@@ -29,6 +37,11 @@ module.exports = {
             {
                 test: /\.css$/,
                 use: ['style-loader', 'css-loader']
+            },
+            {
+                test: /\.(jpe?g|png|gif|svg)$/i,
+                use: ['file-loader?hash=sha512&digest=hex&name=[hash].[ext]',
+                    `image-webpack-loader?${JSON.stringify(query)}`]
             }
         ],
     },
