@@ -15,6 +15,7 @@ import {user_created_success, spinner_overlay} from '../redux'
 import {useDispatch, useSelector} from "react-redux";
 import AtomSpinner from '../components/Atomspinner'
 import CSRFToken from "../components/csrf";
+import '../index.css'
 
 function SignUp(props) {
 
@@ -212,8 +213,8 @@ function SignUp(props) {
                 <AtomSpinner/>
             </div>
             <Orientation getData={setOrientation}/>
-            <div className="row align-items-center" style={{padding: "1% 0% 0% 0%", margin: "0px"}}>
-                <Col xs={12} sm={12} md={12} lg={12} xl={{ span:4, offset: 4 }}>
+            <div className="custom_row" style={{padding: "1% 0% 0% 0%", margin: "0px"}}>
+                <Col xs={12} sm={12} md={12} lg={12} xl={{ span:4 }}>
                     <Form onSubmit={e => handleSubmit(e, "signup", "")}>
                         <CSRFToken/>
                         <Form.Group>

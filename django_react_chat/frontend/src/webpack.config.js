@@ -10,7 +10,7 @@ var query = {
     }
 };
 module.exports = {
-    entry: [path.resolve("/home/abhishek/Projects/django-react-chat/django_react_chat/frontend/src/index.js")],
+    entry: ['babel-polyfill', path.resolve("/home/abhishek/Projects/django-react-chat/django_react_chat/frontend/src/index.js")],
     output: {
         // where compiled files go
         path: path.resolve("/home/abhishek/Projects/django-react-chat/django_react_chat/frontend/static/frontend/public/"),

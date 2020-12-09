@@ -12,19 +12,22 @@ import Tooltip from 'react-bootstrap/Tooltip'
 import {Orientation} from "../components/Orientation";
 import {FaEye, FaEyeSlash, FaEnvelopeOpen, FaUserShield, FaCheckCircle} from "react-icons/fa";
 import API_URL from '../constants/'
-import {spinner_overlay} from '../redux'
+import {spinner_overlay, sign_in, user_data, user_created_success} from '../redux'
 import AtomSpinner from '../components/Atomspinner'
 import axios from 'axios'
 import {Link, Redirect, useHistory} from 'react-router-dom'
 import {useDispatch, useSelector} from "react-redux";
 import CSRFToken from "../components/csrf";
+import '../index.css'
+import axiosInstance from '../components/axiosInstance'
 
-function Login(props) {
+function SignIn(props) {
 
     const [windowDimensions, setWindowDimensions] = useState({
         'height': window.innerHeight,
         'width': window.innerWidth
     });
+    const history = useHistory();
     const dispatch = useDispatch();
     const store_overlay = useSelector(state => state.session.spinner_overlay);
     const store_user_created_success = useSelector(state => state.session.user_created_success);
@@ -99,18 +102,19 @@ function Login(props) {
             e.preventDefault();
             post_data = {"email": email, "password": password, "type": type};
         }
-        axios.post('login/', post_data).then(res => {
+        axiosInstance.post('signin/', post_data).then(res => {
             spinnerStop();
             if(res.data.ok) {
-                // localStorage.setItem('refreshToken', res.data.refresh);
-                // localStorage.setItem('accessToken', res.data.access);
+                localStorage.setItem('refreshToken', res.data.refresh);
+                localStorage.setItem('accessToken', res.data.access);
                 dispatch(sign_in());
-                dispatch(user_data(res.data.curr_user));
+                dispatch(user_data(res.data.user));
                 setIsValidLogin(true);
                 history.push('/home');
             }else{
+                let err_msg = res.data?res.data.error:'Some of the fields are incorrect.';
                 setIsValidLogin(false);
-                setErrorMessage(res.data.error);
+                setErrorMessage(err_msg);
                 setTimeout(function () {
                     setErrorMessage("");
                 }, 10000);
@@ -262,7 +266,7 @@ function Login(props) {
         let post_data = {};
         if (formValid(formErrors, resetEmailFormData, "email")) {
             post_data['email'] = resetEmailFormData.resetEmail;
-            axios.post(API_URL+'validate_email/', post_data).then(res => {
+            axiosInstance.post('validate_email/', post_data).then(res => {
                 spinnerStop();
                 if (res.data.ok) {
                     setIsValidResetEmail(true);
@@ -351,7 +355,7 @@ function Login(props) {
                                                         <span
                                                             className="float-left errorMessage">{formErrors.resetEmail}</span>
                                                     )}
-                                                    {isValidResetEmail && tabKey == "email" ?
+                                                        {isValidResetEmail && tabKey == "email" ?
                                                         <span className="validate_email_message">Email has been verified ! <FaCheckCircle
                                                             style={{
                                                                 marginBottom: "3px",
@@ -463,8 +467,8 @@ function Login(props) {
                     </Row>
                 </Modal.Footer>
             </Modal>
-            <div className="row align-items-end" style={{padding: "6% 0% 0% 0%", margin: "0px"}}>
-                <Col xs={12} sm={12} md={12} lg={12} xl={{span:4, offset: 4 }}>
+            <div className="custom_row" style={{padding: "6% 0% 0% 0%", margin: "0px"}}>
+                <Col xs={12} sm={12} md={12} lg={12} xl={{ span:4 }}>
                     <Form onSubmit={e => handleSubmit(e, "login", "")}>
                         <CSRFToken/>
                         <Form.Group>
@@ -501,12 +505,6 @@ function Login(props) {
                                 </InputGroup.Append>
                             </InputGroup>
                         </Form.Group>
-                        <Row style={{margin: "0px", padding: "0px"}}>
-                            <Col>
-                                {!isValidLogin ?
-                                    <span className="sign_in_error_message">{errorMessage}</span> : ""}
-                            </Col>
-                        </Row>  
                         <Row style={{'margin': '0px', 'padding': '0px'}}>
                             <Col style={{ 'paddingRight': '1%' }} xs={{ span: '6', offset: '6' }} sm={{ span: '5', offset: '7' }} md={{ span: '4', offset: '8' }} lg={{ span: '4', offset: '8' }} xl={{ span: '4', offset: '8' }}>
                                 <p onClick={() => openResetPasswordModal()} style={{'color': '#0879FA', 'textDecoration': 'none'}} className="cursor-pointer forgot-password text-right">
@@ -527,6 +525,11 @@ function Login(props) {
                             </Col>
                         </Row>
                     </Form>
+                    {!isValidLogin ?<Row style={{margin: "0px", padding: "0px"}}>
+                        <Col>
+                            <p style={{ fontSize: "0.8rem" }} className="text-center sign_in_error_message">{errorMessage}</p>
+                        </Col>
+                    </Row>:""}
                     <Row style={{margin: "0px", padding: "0px"}}>
                         <Col>
                             {store_user_created_success ?
@@ -539,4 +542,4 @@ function Login(props) {
     );
 }
 
-export default Login
+export default SignIn

@@ -1,26 +1,26 @@
 import React, {Component} from "react";
-import {Row, Col} from "react-bootstrap";
-import {Switch, Route, Link} from "react-router-dom";
-import Login from "./pages/Signin"
-import SignUp from "./pages/Signup";
-import Home from "./pages/Home";
-import './index.css'
 import {withRouter} from 'react-router-dom';
-import Layout from './components/Layout'
+import CustomRouter from "./router";
 
 
 function App(props) {
 
+    // const isLoggedIn = useSelector(state => state.session.isLoggedIn);
+    // const history = useHistory();
+    // const dispatch = useDispatch();
+    // const store_overlay = useSelector(state => state.session.spinner_overlay);
+
+    // const CustomRoute = ({component: Component, layout: Layout, ...rest}) => (
+    //     <Route {...rest} render={props => (
+    //             <Layout {...props}>
+    //                 <Component {...props} />
+    //             </Layout>
+    //     )}/>
+    // )
+
     return (
         <div className="App">
-            <Switch>
-                <Layout>
-                    <Route exact path='/' component={Login}/>
-                    <Route path="/signin" component={Login}/>
-                    <Route path="/signup" component={SignUp}/>
-                    <Route path="/home" component={Home}/>
-                </Layout>
-            </Switch>
+            <CustomRouter/>
         </div>
     )
 }

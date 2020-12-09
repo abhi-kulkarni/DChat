@@ -1,9 +1,9 @@
 import axios from 'axios'
 
+console.log(localStorage)
+
 axios.defaults.xsrfCookieName = 'csrftoken';
 axios.defaults.xsrfHeaderName = 'X-CSRFToken';
-
-console.log(localStorage)
 
 const axiosInstance = axios.create({
     baseURL: 'http://127.0.0.1:8000/api/',
@@ -14,13 +14,13 @@ const axiosInstance = axios.create({
         'accept': 'application/json'
     }
 });
+
 axiosInstance.interceptors.response.use(
     response => response,
     error => {
       const originalRequest = error.config;
-      if (error && error.response && error.response.status === 401 && error.response.statusText === "Unauthorized") {
+      if (error && (error.response.status === 401 || error.response.status === 403) && (error.response.statusText === "Unauthorized" || error.response.statusText === "Forbidden")) {
           const refresh_token = localStorage.getItem('refreshToken');
-
           return axiosInstance
               .post('/token/refresh/', {refresh: refresh_token})
               .then((response) => {
@@ -40,4 +40,5 @@ axiosInstance.interceptors.response.use(
       return Promise.reject(error);
   }
 );
+
 export default axiosInstance

@@ -201,3 +201,23 @@ body, html, .App, #root {
   padding-top: 25%;
   opacity: .80;
 }
+
+#dropdown-menu-align-right{
+  box-shadow:none!important;
+  border:none;
+  background-color: #F8F9FA!important;
+  padding-top: 0px;
+  padding-right: 0px;
+  margin-top: 0px;
+  padding-left:0px;
+}
+
+#dropdown-menu-align-right:focus {
+  box-shadow: none !important;
+} 
+
+.custom_row {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
