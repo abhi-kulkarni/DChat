@@ -14,15 +14,18 @@
     "bootstrap": "^4.5.3",
     "jquery": "^3.5.1",
     "jwt-decode": "^3.1.2",
+    "moment": "^2.29.1",
     "react": "^16.0.0",
     "react-bootstrap": "^1.4.0",
     "react-device-detect": "^1.14.0",
     "react-dom": "^16.0.0",
     "react-icons": "^4.1.0",
+    "react-ionicons": "^3.1.4",
     "react-redux": "^7.2.2",
     "react-router-dom": "^5.2.0",
     "redux-devtools-extension": "^2.13.8",
-    "redux-logger": "^3.0.6"
+    "redux-logger": "^3.0.6",
+    "shave": "^2.5.10"
   },
   "devDependencies": {
     "@babel/core": "^7.12.3",

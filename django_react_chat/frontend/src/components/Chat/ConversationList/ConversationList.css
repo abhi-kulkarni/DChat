@@ -1,0 +1,17 @@
+.conversation-list {
+  display: flex;
+  flex-direction: column;
+}
+
+.conversation-list-row{
+  padding: 0px;
+  margin: 0px;
+}
+
+.add_conversation{
+  margin: 3% 4% 1% 0%;
+  font-size: 1rem;
+  float: right;
+  color: #0578FA;
+  cursor: pointer;
+}

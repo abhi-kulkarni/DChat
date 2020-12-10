@@ -1,0 +1,33 @@
+.conversation-list-item {
+  display: flex;
+  align-items: center;
+  padding: 10px;
+}
+
+.conversation-list-item:hover {
+  background: #eeeef1;
+  cursor: pointer;
+}
+
+.conversation-photo {
+  border-radius: 50%;
+  object-fit: cover;
+  margin-right: 10px;
+}
+
+.conversation-title {
+  font-size: 0.9rem;
+  font-weight: bold;
+  text-transform: capitalize;
+  margin: 0;
+}
+
+.conversation-snippet {
+  font-size: 0.8rem;;
+  white-space: nowrap; 
+  width: 85%; 
+  overflow: hidden;
+  text-overflow: ellipsis; 
+  color: #888;
+  margin: 0;
+}

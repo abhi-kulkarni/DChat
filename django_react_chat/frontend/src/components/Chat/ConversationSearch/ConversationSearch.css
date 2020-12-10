@@ -1,0 +1,14 @@
+
+#searchConversations::placeholder {
+  text-align: center!important;
+}
+
+#searchConversations:focus::placeholder {
+  text-align: left !important;
+}
+
+#searchConversations{
+  box-shadow: none;
+  outline: none;
+  border-radius: 0.9rem!important;
+}

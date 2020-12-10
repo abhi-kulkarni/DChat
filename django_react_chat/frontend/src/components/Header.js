@@ -7,7 +7,7 @@ import brandImg from '../static/images/brand_img.png'
 import {useDispatch, useSelector} from "react-redux";
 import {useHistory, Link} from 'react-router-dom'
 import '../index.css'
-import {spinner_overlay, sign_out, user_data} from '../redux'
+import {spinner_overlay, sign_out, user_data, forgot_password_clicked} from '../redux'
 import AtomSpinner from './Atomspinner'
 import axios from 'axios'
 import axisoInstance from '../components/axiosInstance'
@@ -299,6 +299,11 @@ function Header(props) {
                 console.log(error)
         });
     };
+
+    const goToForgotPassword = () => {
+        dispatch(forgot_password_clicked());
+        signout();
+    }
     
     return (
         <div className="fixed-top" style={{padding: '0%', margin: '0%'}}>
@@ -346,6 +351,13 @@ function Header(props) {
                                                     </InputGroup.Text>
                                                 </InputGroup.Append>
                                             </InputGroup>
+                                            <Row style={{'margin': '0px', 'padding': '0px'}}>
+                                                <Col style={{ 'paddingRight': '1%' }} xs={{ span: '6', offset: '6' }} sm={{ span: '5', offset: '7' }} md={{ span: '4', offset: '8' }} lg={{ span: '4', offset: '8' }} xl={{ span: '4', offset: '8' }}>
+                                                    <p onClick={() => goToForgotPassword()} style={{'color': '#0879FA', 'textDecoration': 'none'}} className="cursor-pointer forgot-password text-right">
+                                                        Forgot password ?
+                                                    </p>
+                                                </Col>
+                                            </Row>
                                             <Row style={{margin: "8px 0px 0px 0px", padding: "0px"}}>
                                                 <Col sm={12} xs={12} md={12} style={{padding: "0px"}}>
                                                     {isValidCurrentPassword && tabKey == "password" ?

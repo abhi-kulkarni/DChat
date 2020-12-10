@@ -4,7 +4,7 @@
   box-sizing: border-box;
 }
 body {
-  background: #f9ffe4 !important;
+  background: #FFFFFF !important;
   font-weight: 400;
   font-family: 'Fira Sans', sans-serif; 
 }
@@ -220,4 +220,26 @@ body, html, .App, #root {
   display: flex;
   align-items: center;
   justify-content: center;
+}
+
+.blink_me {
+  animation: blinker 1s linear infinite;
+}
+
+@keyframes blinker {
+  50% {
+    opacity: 0;
+  }
+}
+
+@-moz-keyframes blinker {  
+  50% {
+    opacity: 0;
+  }
+  }
+
+@-webkit-keyframes blinker {  
+  50% {
+    opacity: 0;
+  }
 }

@@ -31,6 +31,7 @@ function SignIn(props) {
     const dispatch = useDispatch();
     const store_overlay = useSelector(state => state.session.spinner_overlay);
     const store_user_created_success = useSelector(state => state.session.user_created_success);
+    const store_forgot_password_clicked = useSelector(state => state.session.forgot_password_clicked);
     const [userCreatedMsg, setUserCreatedMsg] = useState("");
     const [orientation, setOrientation] = useState('default');
     const [email, setEmail] = useState("");
@@ -76,7 +77,22 @@ function SignIn(props) {
                 setUserCreatedMsg("")
             }, 10000);
         }
+        if(store_forgot_password_clicked){
+            blinkElement();
+            setTimeout(function () {
+                const el = document.getElementById("forgot_password");
+                if (el.classList.contains("blink_me")) {
+                    el.classList.remove("blink_me");
+                }
+            }, 5000);
+        }
+
     }, []);
+
+    const blinkElement = () => {
+        var ele = document.getElementById("forgot_password");
+        ele.className += " blink_me";
+    }
 
     const passwordVisibilityToggle = (id, reset, type) => {
         if (reset) {
@@ -507,7 +523,7 @@ function SignIn(props) {
                         </Form.Group>
                         <Row style={{'margin': '0px', 'padding': '0px'}}>
                             <Col style={{ 'paddingRight': '1%' }} xs={{ span: '6', offset: '6' }} sm={{ span: '5', offset: '7' }} md={{ span: '4', offset: '8' }} lg={{ span: '4', offset: '8' }} xl={{ span: '4', offset: '8' }}>
-                                <p onClick={() => openResetPasswordModal()} style={{'color': '#0879FA', 'textDecoration': 'none'}} className="cursor-pointer forgot-password text-right">
+                                <p id="forgot_password" onClick={() => openResetPasswordModal()} style={{'color': '#0879FA', 'textDecoration': 'none'}} className="cursor-pointer forgot-password text-right">
                                     Forgot password ?
                                 </p>
                             </Col>

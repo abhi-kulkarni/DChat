@@ -1,4 +1,4 @@
-import {SIGN_IN, SIGN_OUT, USER_CREATED_SUCCESS, USER_DATA, SPINNER_OVERLAY, FRIEND_REQUESTS, ONLINE_STATUS} from "./sessionTypes";
+import {SIGN_IN, SIGN_OUT, USER_CREATED_SUCCESS, USER_DATA, SPINNER_OVERLAY, FRIEND_REQUESTS, ONLINE_STATUS, FORGOT_PASSWORD_CLICKED} from "./sessionTypes";
 
 export const sign_in = () => {
     return {
@@ -15,6 +15,12 @@ export const sign_out = () => {
 export const user_created_success = () => {
     return {
         type: USER_CREATED_SUCCESS
+    }
+};
+
+export const forgot_password_clicked = () => {
+    return {
+        type: FORGOT_PASSWORD_CLICKED
     }
 };
 

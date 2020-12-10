@@ -6,6 +6,7 @@ import {user_created_success, spinner_overlay, user_data} from '../redux'
 import {useDispatch, useSelector} from "react-redux";
 import '../index.css'
 import AtomSpinner from '../components/Atomspinner'
+import Messenger from '../components/Chat/Messenger'
 
 function Chat(props) {
 
@@ -47,11 +48,8 @@ function Chat(props) {
 
 
     return (
-        <div>
-            <div id="overlay">
-                <AtomSpinner/>
-            </div>
-            State {JSON.stringify(curr_user_data)}
+        <div className="Chat" style={{ position: 'fixed' }}>
+            <Messenger />
         </div>
     )
 }
