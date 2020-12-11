@@ -31,3 +31,18 @@
   color: #888;
   margin: 0;
 }
+
+
+
+.div_hover { 
+  background-color: #FFFFFF; 
+  display:none;
+}
+
+.div_hover:hover { background-color: #ececec; }
+
+.noContent {
+  color: #000 !important;
+  background-color: transparent !important;
+  pointer-events: none;
+}

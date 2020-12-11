@@ -43,12 +43,15 @@
 }
 
 .conversation_list{
+  overflow-x:hidden;
   height: calc(100vh - 130px);
   overflow-y: scroll;
   padding-left: 0px!important;
 }
 
 .msg_list{
+  overflow-x:hidden;
+  padding-left: 0px;
   height: calc(100vh - 138px);
   overflow-y: scroll;
 }

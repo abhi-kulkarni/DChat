@@ -72,3 +72,25 @@
   color: #0578FA;
   margin-left: 5%;
 }
+
+.clear_chat{
+  color: #EB3E37;
+  cursor: pointer;
+  font-size: 1rem;
+}
+
+.info{
+  color: #58A847;
+  cursor: pointer;
+  font-size: 1rem;
+}
+
+.disable_send_btn{
+  opacity: 0.6;
+}
+
+.enable_send_btn{
+  color: #0578FA;
+  font-size: '1.2rem';
+  cursor: pointer; 
+}

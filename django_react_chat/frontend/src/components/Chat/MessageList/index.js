@@ -1,26 +1,76 @@
-import React, {useEffect, useState} from 'react';
-import Compose from '../Compose';
+import React, {useEffect, useState, useRef} from 'react';
 import Toolbar from '../Toolbar';
-import ToolbarButton from '../ToolbarButton';
 import Message from '../Message';
 import moment from 'moment';
 import Row from 'react-bootstrap/Row'
 import Col from 'react-bootstrap/Col'
 import Form from 'react-bootstrap/Form'
+import Picker, { SKIN_TONE_MEDIUM_DARK } from 'emoji-picker-react';
 import './MessageList.css';
-import Footer from '../../Footer'
-import {FaPaperPlane, FaSmile, FaCamera, FaImage, FaMicrophone} from "react-icons/fa";
+import {FaPaperPlane, FaSmile, FaCamera, FaInfoCircle, FaMicrophone, FaTrash} from "react-icons/fa";
 import OverlayTrigger from 'react-bootstrap/OverlayTrigger'
 import Tooltip from 'react-bootstrap/Tooltip'
+import Dialog from 'react-bootstrap-dialog'
 
 const MY_USER_ID = 'apple';
 
 export default function MessageList(props) {
   const [messages, setMessages] = useState([])
+  let CustomDialog = useRef(null);
+  let messagesEnd = useRef(null)
+  let emojiInputRef = useRef(null);
+  const [showEmojiPicker, setShowEmojiPicker] = useState(false);
+  const [inputMsg, setInputMsg] = useState('')
+  const [chosenEmoji, setChosenEmoji] = useState(null)
+  const mounted = useRef();
+
 
   useEffect(() => {
-    getMessages();
-  },[])
+    if (!mounted.current) {
+      getMessages();
+      document.addEventListener('mousedown', handleClickOutside, false);
+      scrollToBottom();
+      mounted.current = true;
+    } else {
+      scrollToBottom();
+    }
+  });
+
+  const handleClickOutside = (e) => {
+    if (emojiInputRef && e.target && emojiInputRef.current && !emojiInputRef.current.contains(e.target)) {
+        setShowEmojiPicker(false)
+    }
+  };
+  
+  const scrollToBottom = () => {
+    messagesEnd.scrollIntoView({ behavior: "smooth" });
+  };
+
+  const clearChatRef = (chat_id) => {
+    CustomDialog.show({
+        body: 'Are you sure you want to clear this chat ?',
+        actions: [
+            Dialog.DefaultAction(
+                'Delete',
+                () => {
+                  clearChat(chat_id);
+                },
+                'btn-danger'
+            ),
+            Dialog.Action(
+                'Cancel',
+                () => {
+                  CustomDialog.hide();
+                },
+                'btn-primary'
+            ),
+        ]
+    });
+};
+
+  const clearChat = (chatId) => {
+    alert('Chat Cleared')
+  }
 
   
   const getMessages = () => {
@@ -173,76 +223,138 @@ export default function MessageList(props) {
     return tempMessages;
   }
 
-    return(
-      <Row className="conversation-list-row">
-          <Col xs={12} sm={12} md={12} lg={12} xl={12}>
-          <Toolbar
-            title="Conversation Title"
-            rightItems={[
-              <ToolbarButton key="info" icon="ion-ios-information-circle-outline" />,
-              <ToolbarButton key="video" icon="ion-ios-videocam" />,
-              <ToolbarButton key="phone" icon="ion-ios-call" />
-            ]}
-          />
-          </Col>
-        
-          <Col xs={12} sm={12} md={12} lg={12} xl={12}>
-              {renderMessages()}
-          </Col>
-          
-          <Col xs={12} sm={12} md={12} lg={12} xl={12}>
-            <Row className="compose" style={{ padding: '0px', margin: '0px' }}>
-              <Col xs={7} sm={7} md={7} lg={7} xl={7}>
-                <Form>
-                  <Form.Group controlId="composeMsg" className="compose-input">
-                    <Form.Control autoComplete="off" name="composeMsg" type="text"
-                                  placeholder="Type a message. @name"
-                    >
-                    </Form.Control>
-                  </Form.Group>
-                </Form>
-              </Col>
-              <Col className="composeButtons" xs={4} sm={4} md={4} lg={4} xl={4}>
-              <OverlayTrigger
-                        key="bottom"
-                        placement="top"
-                        overlay={
-                            <Tooltip id="send_msg_tooltip">
-                                <span>Send</span>
-                            </Tooltip>
-                        }
-                    ><FaPaperPlane style={{ color: '#0578FA', fontSize: '1.2rem', cursor: 'pointer' }}/></OverlayTrigger>
-                  <OverlayTrigger
-                        key="bottom"
-                        placement="top"
-                        overlay={
-                            <Tooltip id="send_emoji_tooltip">
-                                <span>Emoji</span>
-                            </Tooltip>
-                        }
-                    ><FaSmile className="composeIcons" /></OverlayTrigger>
-                  <OverlayTrigger
-                        key="bottom"
-                        placement="top"
-                        overlay={
-                            <Tooltip id="send_img_tooltip">
-                                <span>Upload an Image</span>
-                            </Tooltip>
-                        }
-                    ><FaCamera className="composeIcons"/></OverlayTrigger>
-                  <OverlayTrigger
-                        key="bottom"
-                        placement="top"
-                        overlay={
-                            <Tooltip id="send_audio_tooltip">
-                                <span>Upload Audio</span>
-                            </Tooltip>
-                        }
-                    ><FaMicrophone className="composeIcons"/></OverlayTrigger>
-              </Col>
-            </Row>
-          </Col>
-      </Row>
+  const onEmojiClick = (event, emoji) => {
+    let input_msg = document.getElementById('composeMsg').value;
+    input_msg += String.fromCodePoint(parseInt(emoji.unified, 16))
+    setInputMsg(input_msg)
+    setChosenEmoji(emoji)
+  }
+
+  const handleEmojiPicker = () => {
+    let showEmojiPicker = !showEmojiPicker
+    setShowEmojiPicker(showEmojiPicker)
+  }
+
+  const handleChange = (e) => {
+    e.preventDefault();
+    setInputMsg(e.target.value)
+  }
+
+  const handleKeyDown = (e) => {
+    if(e.key === 'Enter'){
+      sendNewMessage(e.target.value);
+      e.target.value = '';
+      setInputMsg('')
+    }
+  }
+
+  const handleMessageInput = () => {
+    let input_msg = document.getElementById('composeMsg').value;
+    this.sendNewMessage(input_msg);
+    document.getElementById('composeMsg').value = '';
+    setInputMsg(input_msg)
+  }
+
+  const sendNewMessage = (message) => {
+    alert(message)
+  }
+
+  return(
+    <Row className="conversation-list-row">
+        <div style={{display: 'none'}}>
+          <Dialog ref={(el) => {
+              CustomDialog = el
+          }}/>
+        </div>
+        <Col xs={12} sm={12} md={12} lg={12} xl={12}>
+        <Toolbar
+          title={props.userData.name?props.userData.name:'Begin Conversation'}
+          leftItems={[
+            <OverlayTrigger
+                      key="bottom"
+                      placement="top"
+                      overlay={
+                          <Tooltip id="info_tooltip">
+                              <span>Info</span>
+                          </Tooltip>
+                      }
+                  ><FaInfoCircle className="info"/></OverlayTrigger>
+          ]}
+          rightItems={[
+            <OverlayTrigger
+                      key="bottom"
+                      placement="top"
+                      overlay={
+                          <Tooltip id="clear_chat_tooltip">
+                              <span>Clear Chat</span>
+                          </Tooltip>
+                      }
+                  ><FaTrash onClick={() => clearChatRef('1')} className="clear_chat"/></OverlayTrigger>
+          ]}
+        />
+        </Col>
       
-    );
+        <Col style={{ marginBottom: 'calc(1.5em + 3rem + 2px)' }} xs={12} sm={12} md={12} lg={12} xl={12}>
+            {renderMessages()}
+            {showEmojiPicker?<div ref={emojiInputRef} style={{ bottom: '15%', left: '66%', position: 'fixed' }}>
+              <Picker onEmojiClick={onEmojiClick} />
+            </div>:""}
+        </Col>
+
+        
+        <Col ref={(el) => { messagesEnd = el }} xs={12} sm={12} md={12} lg={12} xl={12}>
+          <Row className="compose" style={{ padding: '0px', margin: '0px' }}>
+            <Col style={{ paddingLeft: '0px' }} xs={6} sm={6} md={7} lg={7} xl={7}>
+              <Form onSubmit={(e) => e.preventDefault()}>
+                <Form.Group controlId="composeMsg" className="compose-input">
+                  <Form.Control onKeyDown={(e) => handleKeyDown(e)}
+            onChange={e => handleChange(e)} autoComplete="off" name="inputMsg" type="text"
+                                value={inputMsg} placeholder="Type a message. @name"
+                  >
+                  </Form.Control>
+                </Form.Group>
+              </Form>
+            </Col>
+            <Col className="composeButtons" xs={12} sm={12} md={12} lg={4} xl={4}>
+                <OverlayTrigger
+                      key="bottom"
+                      placement="top"
+                      overlay={<Tooltip style={{ display: inputMsg.length > 0? 'block': 'none' }} id="send_msg_tooltip">
+                              <span>Send</span>
+                          </Tooltip>}
+                  ><FaPaperPlane onClick={() => handleMessageInput()} className={inputMsg.length>0?"enable_send_btn":"disable_send_btn"}/></OverlayTrigger>
+                <OverlayTrigger
+                      key="bottom"
+                      placement="top"
+                      overlay={
+                          <Tooltip id="send_emoji_tooltip">
+                              <span>Emoji</span>
+                          </Tooltip>
+                      }
+                  ><FaSmile onClick={() => handleEmojiPicker()} className="composeIcons"/>
+                  </OverlayTrigger>
+                <OverlayTrigger
+                      key="bottom"
+                      placement="top"
+                      overlay={
+                          <Tooltip id="send_img_tooltip">
+                              <span>Upload an Image</span>
+                          </Tooltip>
+                      }
+                  ><FaCamera className="composeIcons"/></OverlayTrigger>
+                <OverlayTrigger
+                      key="bottom"
+                      placement="top"
+                      overlay={
+                          <Tooltip id="send_audio_tooltip">
+                              <span>Upload Audio</span>
+                          </Tooltip>
+                      }
+                  ><FaMicrophone className="composeIcons"/></OverlayTrigger>
+            </Col>
+          </Row>
+        </Col>
+    </Row>
+    
+  );
 }

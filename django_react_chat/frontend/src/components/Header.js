@@ -22,7 +22,7 @@ import Tab from 'react-bootstrap/Tab'
 import Tabs from 'react-bootstrap/Tabs'
 import OverlayTrigger from 'react-bootstrap/OverlayTrigger'
 import Tooltip from 'react-bootstrap/Tooltip'
-import {FaEye, FaEyeSlash, FaEnvelopeOpen, FaUserShield, FaCheckCircle, FaKey} from "react-icons/fa";
+import {FaEye, FaEyeSlash, FaEnvelopeOpen, FaUserShield, FaCheckCircle, FaKey, FaComments} from "react-icons/fa";
 import API_URL from '../constants/'
 
 function Header(props) {
@@ -473,7 +473,7 @@ function Header(props) {
                 </Modal.Footer>
             </Modal>
             <Navbar collapseOnSelect expand="lg" bg="light">
-                <Navbar.Brand href="/">
+                <Navbar.Brand href={isLoggedIn?'/home': '/'}>
                 <img
                     alt="Brand Image"
                     src={brandImg}
@@ -487,7 +487,9 @@ function Header(props) {
                         <Navbar.Collapse id="responsive-navbar-nav">
                             {isLoggedIn?
                             <Nav className="ml-auto">
-                                <Nav.Link style={{ paddingTop: '10px', paddingRight: '20px' }} href="/chat">Chat</Nav.Link>
+                                <Nav.Link style={{ paddingTop: '10px', paddingRight: '30px', paddingLeft: '5px' }} href="/chat">
+                                    <FaComments style={{ cursor: 'pointer', fontSize: '1.6rem' }} />
+                                </Nav.Link>
                                 <DropdownButton
                                     alignRight
                                     title={<img
