@@ -1,6 +1,6 @@
 from django.urls import path
 from django.conf.urls import url
-from .views import ObtainTokenPairWithEmailView, change_password, validate_password, get_curr_user, signin, signup, get_all_users, delete_user, update_user, validate_email,signout, is_authenticated
+from .views import *
 from rest_framework_simplejwt import views as jwt_views
 
 urlpatterns = [
