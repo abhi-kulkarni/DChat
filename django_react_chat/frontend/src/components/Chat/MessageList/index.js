@@ -7,7 +7,7 @@ import Col from 'react-bootstrap/Col'
 import Form from 'react-bootstrap/Form'
 import Picker, { SKIN_TONE_MEDIUM_DARK } from 'emoji-picker-react';
 import './MessageList.css';
-import {FaPaperPlane, FaSmile, FaCamera, FaInfoCircle, FaMicrophone, FaTrash} from "react-icons/fa";
+import {FaPaperPlane, FaSmile, FaCamera, FaInfoCircle, FaMicrophone, FaTrash, FaArrowUp} from "react-icons/fa";
 import OverlayTrigger from 'react-bootstrap/OverlayTrigger'
 import Tooltip from 'react-bootstrap/Tooltip'
 import Dialog from 'react-bootstrap-dialog'
@@ -17,7 +17,8 @@ const MY_USER_ID = 'apple';
 export default function MessageList(props) {
   const [messages, setMessages] = useState([])
   let CustomDialog = useRef(null);
-  let messagesEnd = useRef(null)
+  let messagesEnd = useRef(null);
+  let messagesStart = useRef(null);
   let emojiInputRef = useRef(null);
   const [showEmojiPicker, setShowEmojiPicker] = useState(false);
   const [inputMsg, setInputMsg] = useState('')
@@ -29,10 +30,10 @@ export default function MessageList(props) {
     if (!mounted.current) {
       getMessages();
       document.addEventListener('mousedown', handleClickOutside, false);
-      scrollToBottom();
+      props.userData && props.userData.name?scrollToBottom():'';
       mounted.current = true;
     } else {
-      scrollToBottom();
+      props.userData && props.userData.name?scrollToBottom():'';
     }
   });
 
@@ -45,6 +46,10 @@ export default function MessageList(props) {
   const scrollToBottom = () => {
     messagesEnd.scrollIntoView({ behavior: "smooth" });
   };
+
+  const scrollToTop = () => {
+    messagesStart.scrollIntoView({ behavior: "smooth" });
+  }
 
   const clearChatRef = (chat_id) => {
     CustomDialog.show({
@@ -266,7 +271,7 @@ export default function MessageList(props) {
               CustomDialog = el
           }}/>
         </div>
-        <Col xs={12} sm={12} md={12} lg={12} xl={12}>
+        <Col ref={(el) => { messagesStart = el }} xs={12} sm={12} md={12} lg={12} xl={12}>
         <Toolbar
           title={props.userData.name?props.userData.name:'Begin Conversation'}
           leftItems={[

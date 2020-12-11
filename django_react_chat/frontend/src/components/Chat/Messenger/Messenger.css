@@ -43,6 +43,7 @@
 }
 
 .conversation_list{
+  border-right: 1px solid #dfdfdf;
   overflow-x:hidden;
   height: calc(100vh - 130px);
   overflow-y: scroll;

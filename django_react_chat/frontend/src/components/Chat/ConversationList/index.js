@@ -47,6 +47,8 @@ const ConversationList = forwardRef((props, ref) => {{
   
   const handleSearch = (search_data) => {
     if (search_data) {
+      let load_more_btn = document.getElementById('load_more');
+      load_more_btn.style.display = 'none';
       let result = searchedConversations.filter(item => {
         return item.name.toLowerCase().includes(search_data.toLowerCase())
       });
