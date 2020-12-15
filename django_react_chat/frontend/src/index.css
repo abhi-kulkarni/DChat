@@ -243,3 +243,55 @@ body, html, .App, #root {
     opacity: 0;
   }
 }
+
+.remove_friend{
+  color: #EB3E37;
+  cursor: pointer;
+  font-size: 1rem;
+  margin-top: 4%;
+}
+
+.add_friend {
+  color: #0A73F0;
+  cursor: pointer;
+  font-size: 1rem;
+  margin-top: 4%;
+}
+
+.cancel_friend_request{
+  color: #EB3E37;
+  cursor: pointer;
+  font-size: 1rem;
+  margin-top: 4%;
+}
+
+.reject_friend_request{
+  color: #EB3E37;
+  cursor: pointer;
+  font-size: 1rem;
+  margin-left: 20px;
+  margin-top: 4%;
+}
+
+.accept_friend_request {
+  color: #58A847;
+  cursor: pointer;
+  font-size: 1rem;
+  margin-top: 4%;
+}
+
+.sent_friend_request{
+  color: #58A847;
+  cursor: pointer;
+  font-size: 1rem;
+  margin-top: 4%;
+}
+
+#notification_popover{
+  width: 225px!important
+}
+
+.popover-header{
+  text-align: center;
+  padding-left: 10%!important;
+}

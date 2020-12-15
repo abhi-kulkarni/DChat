@@ -1,4 +1,4 @@
-import React, {useState, useEffect} from "react";
+import React, {useState, useEffect, useRef} from "react";
 import Navbar from "react-bootstrap/Navbar";
 import Nav from "react-bootstrap/Nav";
 import DropdownButton from "react-bootstrap/DropdownButton";
@@ -15,6 +15,8 @@ import defaultImg from '../static/images/default_profile_picture.jpg'
 import Row from 'react-bootstrap/Row'
 import Col from 'react-bootstrap/Col'
 import Form from 'react-bootstrap/Form'
+import Overlay from 'react-bootstrap/Overlay'
+import Popover from 'react-bootstrap/Popover'
 import Button from 'react-bootstrap/Button'
 import InputGroup from 'react-bootstrap/InputGroup'
 import Modal from 'react-bootstrap/Modal'
@@ -22,8 +24,9 @@ import Tab from 'react-bootstrap/Tab'
 import Tabs from 'react-bootstrap/Tabs'
 import OverlayTrigger from 'react-bootstrap/OverlayTrigger'
 import Tooltip from 'react-bootstrap/Tooltip'
-import {FaEye, FaEyeSlash, FaEnvelopeOpen, FaUserShield, FaCheckCircle, FaKey, FaComments} from "react-icons/fa";
-import API_URL from '../constants/'
+import {FaUserPlus, FaEye, FaEyeSlash, FaBell, FaEnvelopeOpen, FaUserShield, FaCheckCircle, FaKey, FaComments, FaAddressBook} from "react-icons/fa";
+import CustomBadge from '../components/CustomBadge/badge';
+import WebSocketInstance from '../websocket'
 
 function Header(props) {
 
@@ -36,7 +39,9 @@ function Header(props) {
         'height': window.innerHeight,
         'width': window.innerWidth
     });
-
+    const [notificationCount, setNotificationCount] = useState(0);
+    const [showNotification, setShowNotification] = useState(false);
+    const [notificationTarget, setNotificationTarget] = useState(null);
     const [errorMessage, setErrorMessage] = useState("");
     const [isIncorrectPassword, setIsIncorrectPassword] = useState("");
     const [isIncorrectCurrentPassword, setIsIncorrectCurrentPassword] = useState(false);
@@ -53,11 +58,14 @@ function Header(props) {
         newPassword: "",
         newPasswordConfirm: "",
     });
+    const notificationRef = useRef(null);
+    const session_notification_data = useSelector(state => state.session.notifications)
     const [formErrors, setFormErrors] = useState({
         currentPassword: "",
         newPassword: "",
         newPasswordConfirm: "",
     });
+    const [notificationData, setNotificationData] = useState([]);
 
     const emailRegex = RegExp(
         /^[a-zA-Z0-9.!#$%&’*+/=?^_`{|}~-]+@[a-zA-Z0-9-]+(?:\.[a-zA-Z0-9-]+)*$/
@@ -67,11 +75,34 @@ function Header(props) {
         /^(?=\S*[a-z])(?=\S*[A-Z])(?=\S*\d)(?=\S*[^\w\s])\S{6,10}$/
     );
 
+    useEffect(() => {
+        setNotificationData(session_notification_data);
+        setNotificationCount(session_notification_data.length)
+    }, [session_notification_data])
+
+    const hideNotificationPopUp = () => {
+        setShowNotification(false);
+    };
+
+    const showNotifications = (event) => {
+        setShowNotification(!showNotification);
+        setNotificationTarget(event.target);
+    };
+
 
     const spinner = (display) => {
         let overlay_ele = document.getElementById("overlay")
         overlay_ele && display ? overlay_ele.style.display = "block" : overlay_ele.style.display = "none";
     };
+
+    const initializeSocket = () => {
+        waitForSocketConnection(() => {
+          WebSocketInstance.fetchFriendRequests(
+            curr_user_data.id
+          );
+        });
+        WebSocketInstance.connect('friend_requests', '');
+    }
 
     const spinnerStop = () => {
         dispatch(spinner_overlay(false));
@@ -487,6 +518,50 @@ function Header(props) {
                         <Navbar.Collapse id="responsive-navbar-nav">
                             {isLoggedIn?
                             <Nav className="ml-auto">
+                                <Nav.Link style={{ position: 'relative', paddingTop: '10px', paddingRight: '20px', paddingLeft: '5px' }}>
+                                    <FaBell onClick={showNotifications} style={{ cursor: 'pointer', fontSize: '1.3rem' }}/>
+                                    <CustomBadge style={{
+                                        fontSize: '0.7rem',
+                                        padding: '3px 6px',
+                                        right: notificationCount > 10 ? '-12px' : '-5px'
+                                    }} count={notificationCount}/>
+                                    <Overlay
+                                        show={showNotification}
+                                        onHide={hideNotificationPopUp}
+                                        rootClose={true}
+                                        target={notificationTarget}
+                                        placement="bottom"
+                                        container={notificationRef.current}
+                                        containerPadding={20}
+                                    >
+                                        <Popover id="notification_popover">
+                                            <Popover.Title as="h3" style={{
+                                                color: 'black',
+                                                fontWeight: 'bold',
+                                                'paddingLeft': '20%',
+                                                fontSize: '12px'
+                                            }}>Notifications</Popover.Title>
+                                            <Popover.Content>
+                                            {notificationData.length > 0?notificationData.map(item => {
+                                                return (<Row style={{margin: '0px', padding: '0px'}}>
+                                                    <Col style={{ padding: '0px' }} xs={1} sm={1} md={1} lg={1} xl={1}>
+                                                        <FaUserPlus style={{ fontSize: '0.8rem', margin: '0px', color: '#58A847' }}/>
+                                                    </Col>
+                                                    <Col style={{ padding: '2px 0px 0px 5px'}} xs={11} sm={11} md={11} lg={11} xl={11}>
+                                                        <p style={{margin: '0px', fontSize:'0.8rem', color: '#6393F2'}}>{item.msg}</p>
+                                                        <p style={{margin: '0px', fontSize:'0.6rem', fontWeight: 'bold'}} className="float-right">{item.created_on}</p>
+                                                    </Col>                                                    
+                                                </Row>)
+                                            }):<div>
+                                                <p style={{margin: '0px', textAlign:'center'}}>No new notifications.</p>
+                                                </div>}
+                                            </Popover.Content>
+                                        </Popover>
+                                    </Overlay>
+                                </Nav.Link>
+                                <Nav.Link style={{ paddingTop: '10px', paddingRight: '20px', paddingLeft: '5px' }} href="/friends">
+                                    <FaAddressBook style={{ cursor: 'pointer', fontSize: '1.3rem' }} />
+                                </Nav.Link>
                                 <Nav.Link style={{ paddingTop: '10px', paddingRight: '30px', paddingLeft: '5px' }} href="/chat">
                                     <FaComments style={{ cursor: 'pointer', fontSize: '1.6rem' }} />
                                 </Nav.Link>
@@ -505,6 +580,8 @@ function Header(props) {
                                     </Dropdown.Item>
                                     <Dropdown.Item><Link style={{color: "black", textDecoration: 'none'}} to='/profile'>Your
                                         Profile</Link></Dropdown.Item>
+                                    <Dropdown.Item><Link style={{color: "black", textDecoration: 'none'}} to='/friends'>
+                                    Manage Friends</Link></Dropdown.Item>    
                                     <Dropdown.Item onClick={() => openChangePasswordModal()}>
                                         Change Password
                                     </Dropdown.Item>

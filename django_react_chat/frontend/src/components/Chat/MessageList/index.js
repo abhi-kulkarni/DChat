@@ -71,7 +71,7 @@ export default function MessageList(props) {
             ),
         ]
     });
-};
+  };
 
   const clearChat = (chatId) => {
     alert('Chat Cleared')

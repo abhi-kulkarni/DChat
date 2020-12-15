@@ -31,7 +31,9 @@ module.exports = {
                 // for matching files, use the babel-loader
                 use: {
                     loader: "babel-loader",
-                    options: {presets: ["@babel/env", "@babel/preset-react"]}
+                    options: {presets: ["@babel/env", "@babel/preset-react", {
+                        "plugins": ['@babel/plugin-proposal-class-properties']}
+                    ]}
                 }
             },
             {

@@ -2,6 +2,7 @@ import SignIn from "../pages/Signin"
 import SignUp from "../pages/Signup";
 import Home from "../pages/Home";
 import Chat from "../pages/Chat";
+import Friends from "../pages/Friends";
 import ChangePassword from "../pages/ChangePassword";
 import Profile from "../pages/Profile";
 
@@ -49,6 +50,13 @@ const routes = [{
     layout: CustomLayout,
     exact: true,
     name: 'change_password'
+},
+{
+    path: "/friends",
+    component: Friends,
+    layout: CustomLayout,
+    exact: true,
+    name: 'friends'
 }
 ];
 

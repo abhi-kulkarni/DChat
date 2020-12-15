@@ -12,7 +12,7 @@ import Tooltip from 'react-bootstrap/Tooltip'
 import {Orientation} from "../components/Orientation";
 import {FaEye, FaEyeSlash, FaEnvelopeOpen, FaUserShield, FaCheckCircle} from "react-icons/fa";
 import API_URL from '../constants/'
-import {spinner_overlay, sign_in, user_data, user_created_success} from '../redux'
+import {spinner_overlay, sign_in, user_data, user_created_success, friend_requests} from '../redux'
 import AtomSpinner from '../components/Atomspinner'
 import axios from 'axios'
 import {Link, Redirect, useHistory} from 'react-router-dom'
@@ -125,6 +125,8 @@ function SignIn(props) {
                 localStorage.setItem('accessToken', res.data.access);
                 dispatch(sign_in());
                 dispatch(user_data(res.data.user));
+                console.log(res.data.user.friend_requests);
+                dispatch(friend_requests(res.data.user.friend_requests));
                 setIsValidLogin(true);
                 history.push('/home');
             }else{

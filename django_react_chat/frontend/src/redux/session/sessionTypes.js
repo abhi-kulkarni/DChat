@@ -13,3 +13,5 @@ export const USER_DATA = "USER_DATA";
 export const FRIEND_REQUESTS = "FRIEND_REQUESTS";
 
 export const ONLINE_STATUS = "ONLINE_STATUS";
+
+export const NOTIFICATIONS = "NOTIFICATIONS";

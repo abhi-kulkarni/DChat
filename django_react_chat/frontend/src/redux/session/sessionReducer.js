@@ -1,4 +1,4 @@
-import {SIGN_IN, SIGN_OUT, USER_CREATED_SUCCESS, FORGOT_PASSWORD_CLICKED, SPINNER_OVERLAY, USER_DATA, FRIEND_REQUESTS, ONLINE_STATUS} from './sessionTypes'
+import {SIGN_IN, SIGN_OUT, USER_CREATED_SUCCESS, FORGOT_PASSWORD_CLICKED, SPINNER_OVERLAY, USER_DATA, FRIEND_REQUESTS, ONLINE_STATUS, NOTIFICATIONS} from './sessionTypes'
 
 const initialState = {
     isLoggedIn: false,
@@ -6,8 +6,9 @@ const initialState = {
     forgot_password_clicked:false,
     spinner_overlay:false,
     user_data:{},
-    friend_requests:[],
-    online_status: {}
+    friend_requests:{},
+    online_status: {},
+    notifications: []
 };
 
 const sessionReducer = (state = initialState, action) => {
@@ -47,6 +48,11 @@ const sessionReducer = (state = initialState, action) => {
                 ...state,
                 friend_requests: action.payload
             };
+        case NOTIFICATIONS:
+            return {
+                ...state,
+                notifications: [...state.notifications, ...action.payload] 
+            };    
         case ONLINE_STATUS:
             return {
                 ...state,
