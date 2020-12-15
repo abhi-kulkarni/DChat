@@ -35,6 +35,7 @@ ALLOWED_HOSTS = []
 # Application definition
 
 INSTALLED_APPS = [
+    'channels',
     'django.contrib.admin',
     'django.contrib.auth',
     'django.contrib.contenttypes',
@@ -44,7 +45,8 @@ INSTALLED_APPS = [
     'corsheaders',
     'backend',
     'frontend',
-    'rest_framework'
+    'rest_framework',
+    'friendship'
 ]
 
 REST_FRAMEWORK = {
@@ -55,7 +57,6 @@ REST_FRAMEWORK = {
     'rest_framework.authentication.SessionAuthentication',
     'rest_framework.authentication.BasicAuthentication',
     'rest_framework_simplejwt.authentication.JWTAuthentication',
-
 )
 }
 
@@ -117,6 +118,16 @@ CSRF_COOKIE_NAME = "csrftoken"
 
 WSGI_APPLICATION = 'main.wsgi.application'
 
+ASGI_APPLICATION = 'main.routing.application'
+
+CHANNEL_LAYERS = {
+    'default': {
+        'BACKEND': 'channels_redis.core.RedisChannelLayer',
+        'CONFIG': {
+            "hosts": [('127.0.0.1', 6379)],
+        },
+    },
+}
 
 # Database
 # https://docs.djangoproject.com/en/3.1/ref/settings/#databases
@@ -173,6 +184,7 @@ USE_L10N = True
 
 USE_TZ = True
 
+SITE_URL = "http://127.0.0.1:8000"
 
 # Static files (CSS, JavaScript, Images)
 # https://docs.djangoproject.com/en/3.1/howto/static-files/

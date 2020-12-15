@@ -4,6 +4,7 @@ from rest_framework.response import Response
 from rest_framework_simplejwt.serializers import TokenObtainPairSerializer
 from rest_framework_simplejwt.views import TokenObtainPairView
 from django.contrib.auth import authenticate, login, logout
+from friendship.models import Friend, FriendshipRequest
 
 class UserSerializer(serializers.ModelSerializer):
     class Meta:
@@ -12,9 +13,22 @@ class UserSerializer(serializers.ModelSerializer):
         extra_kwargs = {'password': {'write_only': True}}
 
 
+class FriendRequestSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = FriendshipRequest
+        fields = ('from_user', 'to_user', 'created', 'rejected', 'viewed', 'message')
+
+
+class FriendSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Friend
+        fields = '__all__'
+
+
 class MyTokenObtainPairSerializer(TokenObtainPairSerializer):
 
     def validate(self, attrs):
+        from .socket_views import manage_friend_request_data
 
         post_data = dict(attrs)
         user = authenticate(self.context['request'], username=post_data['email'], password=post_data['password'])
@@ -25,6 +39,7 @@ class MyTokenObtainPairSerializer(TokenObtainPairSerializer):
             data['refresh'] = str(refresh)
             data['access'] = str(refresh.access_token)
             data['user'] = UserSerializer(self.user).data
+            data['user']['friend_requests'] = manage_friend_request_data([self.user.id], '')[self.user.id]
             data['ok'] = True
         else:
             data['ok'] = False

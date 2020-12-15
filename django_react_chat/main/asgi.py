@@ -1,5 +1,5 @@
 """
-ASGI config for main project.
+ASGI config for i-saw-aliens project.
 
 It exposes the ASGI callable as a module-level variable named ``application``.
 

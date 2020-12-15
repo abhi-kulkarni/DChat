@@ -14,6 +14,8 @@ urlpatterns = [
     path('change_password/', change_password),
     path('validate_email/', validate_email),
     path('validate_password/', validate_password),
+    path('manage_friends/', manage_friends),
+    path('get_manage_friends_data/', get_manage_friends_data),
     path('signin/', ObtainTokenPairWithEmailView.as_view(), name='token_create'),  
     path('token/refresh/', jwt_views.TokenRefreshView.as_view(), name='token_refresh')
 ]
