@@ -1,4 +1,4 @@
-import {SIGN_IN, SIGN_OUT, USER_CREATED_SUCCESS, USER_DATA, SPINNER_OVERLAY, FRIEND_REQUESTS, ONLINE_STATUS, FORGOT_PASSWORD_CLICKED, NOTIFICATIONS} from "./sessionTypes";
+import {SIGN_IN, SIGN_OUT, USER_CREATED_SUCCESS, USER_DATA, SPINNER_OVERLAY, FRIEND_REQUESTS, ONLINE_STATUS, FORGOT_PASSWORD_CLICKED, NOTIFICATIONS, CHAT_REQUESTS, CHAT_MESSAGES} from "./sessionTypes";
 
 export const sign_in = () => {
     return {
@@ -46,10 +46,17 @@ export const friend_requests = (friend_requests = {}) => {
     }
 };
 
-export const notifications = (notifications = []) => {
+export const chat_requests = (chat_requests = {}) => {
+    return {
+        type:   CHAT_REQUESTS,
+        payload: chat_requests
+    }
+};
+
+export const notifications = (notifications = [], type="") => {
     return {
         type:   NOTIFICATIONS,
-        payload: notifications
+        payload: {'notifications':notifications, 'type': type}
     }
 };
 
@@ -58,5 +65,12 @@ export const online_status = (online_status = {}) => {
     return {
         type:   ONLINE_STATUS,
         payload: online_status
+    }
+};
+
+export const chat_messages = (chat_messages = [], type = '') => {
+    return {
+        type:   CHAT_MESSAGES,
+        payload: {'messages': chat_messages, 'type': type}
     }
 };

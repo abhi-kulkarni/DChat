@@ -7,10 +7,10 @@ import brandImg from '../static/images/brand_img.png'
 import {useDispatch, useSelector} from "react-redux";
 import {useHistory, Link} from 'react-router-dom'
 import '../index.css'
-import {spinner_overlay, sign_out, user_data, forgot_password_clicked} from '../redux'
+import {spinner_overlay, sign_out, user_data, forgot_password_clicked, notifications, friend_requests, chat_messages, chat_requests} from '../redux'
 import AtomSpinner from './Atomspinner'
 import axios from 'axios'
-import axisoInstance from '../components/axiosInstance'
+import axiosInstance from '../components/axiosInstance'
 import defaultImg from '../static/images/default_profile_picture.jpg'
 import Row from 'react-bootstrap/Row'
 import Col from 'react-bootstrap/Col'
@@ -27,6 +27,7 @@ import Tooltip from 'react-bootstrap/Tooltip'
 import {FaUserPlus, FaEye, FaEyeSlash, FaBell, FaEnvelopeOpen, FaUserShield, FaCheckCircle, FaKey, FaComments, FaAddressBook} from "react-icons/fa";
 import CustomBadge from '../components/CustomBadge/badge';
 import WebSocketInstance from '../websocket'
+import moment from 'moment'
 
 function Header(props) {
 
@@ -76,8 +77,17 @@ function Header(props) {
     );
 
     useEffect(() => {
-        setNotificationData(session_notification_data);
-        setNotificationCount(session_notification_data.length)
+        let count = 0;
+        let data = session_notification_data && session_notification_data.filter(item => {
+            if(item){
+                if(item.hasOwnProperty('read') && !item.read){
+                    count += 1
+                }
+                return item.participants.indexOf(curr_user_data.id) > -1
+            }
+        })
+        setNotificationData(data.reverse());
+        count > 0?setNotificationCount(count):setNotificationCount(0);
     }, [session_notification_data])
 
     const hideNotificationPopUp = () => {
@@ -85,10 +95,37 @@ function Header(props) {
     };
 
     const showNotifications = (event) => {
+        let data = session_notification_data && session_notification_data.map(item => {
+            if(item){
+                item['read'] = true;
+                return item;
+            }  
+        });
+        setNotificationData(data);
+        manageNotifications(data);
+        setNotificationCount(0)
         setShowNotification(!showNotification);
         setNotificationTarget(event.target);
     };
 
+
+    const manageNotifications = (notification_data) => {
+
+        let post_data = {};
+        post_data['notifications'] = notification_data
+        post_data['type'] = 'edit';
+        axiosInstance.post('manage_notifications/', post_data).then(res => {
+          if(res.data.ok) {
+              dispatch(notifications(res.data.notifications, "read"));
+
+          }else{
+              console.log('Error')
+          }
+        }).catch(err => {
+            console.log(err)
+        });
+        
+      }
 
     const spinner = (display) => {
         let overlay_ele = document.getElementById("overlay")
@@ -153,7 +190,7 @@ function Header(props) {
             }
             let post_data = {};
             post_data['password'] = passwordFormData.newPassword
-            axisoInstance.post('change_password/', post_data).then(res => {
+            axiosInstance.post('change_password/', post_data).then(res => {
                 spinnerStop();
                 if (res.data.ok) {
                     console.log(`
@@ -281,7 +318,7 @@ function Header(props) {
         let post_data = {};
         if (formValid(formErrors, passwordFormData, "currentPassword")) {
             post_data['password'] = passwordFormData.currentPassword;
-            axisoInstance.post('validate_password/', post_data).then(res => {
+            axiosInstance.post('validate_password/', post_data).then(res => {
                 spinnerStop();
                 if (res.data.ok) {
                     setIsValidCurrentPassword(true);
@@ -314,11 +351,15 @@ function Header(props) {
         if(store_overlay) {
             spinner(true)
         }
-        axisoInstance.get('signout/').then(response => {
+        axiosInstance.get('signout/').then(response => {
                 spinnerStop();
                 if (response.data.ok) {
                     dispatch(sign_out());
                     dispatch(user_data());
+                    dispatch(friend_requests());
+                    dispatch(chat_requests());
+                    dispatch(chat_messages());
+                    dispatch(notifications());
                     localStorage.removeItem('accessToken');
                     localStorage.removeItem('refreshToken');
                     history.push('/signin')
@@ -545,11 +586,11 @@ function Header(props) {
                                             {notificationData.length > 0?notificationData.map(item => {
                                                 return (<Row style={{margin: '0px', padding: '0px'}}>
                                                     <Col style={{ padding: '0px' }} xs={1} sm={1} md={1} lg={1} xl={1}>
-                                                        <FaUserPlus style={{ fontSize: '0.8rem', margin: '0px', color: '#58A847' }}/>
+                                                        {item.notification_type =='chat'?<FaComments style={{ fontSize: '0.8rem', margin: '0px', color: '#5C8DF2' }}/>:<FaUserPlus style={{ fontSize: '0.8rem', margin: '0px', color: '#58A847' }}/>}
                                                     </Col>
                                                     <Col style={{ padding: '2px 0px 0px 5px'}} xs={11} sm={11} md={11} lg={11} xl={11}>
-                                                        <p style={{margin: '0px', fontSize:'0.8rem', color: '#6393F2'}}>{item.msg}</p>
-                                                        <p style={{margin: '0px', fontSize:'0.6rem', fontWeight: 'bold'}} className="float-right">{item.created_on}</p>
+                                                        <p style={{margin: '0px', fontSize:'0.8rem', color: '#6393F2'}}>{item.message}</p>
+                                                        <p style={{margin: '0px', fontSize:'0.6rem', fontWeight: 'bold'}} className="float-right">{moment(item.created_on).fromNow()}</p>
                                                     </Col>                                                    
                                                 </Row>)
                                             }):<div>

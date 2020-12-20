@@ -1,6 +1,5 @@
 import axios from 'axios'
-
-console.log(localStorage)
+import axiosRetry from 'axios-retry';
 
 axios.defaults.xsrfCookieName = 'csrftoken';
 axios.defaults.xsrfHeaderName = 'X-CSRFToken';
@@ -14,6 +13,9 @@ const axiosInstance = axios.create({
         'accept': 'application/json'
     }
 });
+
+axiosRetry(axiosInstance, { retries: 3 });
+
 
 axiosInstance.interceptors.response.use(
     response => response,

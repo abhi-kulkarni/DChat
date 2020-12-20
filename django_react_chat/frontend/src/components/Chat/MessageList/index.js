@@ -1,4 +1,4 @@
-import React, {useEffect, useState, useRef} from 'react';
+import React, {useEffect, useState, useRef, forwardRef, useImperativeHandle} from 'react';
 import Toolbar from '../Toolbar';
 import Message from '../Message';
 import moment from 'moment';
@@ -11,11 +11,17 @@ import {FaPaperPlane, FaSmile, FaCamera, FaInfoCircle, FaMicrophone, FaTrash, Fa
 import OverlayTrigger from 'react-bootstrap/OverlayTrigger'
 import Tooltip from 'react-bootstrap/Tooltip'
 import Dialog from 'react-bootstrap-dialog'
+import {useDispatch, useSelector} from "react-redux";
+import WebSocketInstance from '../../../websocket'
+import {useHistory, useLocation} from 'react-router-dom'
+import {chat_messages} from '../../../redux'
+import axiosInstance from '../../axiosInstance'
 
 const MY_USER_ID = 'apple';
 
-export default function MessageList(props) {
-  const [messages, setMessages] = useState([])
+const MessageList = forwardRef((props, ref) => {{
+
+  const [messages, setMessages] = useState([]);
   let CustomDialog = useRef(null);
   let messagesEnd = useRef(null);
   let messagesStart = useRef(null);
@@ -24,18 +30,92 @@ export default function MessageList(props) {
   const [inputMsg, setInputMsg] = useState('')
   const [chosenEmoji, setChosenEmoji] = useState(null)
   const mounted = useRef();
-
+  const location = useLocation();
+  const history = useHistory();
+  const dispatch = useDispatch();
+  const curr_user_data = useSelector(state => state.session.user_data);
+  const curr_chat_messages = useSelector(state => state.session.chat_messages);
+  const [currUserData, setCurrUserData] = useState({});
+  const [messageData, setMessageData] = useState([]);
+  const [chatId, setChatId] = useState('');
+  const [currChatMsgs, setCurrChatMsgs] = useState([]);
+  const childRef = useRef(null);
 
   useEffect(() => {
-    if (!mounted.current) {
-      getMessages();
       document.addEventListener('mousedown', handleClickOutside, false);
-      props.userData && props.userData.name?scrollToBottom():'';
       mounted.current = true;
-    } else {
-      props.userData && props.userData.name?scrollToBottom():'';
+      if(location.state){
+        setCurrUserData(location.state);
+      }
+      let params = location.pathname.split('/');
+      let chatId = params.length > 3?params[params.length - 2]: null;
+      if(chatId){
+        setChatId(chatId);
+        initializeChat(chatId);
+      }
+  }, []);
+
+  useEffect(() => {
+    let params = location.pathname.split('/');
+    let chatId = params.length > 3?params[params.length - 2]: null;
+    if(location.state){
+      setCurrUserData(location.state);
     }
-  });
+    WebSocketInstance.disconnect();
+    waitForSocketConnection(() => {
+      WebSocketInstance.fetchMessages(
+        curr_user_data.id, chatId
+      );
+    });
+    WebSocketInstance.connect('chat', chatId);
+    let data = curr_chat_messages.hasOwnProperty('messages') && curr_chat_messages['messages'].filter(item => {
+      return item.chatId === chatId;
+    });
+    data && data.sort((a, b) => (new Date(a.timestamp) < new Date(b.timestamp)) ? -1 : ((new Date(a.timestamp) > new Date(b.timestamp)) ? 1 : 0));
+    setCurrChatMsgs(data);
+  }, [location.pathname]);
+
+  useEffect(() => {
+    let ele = document.getElementById('messagesBottom');
+    ele.scrollIntoView({behavior: "smooth"});
+  }, [currChatMsgs])
+
+  useEffect(() => {
+    let params = location.pathname.split('/');
+    let chatId = params.length > 3?params[params.length - 2]: null;
+    let data = curr_chat_messages.hasOwnProperty('messages') && curr_chat_messages['messages'].filter(item => {
+      return item.chatId === chatId;
+    });
+    data && data.sort((a, b) => (new Date(a.timestamp) < new Date(b.timestamp)) ? -1 : ((new Date(a.timestamp) > new Date(b.timestamp)) ? 1 : 0));
+    setCurrChatMsgs(data);
+  }, [curr_chat_messages['messages']]);
+
+
+  const waitForSocketConnection = (callback) => {
+    setTimeout(function() {
+      if (WebSocketInstance.state() === 1) {
+        console.log("Connection is secure");
+        callback();
+      } else {
+        console.log("wait for connection...");
+        waitForSocketConnection(callback);
+      }
+    }, 100);
+  }
+
+  const initializeChat = (chatId) => {
+    waitForSocketConnection(() => {
+      WebSocketInstance.addCallbacks(
+        (data) => setMessagesCallback(data), 
+        (data) => addMessageCallback(data)
+      )
+      WebSocketInstance.fetchMessages(
+        curr_user_data.id, chatId
+      );
+    });
+    WebSocketInstance.connect('chat', chatId);
+  }
+
 
   const handleClickOutside = (e) => {
     if (emojiInputRef && e.target && emojiInputRef.current && !emojiInputRef.current.contains(e.target)) {
@@ -44,11 +124,23 @@ export default function MessageList(props) {
   };
   
   const scrollToBottom = () => {
-    messagesEnd.scrollIntoView({ behavior: "smooth" });
+    document.getElementById('messagesBottom').scrollIntoView({behavior: "smooth"})
   };
 
   const scrollToTop = () => {
     messagesStart.scrollIntoView({ behavior: "smooth" });
+  }
+
+  const getCurrentChatMsgs = (chatId) => {
+    axiosInstance.get('get_chat/'+chatId+'/').then(res => {
+      if(res.data.ok) {
+          setCurrChatMsgs(res.data.chat_data)
+      }else{
+          console.log('Error')
+      }
+  }).catch(err => {
+      console.log(err)
+  });
   }
 
   const clearChatRef = (chat_id) => {
@@ -77,108 +169,27 @@ export default function MessageList(props) {
     alert('Chat Cleared')
   }
 
-  
-  const getMessages = () => {
-     var tempMessages = [
-        {
-          id: 1,
-          author: 'apple',
-          message: 'Hello world! This is a long message that will hopefully get wrapped by our message bubble component! We will see how well it works.',
-          timestamp: new Date().getTime()
-        },
-        {
-          id: 2,
-          author: 'orange',
-          message: 'It looks like it wraps exactly as it is supposed to. Lets see what a reply looks like!',
-          timestamp: new Date().getTime()
-        },
-        {
-          id: 3,
-          author: 'orange',
-          message: 'Hello world! This is a long message that will hopefully get wrapped by our message bubble component! We will see how well it works.',
-          timestamp: new Date().getTime()
-        },
-        {
-          id: 4,
-          author: 'apple',
-          message: 'It looks like it wraps exactly as it is supposed to. Lets see what a reply looks like!',
-          timestamp: new Date().getTime()
-        },
-        {
-          id: 5,
-          author: 'apple',
-          message: 'Hello world! This is a long message that will hopefully get wrapped by our message bubble component! We will see how well it works.',
-          timestamp: new Date().getTime()
-        },
-        {
-          id: 6,
-          author: 'apple',
-          message: 'It looks like it wraps exactly as it is supposed to. Lets see what a reply looks like!',
-          timestamp: new Date().getTime()
-        },
-        {
-          id: 7,
-          author: 'orange',
-          message: 'Hello world! This is a long message that will hopefully get wrapped by our message bubble component! We will see how well it works.',
-          timestamp: new Date().getTime()
-        },
-        {
-          id: 8,
-          author: 'orange',
-          message: 'It looks like it wraps exactly as it is supposed to. Lets see what a reply looks like!',
-          timestamp: new Date().getTime()
-        },
-        {
-          id: 9,
-          author: 'apple',
-          message: 'Hello world! This is a long message that will hopefully get wrapped by our message bubble component! We will see how well it works.',
-          timestamp: new Date().getTime()
-        },
-        {
-          id: 10,
-          author: 'orange',
-          message: 'It looks like it wraps exactly as it is supposed to. Lets see what a reply looks like!',
-          timestamp: new Date().getTime()
-        },
-        {
-          id: 11,
-          author: 'orange',
-          message: 'It looks like it wraps exactly as it is supposed to. Lets see what a reply looks like!',
-          timestamp: new Date().getTime()
-        },
-        {
-          id: 12,
-          author: 'orange',
-          message: 'It looks like it wraps exactly as it is supposed to. Lets see what a reply looks like!',
-          timestamp: new Date().getTime()
-        },
-        {
-          id: 13,
-          author: 'orange',
-          message: 'It looks like it wraps exactly as it is supposed to. Lets see what a reply looks like!',
-          timestamp: new Date().getTime()
-        },
-        {
-          id: 14,
-          author: 'orange',
-          message: 'It looks like it wraps exactly as it is supposed to. Lets see what a reply looks like!',
-          timestamp: new Date().getTime()
-        }
+  const addMessageCallback = (message) => {
+    dispatch(chat_messages(message, "new_message"));
+  }
 
-      ]
-      setMessages([...messages, ...tempMessages])
+  const setMessagesCallback = (messages) => {
+    dispatch(chat_messages(messages, "fetch_messages"));
   }
 
   const renderMessages = () => {
-    let i = 0;
-    let messageCount = messages.length;
+
+    let curr_username = curr_user_data?curr_user_data['username']:'';
+    let messageCount = currChatMsgs.length;
     let tempMessages = [];
+    let msgs = currChatMsgs;
+    let i = 0;
 
     while (i < messageCount) {
-      let previous = messages[i - 1];
-      let current = messages[i];
-      let next = messages[i + 1];
-      let isMine = current.author === MY_USER_ID;
+      let previous = msgs[i - 1];
+      let current = msgs[i];
+      let next = msgs[i + 1];
+      let isMine = current.author === curr_username;
       let currentMoment = moment(current.timestamp);
       let prevBySameAuthor = false;
       let nextBySameAuthor = false;
@@ -220,8 +231,6 @@ export default function MessageList(props) {
           data={current}
         />
       );
-
-      // Proceed to the next message.
       i += 1;
     }
 
@@ -255,13 +264,19 @@ export default function MessageList(props) {
 
   const handleMessageInput = () => {
     let input_msg = document.getElementById('composeMsg').value;
-    this.sendNewMessage(input_msg);
+    sendNewMessage(input_msg);
     document.getElementById('composeMsg').value = '';
-    setInputMsg(input_msg)
+    setInputMsg('');
   }
 
   const sendNewMessage = (message) => {
-    alert(message)
+    if(message.length > 0){
+      scrollToBottom();
+      let params = location.pathname.split('/');
+      let chatId = params.length > 3?params[params.length - 2]: null;
+      let data = {'from': curr_user_data.id, 'content': message, 'chatId': chatId}
+      WebSocketInstance.newChatMessage(data);
+    }
   }
 
   return(
@@ -273,7 +288,7 @@ export default function MessageList(props) {
         </div>
         <Col ref={(el) => { messagesStart = el }} xs={12} sm={12} md={12} lg={12} xl={12}>
         <Toolbar
-          title={props.userData.name?props.userData.name:'Begin Conversation'}
+          title={currUserData.name?currUserData.name:'Begin Conversation'}
           leftItems={[
             <OverlayTrigger
                       key="bottom"
@@ -305,9 +320,7 @@ export default function MessageList(props) {
               <Picker onEmojiClick={onEmojiClick} />
             </div>:""}
         </Col>
-
-        
-        <Col ref={(el) => { messagesEnd = el }} xs={12} sm={12} md={12} lg={12} xl={12}>
+        <Col id="messagesBottom" ref={(el) => { messagesEnd = el }} xs={12} sm={12} md={12} lg={12} xl={12}>
           <Row className="compose" style={{ padding: '0px', margin: '0px' }}>
             <Col style={{ paddingLeft: '0px' }} xs={6} sm={6} md={7} lg={7} xl={7}>
               <Form onSubmit={(e) => e.preventDefault()}>
@@ -362,4 +375,6 @@ export default function MessageList(props) {
     </Row>
     
   );
-}
+}})
+
+export default MessageList

@@ -16,15 +16,22 @@ class WebSocketService {
   }
 
   connect(type, chatUrl) {
-    let path;
+
+    let path = null;
     if(type === 'chat'){
+      chatUrl = chatUrl.replace('-', '')
       path = `${SOCKET_URL}/ws/chat/${chatUrl}/`;
     }
-    else{
+    else if(type === 'friend_requests'){
       path = `${SOCKET_URL}/ws/friend_requests/`;
     }
+    else if(type === 'chat_requests'){
+      path = `${SOCKET_URL}/ws/chat_requests/`;
+    }
     if(path){
+     
       this.socketRef = new WebSocket(path);
+
       this.socketRef.onopen = () => {
         console.log("WebSocket open");
       };
@@ -42,7 +49,19 @@ class WebSocketService {
   }
 
   disconnect() {
-    if(this.socketRef) {
+    this.socketRef.removeEventListener("open", () => {
+        //pass
+    });
+    this.socketRef.removeEventListener("message", () => {
+      //pass
+    });
+    this.socketRef.removeEventListener("error", () => {
+      //pass
+    });
+    this.socketRef.removeEventListener("close", () => {
+      //pass
+    });
+    if(this.socketRef){
       this.socketRef.close();
     }
   }
@@ -57,50 +76,56 @@ class WebSocketService {
       this.callbacks[command](parsedData.messages);
     }
     if (command === "new_message") {
+      console.log('EMIT');
       this.callbacks[command](parsedData.message);
     }
     if (command === "friend_requests") {
       this.callbacks[command](JSON.parse(parsedData.friend_requests));
     }
+    if (command === "chat_requests") {
+      this.callbacks[command](JSON.parse(parsedData.chat_requests));
+    }
   }
 
-  fetchMessages(username, chatId, owner) {
+  fetchMessages(uId, chatId) {
     this.sendMessage({
       command: "fetch_messages",
-      username: username,
+      userId: uId,
       chatId: chatId,
-      owner:owner
     });
   }
 
-  newChatMessage(message, owner) {
+  newChatMessage(message) {
     this.sendMessage({
       command: "new_message",
       from: message.from,
       message: message.content,
       chatId: message.chatId,
-      owner:owner
     });
   }
 
-  newFriendRequest(userId) {
-    this.sendMessage({
-      user_id: userId,
-      command:'new_friend_request'
-    });
-  }
-
-  fetchFriendRequests(userId, recipientUserId, action) {
+  fetchFriendRequests(userId, recipientUserId, action, notificationData) {
     this.sendMessage({
       user_id: userId,
       recipient_user_id: recipientUserId,
       action: action,
+      notification_data: notificationData,
       command:'fetch_friend_requests'
     });
   }
 
+  fetchChatRequests(userId, recipientUserId, action, chatId, notificationData) {
+    this.sendMessage({
+      user_id: userId,
+      recipient_user_id: recipientUserId,
+      chat_id: chatId,
+      action: action,
+      notification_data: notificationData,
+      command:'fetch_chat_requests'
+    });
+  }
 
-  addCallbacks(messagesCallback, newMessageCallback, newChatRequestCallback, chatRequestStatusCallback, deleteChatCallback, deleteChatFriendCallback, setOnlineStatusCallback, fetchOnlineStatusCallback) {
+  addCallbacks(messagesCallback, newMessageCallback) {
     this.callbacks["messages"] = messagesCallback;
     this.callbacks["new_message"] = newMessageCallback;
     
@@ -108,6 +133,10 @@ class WebSocketService {
 
   friendRequestNotificationCallbacks(friendRequestCallback, sessionFriendRequestCallback){
     this.callbacks["friend_requests"] = friendRequestCallback;
+  }
+
+  conversationRequestNotificationCallbacks(chatRequestCallback, sessionChatRequestCallback){
+    this.callbacks["chat_requests"] = chatRequestCallback;
   }
 
   sendMessage(data) {
@@ -125,7 +154,6 @@ class WebSocketService {
   getCurrentSocketInstance() {
     return this.socketRef;
   }
-
 
 }
 

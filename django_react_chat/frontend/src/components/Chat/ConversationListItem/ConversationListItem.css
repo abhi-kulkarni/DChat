@@ -39,10 +39,18 @@
   display:none;
 }
 
-.div_hover:hover { background-color: #ececec; }
+.div_hover:hover { 
+  background-color: #ececec !important; 
+}
 
 .noContent {
   color: #000 !important;
   background-color: transparent !important;
   pointer-events: none;
+}
+
+.remove_chat {
+  color: #EB3E37;
+  cursor: pointer;
+  font-size: 0.8rem;
 }

@@ -48,7 +48,7 @@ function Chat(props) {
 
 
     return (
-        <div className="Chat" style={{ position: 'fixed' }}>
+        <div className="Chat" style={{ position: 'fixed', width: '100%' }}>
             <Messenger />
         </div>
     )

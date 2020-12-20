@@ -45,6 +45,12 @@ const routes = [{
     exact: true,
     name: 'chat'
 },{
+    path: "/chat/:id/",
+    component: Chat,
+    layout: CustomLayout,
+    exact: true,
+    name: 'chat_detail'
+},{
     path: "/change_password",
     component: ChangePassword,
     layout: CustomLayout,

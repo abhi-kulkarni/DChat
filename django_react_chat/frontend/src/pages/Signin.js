@@ -12,7 +12,7 @@ import Tooltip from 'react-bootstrap/Tooltip'
 import {Orientation} from "../components/Orientation";
 import {FaEye, FaEyeSlash, FaEnvelopeOpen, FaUserShield, FaCheckCircle} from "react-icons/fa";
 import API_URL from '../constants/'
-import {spinner_overlay, sign_in, user_data, user_created_success, friend_requests} from '../redux'
+import {spinner_overlay, sign_in, user_data, user_created_success, friend_requests, chat_requests, notifications} from '../redux'
 import AtomSpinner from '../components/Atomspinner'
 import axios from 'axios'
 import {Link, Redirect, useHistory} from 'react-router-dom'
@@ -125,8 +125,9 @@ function SignIn(props) {
                 localStorage.setItem('accessToken', res.data.access);
                 dispatch(sign_in());
                 dispatch(user_data(res.data.user));
-                console.log(res.data.user.friend_requests);
                 dispatch(friend_requests(res.data.user.friend_requests));
+                dispatch(chat_requests(res.data.user.chat_requests));
+                dispatch(notifications(res.data.user.notifications))
                 setIsValidLogin(true);
                 history.push('/home');
             }else{
@@ -273,7 +274,7 @@ function SignIn(props) {
     const closeResetPasswordModal = () => {
         setResetPasswordModalShow(false);
         spinnerStop();
-        props.history.push('/signin')
+        history.push('/signin')
     };
 
     const validateEmail = () => {
@@ -399,7 +400,7 @@ function SignIn(props) {
                                     <Form style={{marginTop: "20px"}}>
                                         <Form.Group controlId="reset_password">
                                             <InputGroup>
-                                                <Form.Control name="resetPassword"
+                                                <Form.Control autoComplete="off" name="resetPassword"
                                                               type={showResetPassword ? "text" : "password"}
                                                               value={resetPasswordFormData.resetPassword}
                                                               onChange={e => handleChange(e)}
@@ -425,7 +426,7 @@ function SignIn(props) {
                                         </Form.Group>
                                         <Form.Group controlId="reset_password_confirm">
                                             <InputGroup>
-                                                <Form.Control name="resetPasswordConfirm"
+                                                <Form.Control autoComplete="off" name="resetPasswordConfirm"
                                                               type={showResetPasswordConfirm ? "text" : "password"}
                                                               value={resetPasswordFormData.resetPasswordConfirm}
                                                               onChange={e => handleChange(e)}
@@ -509,7 +510,7 @@ function SignIn(props) {
                         <Form.Group controlId="password">
                             <Form.Label>Password</Form.Label>
                             <InputGroup>
-                                <Form.Control name="password" type={showPassword ? "text" : "password"}
+                                <Form.Control autoComplete="off" name="password" type={showPassword ? "text" : "password"}
                                                 value={password} onChange={e => setPassword(e.target.value)}
                                                 placeholder="Enter Password">
 

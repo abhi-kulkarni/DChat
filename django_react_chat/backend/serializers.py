@@ -1,5 +1,5 @@
 from rest_framework import serializers
-from .models import User
+from .models import User, Notification
 from rest_framework.response import Response
 from rest_framework_simplejwt.serializers import TokenObtainPairSerializer
 from rest_framework_simplejwt.views import TokenObtainPairView
@@ -25,10 +25,16 @@ class FriendSerializer(serializers.ModelSerializer):
         fields = '__all__'
 
 
+class NotificationSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Notification
+        fields = '__all__'
+
+
 class MyTokenObtainPairSerializer(TokenObtainPairSerializer):
 
     def validate(self, attrs):
-        from .socket_views import manage_friend_request_data
+        from .socket_views import manage_friend_request_data, manage_chat_request_data, get_all_notifications
 
         post_data = dict(attrs)
         user = authenticate(self.context['request'], username=post_data['email'], password=post_data['password'])
@@ -39,7 +45,9 @@ class MyTokenObtainPairSerializer(TokenObtainPairSerializer):
             data['refresh'] = str(refresh)
             data['access'] = str(refresh.access_token)
             data['user'] = UserSerializer(self.user).data
-            data['user']['friend_requests'] = manage_friend_request_data([self.user.id], '')[self.user.id]
+            data['user']['friend_requests'] = manage_friend_request_data([self.user.id], '', None)[self.user.id]
+            data['user']['chat_requests'] = manage_chat_request_data([self.user.id], '', '', None)[self.user.id]
+            data['user']['notifications'] = get_all_notifications(self.user.id)
             data['ok'] = True
         else:
             data['ok'] = False

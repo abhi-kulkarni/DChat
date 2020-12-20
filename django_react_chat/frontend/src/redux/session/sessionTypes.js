@@ -15,3 +15,9 @@ export const FRIEND_REQUESTS = "FRIEND_REQUESTS";
 export const ONLINE_STATUS = "ONLINE_STATUS";
 
 export const NOTIFICATIONS = "NOTIFICATIONS";
+
+export const CHAT_REQUESTS = "CHAT_REQUESTS";
+
+export const CHAT_MESSAGES = "CHAT_MESSAGES";
+
+export const C_M = "C_M";

@@ -1,4 +1,4 @@
-from backend.models import User
+from backend.models import User, Message, Chat
 from channels.generic.websocket import WebsocketConsumer
 from asgiref.sync import async_to_sync
 import json
@@ -8,17 +8,18 @@ class Consumer(WebsocketConsumer):
 
     def fetch_messages(self, data):
         messages = get_last_10_messages(data['chatId'])
+        chat_data = {}
         content = {
             'command': 'messages',
             'messages': self.messages_to_json(messages, data['chatId']),
-            'chatId': data['chatId']
+            'chat_id': data['chatId']
         }
         self.send_message(content)
 
     def new_message(self, data):
-        user_contact = get_user(data['from'])
+        user = get_user(data['from'])
         message = Message.objects.create(
-            user=user_contact,
+            user=user,
             content=data['message'])
         current_chat = get_current_chat(data['chatId'])
         current_chat.messages.add(message)
@@ -26,7 +27,7 @@ class Consumer(WebsocketConsumer):
         content = {
             'command': 'new_message',
             'message': self.message_to_json(message, data['chatId']),
-            'chatId': data['chatId']
+            'chat_id': data['chatId']
         }
         return self.send_chat_message(content)
 
@@ -51,9 +52,10 @@ class Consumer(WebsocketConsumer):
         temp['user_id'] = data['user_id']
         temp['recipient_user_id'] = data['recipient_user_id']
         ip = [data['user_id'], data['recipient_user_id']]
-        op_data = manage_friend_request_data(ip, data['action'])
+        op_data = manage_friend_request_data(ip, data['action'], data['notification_data'])
         temp['friend_requests'] = json.dumps(op_data)
         temp['action'] = data['action']
+        temp['notification_data'] = data['notification_data']
         temp['command'] = 'friend_requests'
         return self.send_response(temp)    
     
@@ -65,12 +67,27 @@ class Consumer(WebsocketConsumer):
         temp['user_id'] = data['user_id']
         temp['command'] = 'friend_requests'
         return self.send_response(temp)
+    
+
+    def fetch_chat_requests(self, data):
+        temp = {}
+        temp['user_id'] = data['user_id']
+        temp['chat_id'] = data['chat_id']
+        temp['recipient_user_id'] = data['recipient_user_id']
+        ip = [data['user_id'], data['recipient_user_id']]
+        op_data = manage_chat_request_data(ip, data['action'], data['chat_id'], data['notification_data'])
+        temp['chat_requests'] = json.dumps(op_data)
+        temp['action'] = data['action']
+        temp['notification_data'] = data['notification_data']
+        temp['command'] = 'chat_requests'
+        return self.send_response(temp)    
 
     commands = {
         'fetch_messages': fetch_messages,
         'new_message': new_message,
         'fetch_friend_requests': fetch_friend_requests,
         'new_friend_request': new_friend_request,
+        'fetch_chat_requests': fetch_chat_requests,
     }
 
     def connect(self):
@@ -114,7 +131,11 @@ class Consumer(WebsocketConsumer):
                 'command': data.get('command', ''),
                 'online_users': data.get('online_users', ''),
                 'recipient_user_id': data.get('recipient_user_id', ''),
-                'action': data.get('action', '')
+                'action': data.get('action', ''),
+                'chat_requests': data.get('chat_requests', ''),
+                'chat_id': data.get('chat_id', ''),
+                'messages': data.get('messages', []),
+                'notification_data': data.get('notification_data', {})
             }
         )
 

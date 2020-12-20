@@ -1,7 +1,7 @@
 from django.shortcuts import render,HttpResponse
 from rest_framework import generics
 from rest_framework.permissions import IsAuthenticated, AllowAny
-from .models import User
+from .models import User, ChatFriend, ChatManager, ChatRequest, Chat, Message, Notification
 from rest_framework.response import Response
 from rest_framework.decorators import api_view, permission_classes
 from rest_framework import status
@@ -10,10 +10,11 @@ from django.db import IntegrityError
 from django.contrib.auth import authenticate, login, logout
 from rest_framework_simplejwt.views import TokenObtainPairView
 from rest_framework import permissions
-from .serializers import MyTokenObtainPairSerializer, FriendSerializer, FriendRequestSerializer, UserSerializer
+from .serializers import MyTokenObtainPairSerializer, NotificationSerializer, FriendSerializer, FriendRequestSerializer, UserSerializer
 from django.contrib.auth.hashers import check_password, make_password
 from friendship.models import Friend, Follow, Block, FriendshipRequest 
 from django.core.cache import cache
+import uuid
 
 class ObtainTokenPairWithEmailView(TokenObtainPairView):
     permission_classes = (permissions.AllowAny,)
@@ -36,12 +37,14 @@ def signin(request):
 @api_view(['GET'])
 @permission_classes([IsAuthenticated])
 def is_authenticated(request):
-    from .socket_views import manage_friend_request_data
+    from .socket_views import manage_friend_request_data, manage_chat_request_data, get_all_notifications
 
     if request.user:
         serializer = UserSerializer(request.user)
-        friend_requests = manage_friend_request_data([request.user.id], '')[request.user.id]
-        return Response({'ok': True, 'user': serializer.data, 'is_logged_in': True, 'friend_requests': friend_requests})
+        friend_requests = manage_friend_request_data([request.user.id], '', None)[request.user.id]
+        chat_requests = manage_chat_request_data([request.user.id], '', '', None)[request.user.id]
+        notifications = get_all_notifications(request.user.id)
+        return Response({'ok': True, 'user': serializer.data, 'is_logged_in': True, 'friend_requests': friend_requests, 'chat_requests': chat_requests, 'notifications': notifications})
     else:
         return Response({'ok': False})
 
@@ -155,38 +158,81 @@ def change_password(request):
 @api_view(['POST'])
 @permission_classes([IsAuthenticated])
 def manage_friends(request):
+    from .socket_views import manage_notifications
 
     post_data = request.data
     recipient_user_id = post_data['recipient_user_id']
     recipient_user = User.objects.get(pk=recipient_user_id)
+    notification = []
     try:
         if post_data['action'] == 'add':
             Friend.objects.add_friend(request.user, recipient_user, message='Hi! I would like to be friends with you')      
         elif post_data['action'] == 'remove':
             Friend.objects.remove_friend(request.user, recipient_user)
         elif post_data['action'] == 'accept':
-            friend_request = FriendshipRequest.objects.get(to_user=request.user.id)
+            friend_request = FriendshipRequest.objects.filter(to_user=request.user.id, from_user=recipient_user_id)[0]
             friend_request.accept()
+            notification = manage_notifications(request.user, recipient_user, "friends")
         elif post_data['action'] == 'reject':
-            friend_request = FriendshipRequest.objects.get(to_user=request.user.id)
+            friend_request = FriendshipRequest.objects.filter(to_user=request.user.id, from_user=recipient_user_id)[0]
             friend_request.reject()
             friend_request.delete()
         elif post_data['action'] == 'cancel':  
-            FriendshipRequest.objects.filter(to_user=recipient_user_id, from_user=request.user.id).delete()
-        return Response({'ok': True})
+            friend_request = FriendshipRequest.objects.filter(from_user=request.user.id, to_user=recipient_user_id)[0]
+            friend_request.delete()
+        return Response({'ok': True, 'notification': notification})
     except:
-        return Response({'ok': True})
+        return Response({'ok': False})
+
+
+@api_view(['POST'])
+@permission_classes([IsAuthenticated])
+def manage_chats(request):
+    from .socket_views import manage_notifications
+
+    post_data = request.data
+    recipient_user_id = post_data.get('recipient_user_id', '')
+    recipient_user = User.objects.get(pk=recipient_user_id)
+    participants = []
+    participants.append(recipient_user)
+    participants.append(request.user)
+    created_chat_id = ''
+    req_chat_id = post_data.get('chat_id', '')
+    notification = []
+    # try:
+    if post_data['action'] == 'add':
+        ChatFriend.objects.add_friend(request.user, recipient_user, message='Hi! I would like to be friends with you')      
+    elif post_data['action'] == 'remove':
+        ChatFriend.objects.remove_friend(request.user, recipient_user)
+        chat = Chat.objects.get(pk=req_chat_id)
+        chat.messages.through.objects.filter(chat_id=chat.pk).delete()
+        chat.delete()
+    elif post_data['action'] == 'accept':
+        chat_friend_request = ChatRequest.objects.filter(to_user=request.user.id, from_user=recipient_user_id)[0]
+        chat_friend_request.accept()
+        chat_obj = Chat()
+        chat_obj.save()
+        created_chat_id = chat_obj.id
+        for participant in participants:
+            chat_obj.participants.add(participant)
+        notification = manage_notifications(request.user, recipient_user, "chat")
+    elif post_data['action'] == 'reject':
+        chat_friend_request = ChatRequest.objects.filter(to_user=request.user.id, from_user=recipient_user_id)[0]
+        chat_friend_request.reject()
+        chat_friend_request.delete()
+    elif post_data['action'] == 'cancel':  
+        chat_friend_request = ChatRequest.objects.filter(from_user=request.user.id, to_user=recipient_user_id)[0]
+        chat_friend_request.delete()
+    return Response({'ok': True, 'chat_id': created_chat_id, 'notification': notification})
+    # except:
+    # return Response({'ok': False})
+
 
 @api_view(['GET'])
 @permission_classes([IsAuthenticated])
 def get_manage_friends_data(request):
 
-
     required_user = request.user
-
-    print('-----------------------------------')
-    print(required_user)
-    print('-----------------------------------')
 
     all_users = User.objects.exclude(email=required_user.email)
     user_data_dict = dict()
@@ -245,3 +291,155 @@ def get_manage_friends_data(request):
     data_dict = {'user_id_list': user_id_list, 'friend_id_list': friend_id_list, 'sent_friend_requests_id_list': sent_friend_requests_id_list, 'friend_requests_id_list': friend_requests_id_list}
 
     return Response({'ok':True, 'users':display_users, 'friends':all_frs, 'friend_requests':all_fr_requests, 'sent_friend_requests':all_sent_fr_requests, 'data_dict': data_dict})
+
+
+@api_view(["GET"])
+@permission_classes([IsAuthenticated])
+def get_all_friends(request):
+    
+    all_users = User.objects.exclude(email=request.user.email)
+
+    user_data_dict = dict()
+    user_serializer = UserSerializer(all_users, many=True)
+
+    all_usrs = User.objects.all()
+    usr_serializer = UserSerializer(all_usrs, many=True)
+
+    for user_obj in usr_serializer.data:
+        user_data_dict[user_obj['id']] = dict(user_obj)
+
+    all_friends = Friend.objects.friends(request.user)
+
+    all_frs = []
+    friend_id_list = []
+
+    for friend_obj in all_friends:
+        req_user = friend_obj.id
+        friend_id_list.append(req_user)
+        all_frs.append(user_data_dict[req_user])
+
+    if all_users:
+        serializer = UserSerializer(all_users, many=True)
+        return Response({"ok": True, "users": user_serializer.data, "friends": all_frs}, status=status.HTTP_200_OK)
+    else:
+        return Response({"ok": False, "users": [], "friends": [], "error": "Some error occured."})
+
+@api_view(["GET"])
+@permission_classes([IsAuthenticated])
+def get_chat(request, pk):
+
+    chat = Chat.objects.get(pk=pk)
+    participants = chat.participants.all()
+    messages = chat.messages.order_by('-timestamp').all()
+    users = []
+    user = None
+    chat_data = {}
+    chat_data[pk] = {}
+    for participant in participants:
+        if participant.id != request.user.id:
+            user = UserSerializer(participant)
+        users.append(participant)
+    
+    curr_user = user.data if user else {}
+    participants = UserSerializer(users, many=True).data
+    msgs = messages_to_json(messages, pk)
+    chat_data[pk] = msgs
+    return Response({'ok': True, 'participants': participants, 'curr_user': curr_user, 'chat_data': chat_data})
+
+
+@api_view(["GET"])
+@permission_classes([IsAuthenticated])
+def get_all_chats(request):
+
+    all_chats = Chat.objects.all()
+    chat_data = []
+    i = 0
+    for chat in all_chats:
+        temp = {}
+        users = []
+        participants = chat.participants.all()
+        for participant in participants:
+            if participant.id != request.user.id:
+                temp['curr_user'] = UserSerializer(participant).data
+                usr_obj = {}
+                usr_obj['id'] = i
+                usr_obj['photo'] = temp['curr_user']['profile_picture']
+                usr_obj['name'] = temp['curr_user']['username']
+                usr_obj['user_id'] = temp['curr_user']['id']
+                usr_obj['chat_id'] = chat.id
+                usr_obj['text'] = 'Hello world! This is a long message that needs to be truncated.'
+                temp['chat'] = usr_obj
+                temp['chat']['isFriend'] = ChatFriend.objects.are_friends(request.user, participant) == True
+            users.append(participant)
+        participants = UserSerializer(users, many=True).data
+        temp['chat_id'] = chat.id
+        temp['participants'] = participants
+        chat_data.append(temp)
+        i += 1
+    
+    return Response({'ok': True, 'chats': chat_data})
+
+
+def messages_to_json(messages, chat_id):
+        result = []
+        if messages:
+            for message in messages:
+                result.append(message_to_json(message, chat_id))
+        return result
+
+def message_to_json(message, chat_id):
+    return {
+        'id': message.id,
+        'author': message.user.username,
+        'content': message.content,
+        'timestamp': str(message.timestamp),
+        'chatId': chat_id
+    }
+
+@api_view(["GET"])
+@permission_classes([IsAuthenticated])
+def get_all_notifications(request):
+    
+    user = User.objects.get(pk=request.user)
+    notifications = user.notifications.all()
+
+    print(notifications)
+
+    return Response({'ok': True, 'notifications': notifications})
+
+
+@api_view(["POST"])
+@permission_classes([IsAuthenticated])
+def manage_notifications(request):
+    
+    post_data = request.data
+
+    recieved_notifications = post_data.get('notifications', '')
+
+    if post_data['type'] == 'add':
+        notification = Notification.objects.create(
+            friend = post_data['friend']['id'],
+            message = post_data['msg'],
+            participants = post_data['participants'],
+            read = post_data.get('read', False),
+        )
+        current_user = User.objects.get(pk=request.user.id)
+        current_user.notifications.add(notification)
+        current_user.save()
+        notification_data_serializer = NotificationSerializer(notification)
+
+        return Response({'ok': True, 'notification': notification_data_serializer.data})
+    else:
+        notification_list = []
+
+        for notification in recieved_notifications:
+            notification = Notification.objects.get(pk=notification['id'])
+            notification.read = True
+            notification.save()
+            notification_list.append(notification)
+
+        notification_serializer = NotificationSerializer(notification_list, many=True)
+
+        return Response({'ok': True, 'notifications': notification_serializer.data})
+
+    

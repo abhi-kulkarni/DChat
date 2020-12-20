@@ -255,7 +255,7 @@ function SignUp(props) {
                         <Form.Group controlId="password">
                             <Form.Label>Password</Form.Label>
                             <InputGroup>
-                                <Form.Control name="password" type={showPassword ? "text" : "password"}
+                                <Form.Control autoComplete="off" name="password" type={showPassword ? "text" : "password"}
                                                 value={formData.password} onChange={e => handleChange(e)}
                                                 placeholder="Enter Password">
 
@@ -291,7 +291,7 @@ function SignUp(props) {
                         <Form.Group controlId="confirmPassword">
                             <Form.Label>Confirm Password</Form.Label>
                                 <InputGroup>
-                                    <Form.Control name="confirmPassword"
+                                    <Form.Control autoComplete="off" name="confirmPassword"
                                                 type={showConfirmPassword ? "text" : "password"}
                                                 value={formData.confirmPassword}
                                                 onChange={e => handleChange(e)}

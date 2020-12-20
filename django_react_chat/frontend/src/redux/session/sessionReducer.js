@@ -1,4 +1,4 @@
-import {SIGN_IN, SIGN_OUT, USER_CREATED_SUCCESS, FORGOT_PASSWORD_CLICKED, SPINNER_OVERLAY, USER_DATA, FRIEND_REQUESTS, ONLINE_STATUS, NOTIFICATIONS} from './sessionTypes'
+import {SIGN_IN, SIGN_OUT, USER_CREATED_SUCCESS, FORGOT_PASSWORD_CLICKED, SPINNER_OVERLAY, USER_DATA, FRIEND_REQUESTS, ONLINE_STATUS, NOTIFICATIONS, CHAT_REQUESTS, CHAT_MESSAGES} from './sessionTypes'
 
 const initialState = {
     isLoggedIn: false,
@@ -8,7 +8,9 @@ const initialState = {
     user_data:{},
     friend_requests:{},
     online_status: {},
-    notifications: []
+    notifications: [],
+    chat_requests:{},
+    chat_messages: {},
 };
 
 const sessionReducer = (state = initialState, action) => {
@@ -48,11 +50,22 @@ const sessionReducer = (state = initialState, action) => {
                 ...state,
                 friend_requests: action.payload
             };
+        case CHAT_REQUESTS:
+            return {
+                ...state,
+                chat_requests: action.payload
+            };
         case NOTIFICATIONS:
             return {
                 ...state,
-                notifications: [...state.notifications, ...action.payload] 
+                notifications: action.payload.notifications
             };    
+        case CHAT_MESSAGES:
+            return {
+                ...state,
+                chat_messages: { 'messages':Array.isArray(action.payload.messages)?action.payload.messages:[...state.chat_messages.messages, action.payload.messages],
+                 'type': action.payload.type }
+            }    
         case ONLINE_STATUS:
             return {
                 ...state,

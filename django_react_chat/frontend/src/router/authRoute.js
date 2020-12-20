@@ -2,7 +2,7 @@ import React, {Component} from 'react'
 import {withRouter} from 'react-router-dom'
 import {connect} from 'react-redux'
 import decode from "jwt-decode";
-import {friend_requests, sign_in, user_data} from "../redux";
+import {friend_requests, sign_in, user_data, chat_requests, notifications} from "../redux";
 import axiosInstance from "../components/axiosInstance";
 
 class AuthRoute extends Component {
@@ -40,11 +40,15 @@ class AuthRoute extends Component {
                         const resp = await axiosInstance.get("is_authenticated/");
                         const user = await resp.data.user;
                         const friend_requests_data = await resp.data.friend_requests;
+                        const chat_requests_data = await resp.data.chat_requests;
+                        const notification_data = await resp.data.notifications;
                         const ok = await resp.data.ok;
                         if (ok) {
                             this.props.dispatch(sign_in());
                             this.props.dispatch(user_data(user));
                             this.props.dispatch(friend_requests(friend_requests_data));
+                            this.props.dispatch(chat_requests(chat_requests_data));
+                            this.props.dispatch(notifications(notification_data));
                             this.setState({isAuth: true})
                         } else{
                             history.push('/signin');
