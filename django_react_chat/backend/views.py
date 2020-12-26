@@ -15,6 +15,7 @@ from django.contrib.auth.hashers import check_password, make_password
 from friendship.models import Friend, Follow, Block, FriendshipRequest 
 from django.core.cache import cache
 import uuid
+from .socket_views import *
 
 class ObtainTokenPairWithEmailView(TokenObtainPairView):
     permission_classes = (permissions.AllowAny,)
@@ -377,6 +378,7 @@ def get_all_chats(request):
         chat_data.append(temp)
         i += 1
     
+
     return Response({'ok': True, 'chats': chat_data})
 
 
@@ -390,6 +392,7 @@ def messages_to_json(messages, chat_id):
 def message_to_json(message, chat_id):
     return {
         'id': message.id,
+        'author_id': message.user.id,
         'author': message.user.username,
         'content': message.content,
         'timestamp': str(message.timestamp),
@@ -403,9 +406,19 @@ def get_all_notifications(request):
     user = User.objects.get(pk=request.user)
     notifications = user.notifications.all()
 
-    print(notifications)
-
     return Response({'ok': True, 'notifications': notifications})
+
+
+@api_view(["GET"])
+@permission_classes([IsAuthenticated])
+def get_recent_msg_data(request):
+    
+    curr_user = User.objects.get(pk=request.user.id)
+    chats = Chat.objects.all()
+    recent_msg_data_dict = {}
+    all_chats = get_all_chats_data(curr_user.id)
+   
+    return Response({'ok': True, 'chats': all_chats})
 
 
 @api_view(["POST"])

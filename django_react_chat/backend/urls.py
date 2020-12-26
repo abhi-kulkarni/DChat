@@ -22,6 +22,7 @@ urlpatterns = [
     path('get_all_chats/', get_all_chats),
     path('get_all_notifications/', get_all_notifications),
     path('manage_notifications/', manage_notifications),
+    path('get_recent_msg_data/', get_recent_msg_data),
     path('signin/', ObtainTokenPairWithEmailView.as_view(), name='token_create'),  
     path('token/refresh/', jwt_views.TokenRefreshView.as_view(), name='token_refresh')
 ]

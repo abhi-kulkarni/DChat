@@ -35,6 +35,12 @@ class Notification(models.Model):
     notification_type = models.CharField(blank=False, max_length=20, default='')
     read = models.BooleanField(default=False)
 
+
+class Room(models.Model):
+
+    room_group_name = models.CharField(max_length=200, default=None, blank=True, unique=True)
+    channel_name = models.CharField(max_length=200, blank=False, default='')
+
 class User(AbstractUser):
 
     created_on = models.DateTimeField(null=datetime.datetime.now())
@@ -52,6 +58,7 @@ class User(AbstractUser):
     country = models.CharField(null=True, max_length=50)
     email = models.EmailField(blank=True, unique=True)
     notifications = models.ManyToManyField(Notification, blank=True, related_name='notifications', default=None)
+    channel_rooms = models.ManyToManyField(Room, blank=True, related_name='notifications', default=None)
 
     EMAIL_FIELD = 'email'
     USERNAME_FIELD = 'email'
@@ -67,12 +74,15 @@ class Message(models.Model):
     def __str__(self):
         return self.user.username
 
+
 class Chat(models.Model):
 
     id = models.UUIDField(primary_key=True, unique=True, default=uuid.uuid4)
     participants = models.ManyToManyField(
         User, related_name='chats', blank=True)
     messages = models.ManyToManyField(Message, blank=True)
+    last_seen = models.TextField(max_length=200, default='')
+    status = models.BooleanField(default=False)
 
     def __str__(self):
         return "{}".format(self.pk)
