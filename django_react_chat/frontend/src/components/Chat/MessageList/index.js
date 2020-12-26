@@ -44,15 +44,6 @@ const MessageList = forwardRef((props, ref) => {{
   useEffect(() => {
       document.addEventListener('mousedown', handleClickOutside, false);
       mounted.current = true;
-      if(location.state){
-        setCurrUserData(location.state);
-      }
-      let params = location.pathname.split('/');
-      let chatId = params.length > 3?params[params.length - 2]: null;
-      if(chatId){
-        setChatId(chatId);
-        initializeChat(chatId);
-      }
   }, []);
 
   useEffect(() => {
@@ -60,15 +51,20 @@ const MessageList = forwardRef((props, ref) => {{
     let chatId = params.length > 3?params[params.length - 2]: null;
     if(location.state){
       setCurrUserData(location.state);
+      let disconnect = false;
+      let curr_chat_path = '/chat/'+location.state.chat_id+'/';
+      let prev_path = location.state.prevPath;
+      let curr_ws_instance = WebSocketInstance.getCurrentSocketInstance();
+      if(prev_path === '/chat/' || prev_path === '/chat'){
+        disconnect = false;
+      }
+      else if(curr_chat_path !== prev_path){
+        disconnect = true;
+      }
+      setChatId(chatId);
+      initializeChat(chatId, disconnect); 
     }
-    WebSocketInstance.disconnect();
-    waitForSocketConnection(() => {
-      WebSocketInstance.fetchMessages(
-        curr_user_data.id, chatId
-      );
-    });
-    WebSocketInstance.connect('chat', chatId);
-    let data = curr_chat_messages.hasOwnProperty('messages') && curr_chat_messages['messages'].filter(item => {
+    let data = curr_chat_messages && curr_chat_messages.hasOwnProperty('messages') && curr_chat_messages['messages'].filter(item => {
       return item.chatId === chatId;
     });
     data && data.sort((a, b) => (new Date(a.timestamp) < new Date(b.timestamp)) ? -1 : ((new Date(a.timestamp) > new Date(b.timestamp)) ? 1 : 0));
@@ -83,12 +79,12 @@ const MessageList = forwardRef((props, ref) => {{
   useEffect(() => {
     let params = location.pathname.split('/');
     let chatId = params.length > 3?params[params.length - 2]: null;
-    let data = curr_chat_messages.hasOwnProperty('messages') && curr_chat_messages['messages'].filter(item => {
+    let data = curr_chat_messages && curr_chat_messages.hasOwnProperty('messages') && curr_chat_messages['messages'].filter(item => {
       return item.chatId === chatId;
     });
     data && data.sort((a, b) => (new Date(a.timestamp) < new Date(b.timestamp)) ? -1 : ((new Date(a.timestamp) > new Date(b.timestamp)) ? 1 : 0));
     setCurrChatMsgs(data);
-  }, [curr_chat_messages['messages']]);
+  }, [curr_chat_messages && curr_chat_messages.hasOwnProperty('messages') && curr_chat_messages['messages']]);
 
 
   const waitForSocketConnection = (callback) => {
@@ -103,17 +99,27 @@ const MessageList = forwardRef((props, ref) => {{
     }, 100);
   }
 
-  const initializeChat = (chatId) => {
-    waitForSocketConnection(() => {
-      WebSocketInstance.addCallbacks(
-        (data) => setMessagesCallback(data), 
-        (data) => addMessageCallback(data)
-      )
-      WebSocketInstance.fetchMessages(
-        curr_user_data.id, chatId
-      );
-    });
-    WebSocketInstance.connect('chat', chatId);
+  const initializeChat = (chatId, disconnect) => {
+    if(disconnect){
+      WebSocketInstance.disconnect();
+      waitForSocketConnection(() => {
+        WebSocketInstance.fetchMessages(
+          curr_user_data.id, chatId
+        );
+      });
+      WebSocketInstance.connect('chat', chatId);
+    }else{
+      waitForSocketConnection(() => {
+        WebSocketInstance.addCallbacks(
+          (data) => setMessagesCallback(data), 
+          (data) => addMessageCallback(data)
+        )
+        WebSocketInstance.fetchMessages(
+          curr_user_data.id, chatId
+        );
+      });
+      WebSocketInstance.connect('chat', chatId);
+    }
   }
 
 
@@ -170,6 +176,7 @@ const MessageList = forwardRef((props, ref) => {{
   }
 
   const addMessageCallback = (message) => {
+    console.log('Hello')
     dispatch(chat_messages(message, "new_message"));
   }
 
@@ -180,9 +187,9 @@ const MessageList = forwardRef((props, ref) => {{
   const renderMessages = () => {
 
     let curr_username = curr_user_data?curr_user_data['username']:'';
-    let messageCount = currChatMsgs.length;
+    let messageCount = currChatMsgs?currChatMsgs.length:0;
     let tempMessages = [];
-    let msgs = currChatMsgs;
+    let msgs = currChatMsgs?currChatMsgs:[];
     let i = 0;
 
     while (i < messageCount) {

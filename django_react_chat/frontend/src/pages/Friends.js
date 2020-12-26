@@ -43,8 +43,8 @@ function Friends(props) {
     }, []);
 
     useEffect(() => {
-        setFriendRequestData(session_friend_requests);
-        if(session_friend_requests.action == 'accept'){
+        session_friend_requests?setFriendRequestData(session_friend_requests):setFriendRequestData({});
+        if(session_friend_requests && session_friend_requests.action == 'accept'){
             dispatch(notifications([session_friend_requests.notification]))
         }
     }, [session_friend_requests])

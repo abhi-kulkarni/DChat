@@ -20,6 +20,7 @@
   font-weight: bold;
   text-transform: capitalize;
   margin: 0;
+  padding-left: 0px !important;
 }
 
 .conversation-snippet {
@@ -30,6 +31,7 @@
   text-overflow: ellipsis; 
   color: #888;
   margin: 0;
+  padding-left: 0px !important;
 }
 
 
@@ -53,4 +55,11 @@
   color: #EB3E37;
   cursor: pointer;
   font-size: 0.8rem;
+}
+
+.message_count{
+  position:fixed !important;
+  right: 0px!important;
+  top:0px !important;
+  padding-left: 15px !important;
 }

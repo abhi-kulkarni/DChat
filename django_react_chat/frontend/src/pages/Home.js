@@ -13,7 +13,6 @@ function Home(props) {
         getAllUsers();
     }, [])
 
-
     const history = useHistory();
     const dispatch = useDispatch();
     const store_overlay = useSelector(state => state.session.spinner_overlay);
@@ -52,7 +51,7 @@ function Home(props) {
             <div id="overlay">
                 <AtomSpinner/>
             </div>
-            Hello {JSON.stringify(curr_user_data.username)}
+            Hello {curr_user_data && JSON.stringify(curr_user_data.username)}
         </div>
     )
 }

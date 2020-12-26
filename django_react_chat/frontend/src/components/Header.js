@@ -7,7 +7,7 @@ import brandImg from '../static/images/brand_img.png'
 import {useDispatch, useSelector} from "react-redux";
 import {useHistory, Link} from 'react-router-dom'
 import '../index.css'
-import {spinner_overlay, sign_out, user_data, forgot_password_clicked, notifications, friend_requests, chat_messages, chat_requests} from '../redux'
+import {spinner_overlay, clear_session, sign_out, user_data, forgot_password_clicked, notifications, friend_requests, chat_messages, chat_requests, chat_status} from '../redux'
 import AtomSpinner from './Atomspinner'
 import axios from 'axios'
 import axiosInstance from '../components/axiosInstance'
@@ -27,7 +27,8 @@ import Tooltip from 'react-bootstrap/Tooltip'
 import {FaUserPlus, FaEye, FaEyeSlash, FaBell, FaEnvelopeOpen, FaUserShield, FaCheckCircle, FaKey, FaComments, FaAddressBook} from "react-icons/fa";
 import CustomBadge from '../components/CustomBadge/badge';
 import WebSocketInstance from '../websocket'
-import moment from 'moment'
+import Moment from 'react-moment';
+import 'moment-timezone';
 
 function Header(props) {
 
@@ -86,7 +87,7 @@ function Header(props) {
                 return item.participants.indexOf(curr_user_data.id) > -1
             }
         })
-        setNotificationData(data.reverse());
+        data?setNotificationData(data.reverse()):setNotificationData([]);
         count > 0?setNotificationCount(count):setNotificationCount(0);
     }, [session_notification_data])
 
@@ -128,7 +129,7 @@ function Header(props) {
       }
 
     const spinner = (display) => {
-        let overlay_ele = document.getElementById("overlay")
+        let overlay_ele = document.getElementById("overlay");
         overlay_ele && display ? overlay_ele.style.display = "block" : overlay_ele.style.display = "none";
     };
 
@@ -139,6 +140,18 @@ function Header(props) {
           );
         });
         WebSocketInstance.connect('friend_requests', '');
+    }
+
+    const waitForSocketConnection = (callback) => {
+        setTimeout(function() {
+          if (WebSocketInstance.state() === 1) {
+            console.log("Connection is secure");
+            callback();
+          } else {
+            console.log("wait for connection...");
+            waitForSocketConnection(callback);
+          }
+        }, 100);
     }
 
     const spinnerStop = () => {
@@ -354,12 +367,12 @@ function Header(props) {
         axiosInstance.get('signout/').then(response => {
                 spinnerStop();
                 if (response.data.ok) {
-                    dispatch(sign_out());
-                    dispatch(user_data());
-                    dispatch(friend_requests());
-                    dispatch(chat_requests());
-                    dispatch(chat_messages());
-                    dispatch(notifications());
+                    waitForSocketConnection(() => {
+                        WebSocketInstance.setChatStatus(
+                            curr_user_data.id, 'offline', 'reciever'
+                        );
+                    });   
+                    dispatch(clear_session())
                     localStorage.removeItem('accessToken');
                     localStorage.removeItem('refreshToken');
                     history.push('/signin')
@@ -590,7 +603,7 @@ function Header(props) {
                                                     </Col>
                                                     <Col style={{ padding: '2px 0px 0px 5px'}} xs={11} sm={11} md={11} lg={11} xl={11}>
                                                         <p style={{margin: '0px', fontSize:'0.8rem', color: '#6393F2'}}>{item.message}</p>
-                                                        <p style={{margin: '0px', fontSize:'0.6rem', fontWeight: 'bold'}} className="float-right">{moment(item.created_on).fromNow()}</p>
+                                                        <p style={{margin: '0px', fontSize:'0.6rem', fontWeight: 'bold'}} className="float-right"><Moment fromNow>{item.created_on}</Moment></p>
                                                     </Col>                                                    
                                                 </Row>)
                                             }):<div>
@@ -610,13 +623,13 @@ function Header(props) {
                                     alignRight
                                     title={<img
                                         style={{margin: "0px 0px 0px 0px", width: "40px", height: "40px", borderRadius: "50%"}}
-                                        src={curr_user_data.profile_picture ? curr_user_data.profile_picture : defaultImg}
+                                        src={curr_user_data && curr_user_data.profile_picture ? curr_user_data.profile_picture : defaultImg}
                                         alt="profile_img"/>}
                                         id="dropdown-menu-align-right"
                                 >
                                     <Dropdown.Item>
                                         <span style={{color: "black", textDecoration: 'none'}}>
-                                            Username : <b>{curr_user_data.username}</b>
+                                            Username : <b>{curr_user_data?curr_user_data.username: '-'}</b>
                                         </span>
                                     </Dropdown.Item>
                                     <Dropdown.Item><Link style={{color: "black", textDecoration: 'none'}} to='/profile'>Your

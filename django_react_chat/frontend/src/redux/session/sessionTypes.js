@@ -20,4 +20,12 @@ export const CHAT_REQUESTS = "CHAT_REQUESTS";
 
 export const CHAT_MESSAGES = "CHAT_MESSAGES";
 
-export const C_M = "C_M";
+export const CHAT_STATUS = "CHAT_STATUS";
+
+export const CLEAR_SESSION = "CLEAR_SESSION";
+
+export const WS_LIST = "WS_LIST";
+
+export const LAST_SEEN = "LAST_SEEN";
+
+export const HAS_READ = "HAS_READ";

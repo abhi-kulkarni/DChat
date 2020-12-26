@@ -2,15 +2,19 @@ import React, {Component} from 'react'
 import {withRouter} from 'react-router-dom'
 import {connect} from 'react-redux'
 import decode from "jwt-decode";
-import {friend_requests, sign_in, user_data, chat_requests, notifications} from "../redux";
+import {friend_requests, sign_in, user_data, chat_requests, notifications, chat_status} from "../redux";
 import axiosInstance from "../components/axiosInstance";
+import WebSocketInstance from "../websocket"
 
 class AuthRoute extends Component {
-    constructor(props) {
-        super(props);
 
+
+    constructor(props) {
+
+        super(props);
         this.state = {
             isAuth: false,
+            curr_user_data:{}
         }    
     }
 
@@ -39,6 +43,7 @@ class AuthRoute extends Component {
                     } else {
                         const resp = await axiosInstance.get("is_authenticated/");
                         const user = await resp.data.user;
+                        this.setState({curr_user_data: user})
                         const friend_requests_data = await resp.data.friend_requests;
                         const chat_requests_data = await resp.data.chat_requests;
                         const notification_data = await resp.data.notifications;
@@ -60,14 +65,48 @@ class AuthRoute extends Component {
                     console.log(error)
                     console.log('TOKEN Error');
                     history.push('/signin');
-                }
-                
+                }   
             }else{
                 this.setState({isAuth: true})
             }
         }
+        let user = this.state.curr_user_data;
         console.log('Intercept before route jump', this.props);
-        
+        if(!this.props.path.includes('chat')){
+            let self = this;
+            WebSocketInstance.connect('chat_requests', '');
+            WebSocketInstance.chatRequestNotificationCallbacks(
+                () => {},
+                (data) => self.setChatStatus(data),
+                () => {},
+                () => {}
+            )
+            this.waitForSocketConnection(() => {
+                WebSocketInstance.setChatStatus(
+                user.id, 'offline', 'sender'
+                );
+            });    
+        }else if(this.props.path == '/chat' || this.props.path =='/chat/'){
+            //pass
+        }
+    }
+
+    setChatStatus(data){
+        console.log('inside auth');
+        this.props.dispatch(chat_status(data))
+    }
+
+    waitForSocketConnection = (callback) => {
+        let self = this;
+        setTimeout(function() {
+          if (WebSocketInstance.state() === 1) {
+            console.log("Connection is secure");
+            callback();
+          } else {
+            console.log("wait for connection...");
+            self.waitForSocketConnection(callback);
+          }
+        }, 100);
     }
 
     render() {

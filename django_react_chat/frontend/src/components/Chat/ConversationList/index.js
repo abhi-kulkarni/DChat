@@ -19,7 +19,7 @@ import defaultImg from '../../../static/images/default_profile_picture.jpg'
 import axiosInstance from '../../axiosInstance'
 import {useDispatch, useSelector} from "react-redux";
 import WebSocketInstance from '../../../websocket'
-import {spinner_overlay, user_data, chat_requests, notifications} from '../../../redux'
+import {chat_status, last_seen_time, chat_requests, notifications, chat_messages, has_read} from '../../../redux'
 import Dialog from 'react-bootstrap-dialog'
 import moment from 'moment'
 import {useHistory, useLocation} from 'react-router-dom'
@@ -39,22 +39,31 @@ const ConversationList = (props) => {
   const [modalConversationSearchInput, setModalConversationSearchInput] = useState('');
   const session_chat_requests = useSelector(state => state.session.chat_requests);
   const [chats, setChats] = useState([]);
-  const [searchChatData, setSearchChats] = useState({});
+  const [searchChatData, setSearchChats] = useState([]);
   const [c1, setC1] = useState([]);
   const curr_user_data = useSelector(state => state.session.user_data);
   const location = useLocation();
+  const [recent_msg, setRecentMsg] = useState({});
 
   useEffect(() => {
+    getRecentMsgData();
+    if(WebSocketInstance.getCurrentSocketInstance()){
+      WebSocketInstance.disconnect();
+    }
     WebSocketInstance.connect('chat_requests', '');
-    WebSocketInstance.conversationRequestNotificationCallbacks(
-      (data) => setSocketChatRequestData(data)
+    WebSocketInstance.chatRequestNotificationCallbacks(
+      (data) => setSocketChatRequestData(data),
+      (data) => setChatStatus(data),
+      (data) => setRecentMsgData(data),
+      (data) => setLastSeenData(data)
     )
+    initializeChatStatus(curr_user_data.id, "online", "sender");
   },[]);
 
   useEffect(() => {
-    setChats(session_chat_requests['reqd_chat_data']);
-    setSearchChats(session_chat_requests['reqd_chat_data'])
-    if(session_chat_requests.action == 'accept'){
+    session_chat_requests?setChats(session_chat_requests['reqd_chat_data']):setChats([]);
+    session_chat_requests?setSearchChats(session_chat_requests['reqd_chat_data']):setChats([])
+    if(session_chat_requests && session_chat_requests.action == 'accept'){
       if(location.state && location.state.rerender){
         //pass
       }else{
@@ -67,13 +76,53 @@ const ConversationList = (props) => {
         pathname: '/chat/'+session_chat_requests.chat_id+'/',
         state: data,
       });
-    }else if(session_chat_requests.action === 'remove'){
+    }else if(session_chat_requests && session_chat_requests.action === 'remove'){
       history.push('/chat/')
     }
   }, [session_chat_requests]);
 
+  const initializeChatStatus = (uId, status, type) => {
+    waitForSocketConnection(() => {
+      WebSocketInstance.setChatStatus(
+        uId, status, type
+      );
+    });
+  }
+
+  const setRecentMsgData = (data) => {
+    if(data){
+      dispatch(chat_messages(data, "new_message"));
+    }
+  }
+
+  const getRecentMsgData = () => {
+    axiosInstance.get('get_recent_msg_data/').then(res => {
+      if(res.data.ok) {
+        let c = [];
+        res.data && res.data.hasOwnProperty('chats')?setChats(res.data.chats):''
+      }else{
+          console.log('Error')
+      }
+  }).catch(err => {
+      console.log(err)
+  });
+  }
+
+  const setLastSeenData = (data) => {
+    if(data['user_id'] !== curr_user_data.id){
+      dispatch(last_seen_time(data));
+    }
+  }
+
+  const setChatStatus = (data) => {
+    data.user_id !== curr_user_data.id?dispatch(chat_status(data)):'';
+    if(data.type !== 'reciever'){
+      initializeChatStatus(curr_user_data.id, "online", "reciever")
+    }
+  }
 
   const setSocketChatRequestData = (data) => {
+    console.log(data)
     if(Object.keys(data).indexOf((curr_user_data.id).toString()) > -1){
         dispatch(chat_requests(data[curr_user_data.id]))
     }
@@ -83,11 +132,12 @@ const getAllChats = () => {
   axiosInstance.get('get_all_chats/').then(res => {
       if(res.data.ok) {
         let c = [];
-        res.data && res.data.hasOwnProperty('chats') && res.data.chats.map(item => {
+        res.data.chats.map(item => {
             if(item.chat.isFriend){
               c.push(item.chat)
             }
-        })
+        });
+        console.log(c)
         setC1([...c1, ...c]);
       }else{
           console.log('Error')
@@ -100,7 +150,7 @@ const getAllChats = () => {
 const initializeSocket = (uId, rId, action, chatId, notificationData) => {
     waitForSocketConnection(() => {
       WebSocketInstance.fetchChatRequests(
-        uId, rId, action, chatId, notificationData
+        uId, rId, action, chatId, notificationData, ""
       );
     });
 }
@@ -255,7 +305,6 @@ const manageChats = (action, recipient_user, chat_id) => {
   };
 
 
-
   const loadMore = () => {
     refs[0] && refs[0].current && refs[0].current.loadMoreConversations();
   }
@@ -286,6 +335,11 @@ const manageChats = (action, recipient_user, chat_id) => {
   }
 
   const handleSelectUser = (data) => {
+    if(WebSocketInstance.getCurrentSocketInstance()){
+      WebSocketInstance.setLastSeen(data);
+    }
+    dispatch(last_seen_time(data['last_seen']));
+    dispatch(has_read(data['has_read']));
     data['prevPath'] = location.pathname;
     data['rerender'] = true;
     history.push({

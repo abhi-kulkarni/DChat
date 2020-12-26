@@ -39,6 +39,12 @@ class CustomBadge extends React.Component {
   }
 
   render() {
+    if(this.props.message_count){
+      this.props.style.top = '7px';
+      this.props.style.right = '0px';
+      this.props.containerStyle.position = 'fixed';
+      this.props.containerStyle.paddingLeft = '34px';
+    }
     const badgeStyle = this.merge(styles.badge, this.props.style);
     const containerStyle = this.merge(styles.container, this.props.containerStyle);
     const value = this.props.count > 0 ?

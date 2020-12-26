@@ -1,5 +1,6 @@
 import { SOCKET_URL } from "./settings";
 
+
 class WebSocketService {
   static instance = null;
   callbacks = {};
@@ -18,32 +19,30 @@ class WebSocketService {
   connect(type, chatUrl) {
 
     let path = null;
+    let self = this;
+
     if(type === 'chat'){
-      chatUrl = chatUrl.replace('-', '')
-      path = `${SOCKET_URL}/ws/chat/${chatUrl}/`;
-    }
-    else if(type === 'friend_requests'){
-      path = `${SOCKET_URL}/ws/friend_requests/`;
-    }
-    else if(type === 'chat_requests'){
-      path = `${SOCKET_URL}/ws/chat_requests/`;
+      chatUrl = chatUrl.replace(/-/g, '_');
+      path = `${SOCKET_URL}/ws/${type}/${chatUrl}/`;
+    }else{
+      if(type){
+        path = `${SOCKET_URL}/ws/${type}/`;
+      }  
     }
     if(path){
-     
       this.socketRef = new WebSocket(path);
-
       this.socketRef.onopen = () => {
         console.log("WebSocket open");
       };
       this.socketRef.onmessage = e => {
-        this.socketNewMessage(e.data);
+        self.socketNewMessage(e.data);
       };
       this.socketRef.onerror = e => {
         console.log(e.message);
       };
       this.socketRef.onclose = () => {
         console.log("WebSocket closed let's reopen");
-        this.connect();
+        self.connect();
       };
     }
   }
@@ -61,29 +60,39 @@ class WebSocketService {
     this.socketRef.removeEventListener("close", () => {
       //pass
     });
-    if(this.socketRef){
-      this.socketRef.close();
-    }
+
+    this.socketRef.close();
+
   }
 
   socketNewMessage(data) {
+
     const parsedData = JSON.parse(data);
     const command = parsedData.command;
+
     if (Object.keys(this.callbacks).length === 0) {
       return;
     }
-    if (command === "messages") {
+    if (command === "messages" && this.callbacks.hasOwnProperty(command)) {
       this.callbacks[command](parsedData.messages);
     }
-    if (command === "new_message") {
-      console.log('EMIT');
+    if (command === "new_message" && this.callbacks.hasOwnProperty(command)) {
       this.callbacks[command](parsedData.message);
     }
-    if (command === "friend_requests") {
+    if (command === "friend_requests" && this.callbacks.hasOwnProperty(command)) {
       this.callbacks[command](JSON.parse(parsedData.friend_requests));
     }
-    if (command === "chat_requests") {
+    if (command === "chat_requests" && this.callbacks.hasOwnProperty(command)) {
       this.callbacks[command](JSON.parse(parsedData.chat_requests));
+    }
+    if(command === "chat_status" && this.callbacks.hasOwnProperty(command)) {
+      this.callbacks[command](parsedData.chat_status);
+    }
+    if(command === "recent_msg" && this.callbacks.hasOwnProperty(command)) {
+      this.callbacks[command](parsedData.message);
+    }
+    if(command === "last_seen" && this.callbacks.hasOwnProperty(command)) {
+      this.callbacks[command](parsedData.last_seen);
     }
   }
 
@@ -114,14 +123,31 @@ class WebSocketService {
     });
   }
 
-  fetchChatRequests(userId, recipientUserId, action, chatId, notificationData) {
+  fetchChatRequests(userId, recipientUserId, action, chatId, notificationData, type) {
     this.sendMessage({
       user_id: userId,
       recipient_user_id: recipientUserId,
       chat_id: chatId,
       action: action,
       notification_data: notificationData,
+      type: type,
       command:'fetch_chat_requests'
+    });
+  }
+
+  setChatStatus(userId, status, type){
+    this.sendMessage({
+      user_id: userId,
+      status: status,
+      type: type,
+      command:'chat_status'
+    });
+  }
+
+  setLastSeen(data){
+    this.sendMessage({
+      data: data,
+      command:'last_seen'
     });
   }
 
@@ -135,8 +161,11 @@ class WebSocketService {
     this.callbacks["friend_requests"] = friendRequestCallback;
   }
 
-  conversationRequestNotificationCallbacks(chatRequestCallback, sessionChatRequestCallback){
+  chatRequestNotificationCallbacks(chatRequestCallback, chatStatusCallback, recentMsgCallback, lastSeenMsgCallback){
     this.callbacks["chat_requests"] = chatRequestCallback;
+    this.callbacks["chat_status"] = chatStatusCallback;
+    this.callbacks["recent_msg"] = recentMsgCallback;
+    this.callbacks["last_seen"] = lastSeenMsgCallback;
   }
 
   sendMessage(data) {
@@ -148,11 +177,15 @@ class WebSocketService {
   }
 
   state() {
-    return this.socketRef.readyState;
+    return this.socketRef && this.socketRef.readyState;
   }
 
   getCurrentSocketInstance() {
     return this.socketRef;
+  }
+
+  getCurrentWsList(){
+    return [...new Set(this.ws)];
   }
 
 }
