@@ -34,22 +34,15 @@ const ConversationListItem = forwardRef((props, ref) => {{
   const [wsList, setWsList] = useState([]);
   const session_last_seen = useSelector(state => state.session.last_seen);
   const { photo, name, text, id, chat_id, user_id, author_id, last_seen } = props.data;
-  const [hasRead, setHasRead] = useState(false);
-  const [author, setAuthor] = useState('');
-  const [lastSeenData, setLastSeenData] = useState('');
-  const [recentMsgCount, setRecentMsgCount] = useState({});
 
   useEffect(() => {
     if (!mounted.current) {
-      !lastSeenData?shave('.conversation-snippet', 20):''; 
+      shave('.conversation-snippet', 20)
       $(".div_hover").slice(0, 5).show();
       // document.addEventListener('mousedown', handleClickOutside, false);
       mounted.current = true;
     } else {
-      // console.log('RE RENDER')
-        if(session_last_seen && session_last_seen.hasOwnProperty(chat_id) && session_last_seen[chat_id].hasOwnProperty(curr_user_data.id)){
-          setLastSeenData(session_last_seen[chat_id][user_id])
-        }
+      //pass
       }
   });
 
@@ -80,7 +73,6 @@ const ConversationListItem = forwardRef((props, ref) => {{
 
   useEffect(() => {
       console.log('1');
-      last_seen && typeof(last_seen) === 'string'?setLastSeenData(last_seen): '';
       if(session_chat_messages && session_chat_messages.hasOwnProperty('recent_msg_data') && session_chat_messages['recent_msg_data']){
         let recent_msg_data = session_chat_messages['recent_msg_data'].hasOwnProperty(chat_id)?session_chat_messages['recent_msg_data'][chat_id]['content']:'';
         if(recent_msg_data){
@@ -89,7 +81,6 @@ const ConversationListItem = forwardRef((props, ref) => {{
           }
           let temp = {};
           temp[chat_id] = false;
-          setHasRead(temp);
           setRecentMsg(recent_msg_data);          
         }else{
           let msg = text;
@@ -98,7 +89,6 @@ const ConversationListItem = forwardRef((props, ref) => {{
           }
           setRecentMsg(msg);
         }
-        setMessageCount();
       }
   }, [session_chat_messages]);
 
@@ -108,40 +98,7 @@ const ConversationListItem = forwardRef((props, ref) => {{
     }
   }, [location.pathname]);
 
-  useEffect(() => {
-    if(session_last_seen && session_last_seen.hasOwnProperty(chat_id)){
-      setLastSeenData(session_last_seen[chat_id][curr_user_data.id])
-    }
-  }, [session_last_seen]);
 
-  useEffect(() => {
-    session_has_read && session_has_read.hasOwnProperty(chat_id) && session_has_read[chat_id].hasOwnProperty(curr_user_data.id)?console.log(session_has_read[chat_id][curr_user_data.id]['has_read']):'';
-  }, [session_has_read]);
-
-
-  const setMessageCount = () => {
-    let messages = session_chat_messages && session_chat_messages.hasOwnProperty('messages')?session_chat_messages['messages']:[];
-    let count_dict = {};
-    let last_seen_time = session_last_seen && session_last_seen.hasOwnProperty(chat_id) && session_last_seen[chat_id].hasOwnProperty(curr_user_data.id)?new Date(session_last_seen[chat_id][curr_user_data.id]['last_seen']):last_seen?new Date(last_seen):'';
-    messages.map(item => {
-        if(item.author_id !== curr_user_data.id){
-          let uid = item.chatId;
-          let message_time = new Date(item.timestamp);
-          if(last_seen_time && message_time > last_seen_time){
-              if(count_dict.hasOwnProperty(uid)){
-                count_dict[uid]['count'] += 1
-              }else{
-                count_dict[uid] = {'sender': item.author_id, 'count': 1}
-              }
-          }
-        } 
-    });
-    if(count_dict && count_dict.hasOwnProperty(chat_id) && count_dict[chat_id]['sender'] != curr_user_data.id){
-      let temp = {};
-      temp[chat_id] = count_dict[chat_id]['count'];
-      setRecentMsgCount(temp); 
-    }
-  }
 
   const addMessageCallback = (message) => {
     dispatch(chat_messages(message, "new_message"));
@@ -187,22 +144,8 @@ const ConversationListItem = forwardRef((props, ref) => {{
 
   const onSelectUser = () => {
     
-    console.log('2');
-    console.log(new Date());
     let user_elements = document.getElementsByClassName("div_hover");
     let curr_id = location.state?location.state.chat_id:chat_id;
-    let last_seen_dict = {};
-    let has_read_dict = {};
-    last_seen_dict['chat_id'] = curr_id;
-    last_seen_dict['last_seen'] = new Date();
-    last_seen_dict['recipient_id'] = user_id;
-    last_seen_dict['user_id'] = curr_user_data.id;
-    has_read_dict['chat_id'] = curr_id;
-    has_read_dict['has_read'] = true;
-    has_read_dict['recipient_id'] = user_id;
-    has_read_dict['user_id'] = curr_user_data.id;
-    // dispatch(last_seen_time(last_seen_dict))
-    // dispatch(has_read(has_read_dict))
     for (var i = 0; i < user_elements.length; i++) {
       if(user_elements[i].id == curr_id){
         setIsSelected(user_elements[i]);
@@ -212,8 +155,6 @@ const ConversationListItem = forwardRef((props, ref) => {{
       }
     }
     props.data['name'] = props.data['name'].charAt(0).toUpperCase() + props.data['name'].slice(1);
-    props.data['last_seen'] = last_seen_dict;
-    props.data['has_read'] = has_read_dict
     props.onSelectUser(props.data)
   }
 
@@ -236,13 +177,13 @@ const ConversationListItem = forwardRef((props, ref) => {{
                   <h1 className='conversation-title'>{ name }</h1>
                   <p className="conversation-snippet"> { recent_msg?recent_msg : '' } </p>
                 </Col>
-                <Col style={{ paddingLeft: '0px', paddingRight: '0px' }} xs={12} sm={5} md={5} lg={5} xl={5}>
+                {/* <Col style={{ paddingLeft: '0px', paddingRight: '0px' }} xs={12} sm={5} md={5} lg={5} xl={5}>
                   <p style={{ float: 'left', marginBottom: '0px', paddingTop: '1%', paddingLeft: '0%', fontSize: '0.5rem', color: '#0578FA' }}>{lastSeenData? <Moment fromNow>{lastSeenData}</Moment>:last_seen && typeof(last_seen) === 'string'?<Moment fromNow>{last_seen}</Moment>:''}</p>
-                </Col>
+                </Col> */}
               </Row>
             </Col>
             <Col style={{ paddingTop: '1%', paddingLeft: '0%' }} xs={4} sm={2} md={2} lg={2} xl={2}>
-            <CustomBadge message_count={true} count={recentMsgCount[chat_id]}/>
+            {/* <CustomBadge message_count={true} count={recentMsgCount[chat_id]}/> */}
               {/* <OverlayTrigger
                         key="bottom"
                         placement="top"

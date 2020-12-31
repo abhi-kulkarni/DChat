@@ -1,6 +1,7 @@
 import {SIGN_IN, SIGN_OUT, CLEAR_SESSION, USER_CREATED_SUCCESS, USER_DATA, 
     SPINNER_OVERLAY, FRIEND_REQUESTS, FORGOT_PASSWORD_CLICKED, 
-    NOTIFICATIONS, CHAT_REQUESTS, CHAT_MESSAGES, CHAT_STATUS, WS_LIST, LAST_SEEN, HAS_READ} from "./sessionTypes";
+    NOTIFICATIONS, CHAT_REQUESTS, MSG_COUNT, 
+    CHAT_MESSAGES, CHAT_STATUS, WS_LIST, LAST_SEEN, HAS_READ, IS_TYPING} from "./sessionTypes";
 
 export const sign_in = () => {
     return {
@@ -54,10 +55,17 @@ export const friend_requests = (friend_requests = {}) => {
     }
 };
 
-export const chat_requests = (chat_requests = {}) => {
+export const chat_requests = (chat_requests = {}, type='') => {
     return {
         type:   CHAT_REQUESTS,
-        payload: chat_requests
+        payload: {'chat_requests': chat_requests, 'type': type}
+    }
+};
+
+export const msg_count = (msg_count = {}) => {
+    return {
+        type:   MSG_COUNT,
+        payload: msg_count
     }
 };
 
@@ -73,6 +81,13 @@ export const chat_status = (chat_status = {}) => {
     return {
         type:   CHAT_STATUS,
         payload: chat_status
+    }
+};
+
+export const is_typing = (is_typing = {}) => {
+    return {
+        type:   IS_TYPING,
+        payload: is_typing
     }
 };
 

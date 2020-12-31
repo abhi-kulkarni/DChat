@@ -10,14 +10,19 @@ const Messenger = forwardRef((props, ref) => {{
 
     const history = useHistory();
     const location = useLocation();
+    const [seen, setSeen] = useState({});
+
+    const handleSeen = (data) => {
+      setSeen(data);
+    }
 
     return (
       <Row style={{ padding: '0px', margin: '0px', minHeight: '0px' }}>
         <Col className="conversation_list" xs={5} sm={5} md={5} lg={3} xl={3}>
-          <ConversationList/>
+          <ConversationList hasSeen={seen}/>
         </Col>
         <Col className="msg_list" xs={7} sm={7} md={7} lg={9} xl={9}>
-          {location.state?<MessageList/>:""}
+          {location.state?<MessageList onHandleSeen={handleSeen}/>:""}
         </Col>
       </Row>
     );
