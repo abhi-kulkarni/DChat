@@ -101,3 +101,10 @@
   color: #0578FA;
   margin-left: 5%;
 }
+
+.message_toolbar{
+  padding: 0px;
+  z-index: 10;
+  position: sticky;
+  top: 0;
+}

@@ -15,12 +15,12 @@ class Consumer(WebsocketConsumer):
     joined_rooms = None
     rooms = get_rooms()
 
-    def fetch_messages(self, data):
+    def fetch_messages(self, data): 
         message_data = get_last_10_messages(data['chatId'], data['userId'])
         recent_msg_data = get_recent_msg_data(data['userId'], "fetch")
         content = {
             'command': 'messages',
-            'messages': {'messages': self.messages_to_json(message_data['chat_msgs'], data['chatId']),
+            'messages': {'messages': self.messages_to_json(message_data['chat_msgs'], data['chatId'], "fetch"),
                         'recent_msg_data': recent_msg_data},
             'chat_id': data['chatId']
         }
@@ -39,7 +39,7 @@ class Consumer(WebsocketConsumer):
         # self.new_message_signal.send(sender=Message, instance=message, created=True, recent_msg_data=recent_msg_data, chatId=data['chatId'], userId=data['from'], custom=True, f=self.fetch_chat_requests)
         content = {
             'command': 'new_message',
-            'message': {'messages': self.message_to_json(message, data['chatId']), 
+            'message': {'messages': self.message_to_json(message, data['chatId'], "new"), 
                         'recent_msg_data': recent_msg_data, 'user_id': data['from'] },
             'chat_id': data['chatId']
         }
@@ -63,21 +63,22 @@ class Consumer(WebsocketConsumer):
         else:
             print('DEFAULT SAVE MESSAGE')
 
-    def messages_to_json(self, messages, chat_id):
+    def messages_to_json(self, messages, chat_id, m_type):
         result = []
         if messages:
             for message in messages:
-                result.append(self.message_to_json(message, chat_id))
+                result.append(self.message_to_json(message, chat_id, m_type))
         return result
 
-    def message_to_json(self, message, chat_id):
+    def message_to_json(self, message, chat_id, m_type):
         return {
             'id': message.id,
             'author_id': message.user.id,
             'author': message.user.username,
             'content': message.content,
             'timestamp': str(message.timestamp),
-            'chatId': chat_id
+            'chatId': chat_id,
+            'type': m_type
         }
     
     def fetch_friend_requests(self, data):
@@ -120,27 +121,61 @@ class Consumer(WebsocketConsumer):
         temp = {}
         temp['chat_status'] = {'user_id': data.get('user_id', ''), 'status': data['status'], 'type': data['type']}
         temp['command'] = 'chat_status' 
-        return self.send_response(temp)   
+        return self.send_response(temp)  
+
+    def is_typing(self, data):
+
+        temp = {}
+        temp['is_typing'] = {'user_id': data.get('user_id', ''), 'status': data['status'], 'type': data.get('type', ''), 'chat_id': data['chat_id']}
+        temp['command'] = 'is_typing' 
+
+        return self.custom_response(temp, 'is_typing')
 
     def last_seen(self, data):
-        temp_data = data['data']['last_seen']
-        recipient_id = data['data']['user_id']
-        chat_id = data['data']['chat_id']
-        chat = Chat.objects.get(pk=chat_id)
-        curr_last_seen = chat.last_seen
         
+        temp = {}
+        chat_id = data['data']['chat_id']
+        user_id = data['data']['user_id']
+        recipient_user_id = data['data']['recipient_id']
+        last_seen = data['data']['last_seen']
+        chat = Chat.objects.get(pk=chat_id)
+        participants = chat.participants.all()
+        p_list = []
+        for p in participants:
+            p_list.append(p.id)        
+        users = [user_id, recipient_user_id]
+        curr_last_seen = chat.last_seen
         last_seen_dict = {}
         if curr_last_seen:
             last_seen_dict = json.loads(curr_last_seen)
-            last_seen_dict[str(temp_data['user_id'])] = temp_data['last_seen']
-        else:
-            last_seen_dict[str(temp_data['user_id'])] = temp_data['last_seen']
+        if user_id in p_list:
+            last_seen_dict[str(user_id)] = last_seen
         chat.last_seen = json.dumps(last_seen_dict)
         chat.save()
-        temp = {}
+        
+        last_seen_data = get_last_seen_data(users)
         temp['command'] = 'last_seen'
-        temp['last_seen'] = {'user_id': temp_data.get('user_id', ''), 'last_seen': str(temp_data['last_seen']), 'chat_id': temp_data['chat_id'], 'recipient_id': recipient_id}
-        return self.send_response(temp)   
+        temp['last_seen'] = {'user_id': user_id, 'last_seen': last_seen, 'chat_id': str(chat_id), 'last_seen_data': last_seen_data}
+        
+        return self.custom_response(temp, 'last_seen')   
+    
+
+    def custom_response(self, data, r_type):
+
+        room_1 = 'chat_'+data[r_type]['chat_id']
+        room_2 = 'chat_chat_requests'
+        rooms = [room_1, room_2]
+        i = 0
+        for room_obj in rooms:
+            async_to_sync(self.channel_layer.group_send)(
+                            room_obj,
+                            {
+                                'type': 'send_message',
+                                r_type: data[r_type],
+                                'command': r_type
+                            }
+                        )
+            i += 1
 
     commands = {
         'fetch_messages': fetch_messages,
@@ -149,7 +184,8 @@ class Consumer(WebsocketConsumer):
         'new_friend_request': new_friend_request,
         'fetch_chat_requests': fetch_chat_requests,
         'chat_status': chat_status,
-        'last_seen': last_seen
+        'last_seen': last_seen,
+        'is_typing': is_typing,
     }
 
     def connect(self):
@@ -215,6 +251,7 @@ class Consumer(WebsocketConsumer):
                 'notification_data': data.get('notification_data', {}),
                 'chat_status': data.get('chat_status', {}),
                 'last_seen': data.get('last_seen', {}),
+                'is_typing': data.get('is_typing', {})
             }
         )
 

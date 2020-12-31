@@ -418,7 +418,7 @@ def get_recent_msg_data(request):
     recent_msg_data_dict = {}
     all_chats = get_all_chats_data(curr_user.id)
    
-    return Response({'ok': True, 'chats': all_chats})
+    return Response({'ok': True, 'chats': all_chats['chat_data'], 'last_seen': all_chats['last_seen']})
 
 
 @api_view(["POST"])
@@ -456,3 +456,22 @@ def manage_notifications(request):
         return Response({'ok': True, 'notifications': notification_serializer.data})
 
     
+@api_view(["POST"])
+@permission_classes([IsAuthenticated])
+def set_last_seen(request):
+    
+    post_data = request.data
+
+    chat_id = post_data.get('chat_id', '')
+    user_id = post_data.get('curr_user_id', '')
+    last_seen = post_data.get('last_seen', '')
+    chat = Chat.objects.get(pk=chat_id)
+    curr_last_seen = chat.last_seen
+    last_seen_dict = {}
+    if curr_last_seen:
+        last_seen_dict = json.loads(curr_last_seen)
+    last_seen_dict[str(user_id)] = last_seen
+    chat.last_seen = json.dumps(last_seen_dict)
+    chat.save()
+
+    return Response({'ok': True, 'last_seen': chat.last_seen})

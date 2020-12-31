@@ -32,7 +32,7 @@ module.exports = {
                 use: {
                     loader: "babel-loader",
                     options: {presets: ["@babel/env", "@babel/preset-react", {
-                        "plugins": ['@babel/plugin-proposal-class-properties']}
+                        "plugins": ['@babel/plugin-proposal-class-properties', 'emotion']}
                     ]}
                 }
             },

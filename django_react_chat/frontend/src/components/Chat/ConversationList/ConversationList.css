@@ -92,3 +92,68 @@
   outline: none;
   border-top:none!important;
 }
+
+.conversation-list-item {
+  display: flex;
+  align-items: center;
+  padding: 10px;
+}
+
+.conversation-list-item:hover {
+  background: #eeeef1;
+  cursor: pointer;
+}
+
+.conversation-photo {
+  border-radius: 50%;
+  object-fit: cover;
+  margin-right: 10px;
+}
+
+.conversation-title {
+  font-size: 0.9rem;
+  font-weight: bold;
+  text-transform: capitalize;
+  margin: 0;
+  padding-left: 0px !important;
+}
+
+.conversation-snippet {
+  font-size: 0.8rem;
+  white-space: nowrap; 
+  width: 85%; 
+  overflow: hidden;
+  text-overflow: ellipsis; 
+  color: #888;
+  margin: 0;
+  padding-left: 0px !important;
+}
+
+
+.div_hover { 
+  background-color: #FFFFFF; 
+  display: block;
+}
+
+.div_hover:hover { 
+  background-color: #ececec !important; 
+}
+
+.noContent {
+  color: #000 !important;
+  background-color: transparent !important;
+  pointer-events: none;
+}
+
+.remove_chat {
+  color: #EB3E37;
+  cursor: pointer;
+  font-size: 0.8rem;
+}
+
+.message_count{
+  position:fixed !important;
+  right: 0px!important;
+  top:0px !important;
+  padding-left: 15px !important;
+}

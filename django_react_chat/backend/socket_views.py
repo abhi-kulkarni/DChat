@@ -121,13 +121,21 @@ def manage_chat_request_data(ip, action, chat_id, notification_data):
             all_frs.append(user_data_dict[req_user])
 
         recent_msg_data_dict = get_recent_msg_data(user_id, "fetch")
-
         all_chats = Chat.objects.all()
+
+        user_chats = []
+        for chat_obj in all_chats:
+            participants = list(chat_obj.participants.all().values_list('pk', flat=True))
+            if user_id in participants:
+                user_chats.append(chat_obj)
+
+        last_seen_dict = {}
         chat_data = []
         i = 0
-        for chat in all_chats:
+        for chat in user_chats:
             temp = {}
             users = []
+            last_seen_dict[str(chat.id)] = json.loads(chat.last_seen) if chat.last_seen else {}
             participants = chat.participants.all()
             for participant in participants:
                 if participant.id != user_id:
@@ -138,7 +146,7 @@ def manage_chat_request_data(ip, action, chat_id, notification_data):
                     usr_obj['name'] = temp['curr_user']['username']
                     usr_obj['user_id'] = temp['curr_user']['id']
                     usr_obj['chat_id'] = str(chat.id)
-                    usr_obj['last_seen'] = json.loads(chat.last_seen)[str(participant.id)] if (chat.last_seen and str(participant.id) in json.loads(chat.last_seen)) else ''
+                    usr_obj['last_seen'] = json.loads(chat.last_seen) if chat.last_seen else {}
                     usr_obj['author_id'] = recent_msg_data_dict[str(chat.id)]['author_id'] if str(chat.id) in recent_msg_data_dict else ''
                     usr_obj['text'] = recent_msg_data_dict[str(chat.id)]['content'] if str(chat.id) in recent_msg_data_dict else ''
                     temp['chat'] = usr_obj
@@ -195,6 +203,7 @@ def manage_chat_request_data(ip, action, chat_id, notification_data):
         op_dict[user_id]['chat_id'] = chat_id
         op_dict[user_id]['curr_chat_data'] = curr_chat_data
         op_dict[user_id]['notification'] = notification_data[str(user_id)] if notification_data else None
+        op_dict[user_id]['last_seen'] = last_seen_dict
 
     return op_dict
 
@@ -274,7 +283,7 @@ def get_recent_msg_data(user_id, dtype):
             recent_message = recent_message[0]
             recent_msg_data = message_to_json(recent_message, str(chat_obj.id))
             recent_msg_data['recipient_id'] = recipient_user_id
-            recent_msg_data['last_seen'] = json.loads(chat_obj.last_seen)[str(user_id)] if (chat_obj.last_seen and str(user_id) in json.loads(chat_obj.last_seen)) else ''
+            recent_msg_data['last_seen'] = json.loads(chat_obj.last_seen) if chat_obj.last_seen else {}
             recent_msg_data_dict[str(chat_obj.id)] = recent_msg_data
     
     return recent_msg_data_dict
@@ -306,21 +315,25 @@ def get_all_chats_data(user_id):
     all_chats = Chat.objects.all()
     user = User.objects.get(pk=user_id)
     chat_data = []
-
+    res = {}
     user_chats = []
     for chat_obj in all_chats:
         participants = list(chat_obj.participants.all())
         if user in participants:
             user_chats.append(chat_obj)
-
+    
     i = 0
+    last_seen_dict = {}
     for chat in user_chats:
+        last_seen_dict[str(chat.id)] = json.loads(chat.last_seen) if chat.last_seen else {}
         temp = {}
         users = []
         participants = chat.participants.all()
         for participant in participants:
             if participant.id != user.id:
-                recent_msg = chat.messages.order_by('-timestamp').all()[:1][0].content
+                messages = chat.messages.order_by('-timestamp').all()
+                author_id = message_to_json(messages[:1][0], str(chat.id))['author_id'] if len(list(messages)) > 0 else ''
+                recent_msg = messages[:1][0].content if len(list(messages)) > 0 else ''
                 temp['curr_user'] = UserSerializer(participant).data
                 usr_obj = {}
                 usr_obj['id'] = i
@@ -328,7 +341,8 @@ def get_all_chats_data(user_id):
                 usr_obj['name'] = temp['curr_user']['username']
                 usr_obj['user_id'] = temp['curr_user']['id']
                 usr_obj['chat_id'] = chat.id
-                usr_obj['last_seen'] = json.loads(chat.last_seen)[str(participant.id)] if (chat.last_seen and str(participant.id) in json.loads(chat.last_seen)) else ''
+                usr_obj['author_id'] = author_id
+                usr_obj['last_seen'] = json.loads(chat.last_seen) if chat.last_seen else {}
                 usr_obj['text'] = recent_msg
                 temp['chat'] = usr_obj
                 temp['chat']['isFriend'] = ChatFriend.objects.are_friends(user, participant) == True
@@ -339,4 +353,30 @@ def get_all_chats_data(user_id):
         chat_data.append(temp)
         i += 1
     
-    return chat_data
+    res['last_seen'] = last_seen_dict
+    res['chat_data'] = chat_data
+    return res
+
+def get_last_seen_data(users):
+
+    print(users)
+    all_chats = Chat.objects.all()
+    last_seen = {}
+    for user_id in users:
+
+        user = User.objects.get(pk=user_id)
+        chat_data = []
+
+        user_chats = []
+        for chat_obj in all_chats:
+            participants = list(chat_obj.participants.all())
+            if user in participants:
+                user_chats.append(chat_obj)
+        
+        last_seen_dict = {}
+        for chat in user_chats:
+            last_seen_dict[str(chat.id)] = json.loads(chat.last_seen) if chat.last_seen else {}
+
+        last_seen[str(user_id)] = last_seen_dict
+
+    return last_seen

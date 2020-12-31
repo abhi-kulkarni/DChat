@@ -88,6 +88,9 @@ class WebSocketService {
     if(command === "chat_status" && this.callbacks.hasOwnProperty(command)) {
       this.callbacks[command](parsedData.chat_status);
     }
+    if(command === "is_typing" && this.callbacks.hasOwnProperty(command)) {
+      this.callbacks[command](parsedData.is_typing);
+    }
     if(command === "recent_msg" && this.callbacks.hasOwnProperty(command)) {
       this.callbacks[command](parsedData.message);
     }
@@ -144,6 +147,16 @@ class WebSocketService {
     });
   }
 
+  setIsTypingStatus(userId, status, chatId, type){
+    this.sendMessage({
+      user_id: userId,
+      status: status,
+      type: type,
+      chat_id: chatId,
+      command:'is_typing'
+    });
+  }
+
   setLastSeen(data){
     this.sendMessage({
       data: data,
@@ -151,21 +164,22 @@ class WebSocketService {
     });
   }
 
-  addCallbacks(messagesCallback, newMessageCallback) {
+  addCallbacks(messagesCallback, newMessageCallback, isTypingCallBack) {
     this.callbacks["messages"] = messagesCallback;
     this.callbacks["new_message"] = newMessageCallback;
-    
+    this.callbacks["is_typing"] = isTypingCallBack;
   }
 
   friendRequestNotificationCallbacks(friendRequestCallback, sessionFriendRequestCallback){
     this.callbacks["friend_requests"] = friendRequestCallback;
   }
 
-  chatRequestNotificationCallbacks(chatRequestCallback, chatStatusCallback, recentMsgCallback, lastSeenMsgCallback){
+  chatRequestNotificationCallbacks(chatRequestCallback, chatStatusCallback, recentMsgCallback, lastSeenMsgCallback, isTypingCallBack){
     this.callbacks["chat_requests"] = chatRequestCallback;
     this.callbacks["chat_status"] = chatStatusCallback;
     this.callbacks["recent_msg"] = recentMsgCallback;
     this.callbacks["last_seen"] = lastSeenMsgCallback;
+    this.callbacks["is_typing"] = isTypingCallBack;
   }
 
   sendMessage(data) {

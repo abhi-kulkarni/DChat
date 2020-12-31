@@ -29,3 +29,7 @@ export const WS_LIST = "WS_LIST";
 export const LAST_SEEN = "LAST_SEEN";
 
 export const HAS_READ = "HAS_READ";
+
+export const MSG_COUNT = "MSG_COUNT";
+
+export const IS_TYPING = "IS_TYPING";
