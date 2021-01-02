@@ -113,6 +113,7 @@ class WebSocketService {
       from: message.from,
       message: message.content,
       chatId: message.chatId,
+      type: message.type,
     });
   }
 

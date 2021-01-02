@@ -12,7 +12,7 @@ import Tooltip from 'react-bootstrap/Tooltip'
 import Tabs from 'react-bootstrap/Tabs'
 import Tab from 'react-bootstrap/Tab'
 import './ConversationList.css';
-import { FaComment, FaCommentSlash, FaCheck, FaPlus, FaCogs, FaUserFriends, FaTrash, FaTimes, FaCheckCircle, FaShare, FaTasks, FaUserPlus } from 'react-icons/fa';
+import { FaComment, FaCommentSlash, FaCheck, FaPlus, FaRegPaperPlane, FaCogs, FaUserFriends, FaTrash, FaTimes, FaCheckCircle, FaShare, FaTasks, FaUserPlus } from 'react-icons/fa';
 import Button from 'react-bootstrap/Button'
 import Modal from 'react-bootstrap/Modal'
 import defaultImg from '../../../static/images/default_profile_picture.jpg'
@@ -229,7 +229,12 @@ const ConversationList = (props) => {
 
   const setRecentMsgData = (data) => {
     let recent_msg_chat_id = Object.keys(data['recent_msg_data'])[0];
-    let recent_msg_content = data['recent_msg_data'][recent_msg_chat_id].content;
+    let recent_msg_content = '';
+    if(data['recent_msg_data'][recent_msg_chat_id]['message_type'] == 'text'){
+      recent_msg_content = data['recent_msg_data'][recent_msg_chat_id].content;
+    }else{
+      recent_msg_content = 'Image';
+    }
     let temp = {};
     temp['chat_id'] = recent_msg_chat_id;
     temp['content'] = recent_msg_content;
@@ -619,10 +624,10 @@ const manageChats = (action, recipient_user, chat_id) => {
               <Row id={item.chat.chat_id} ref={getOrCreateRef(item.chat.id)} className="div_hover" style={{ paddingRight: '0%', paddingLeft: '0%', margin: '4% 0% 4% 0%', cursor: 'pointer', borderTopRightRadius: '25px', borderBottomRightRadius: '25px', backgroundColor:location.state && location.state.chat_id === item.chat.chat_id?'#ececec': 'white'}}>
               <Col style={{ paddingRight: '0%' }} xs={12} sm={12} md={12} lg={12} xl={12}>
                 <Row style={{ padding: '2% 0% 2% 0%', margin: '0px' }}>
-                  <Col onClick={() => onSelectUser(item.chat)} xs={4} sm={3} md={3} lg={3} xl={3}>
+                  <Col style={{ paddingLeft: '0px'}} onClick={() => onSelectUser(item.chat)} xs={6} sm={3} md={3} lg={3} xl={3}>
                       <img width="45"
                           height="45" className="img-fluid conversation-photo" src={item.chat.photo?item.chat.photo:defaultImg} alt="conversation" />
-                      <div style={{position: 'absolute', backgroundColor: session_chat_status && session_chat_status.hasOwnProperty(item.chat.user_id) && session_chat_status[item.chat.user_id] === 'online'?'#58A847':'#efefef', borderRadius: '100%', width: '0.59rem', height: '0.59rem', right: '18%', top: '0%', border: '1px solid darkgrey'}}></div>
+                      <div style={{position: 'absolute', backgroundColor: session_chat_status && session_chat_status.hasOwnProperty(item.chat.user_id) && session_chat_status[item.chat.user_id] === 'online'?'#58A847':'#efefef', borderRadius: '100%', width: '0.59rem', height: '0.59rem', right: '0px', left:'35px', top: '0px', border: '1px solid darkgrey'}}></div>
                   </Col>
                   <Col onClick={() => onSelectUser(item.chat)} style={{ paddingTop: '1%', paddingLeft: '2%', paddingRight: '0%' }} xs={4} sm={7} md={7} lg={7} xl={7}>
                     <Row style={{ padding: '0px', margin: '0px' }}>
@@ -630,10 +635,10 @@ const manageChats = (action, recipient_user, chat_id) => {
                         <h1 className='conversation-title'>{ item.chat.name }</h1>
                         {isTypingMsg && isTypingMsg.hasOwnProperty(item.chat.chat_id) && isTypingMsg[item.chat.chat_id]?
                         <Row>
-                        <Col xs={4} sm={4} md={4} lg={4} xl={4}>
+                        <Col xs={12} sm={12} md={4} lg={4} xl={4}>
                           <span style={{ fontSize: '0.7rem', color: '#0A73F0', fontStyle:'italic' }}>typing</span>  
                         </Col>
-                        <Col style={{ paddingLeft: '18px' }} xs={8} sm={8} md={8} lg={8} xl={8}>
+                        <Col style={{ paddingLeft: '18px' }} xs={12} sm={12} md={8} lg={8} xl={8}>
                           <PulseLoader
                             css={override}
                             size={3}
@@ -730,7 +735,7 @@ const manageChats = (action, recipient_user, chat_id) => {
                                           <span>Send Chat Request</span>
                                       </Tooltip>
                                   }>
-                                  <FaComment className="add_chat" onClick={() => manageChats('add', friend, '')}/>
+                                  <FaRegPaperPlane className="add_chat" onClick={() => manageChats('add', friend, '')}/>
                                   </OverlayTrigger>}
                                   </Col>
                               </Row>)

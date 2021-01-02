@@ -8,7 +8,7 @@ import Form from 'react-bootstrap/Form'
 import Button from 'react-bootstrap/Button'
 import Picker, { SKIN_TONE_MEDIUM_DARK } from 'emoji-picker-react';
 import './MessageList.css';
-import {FaPaperPlane, FaSmile, FaCamera, FaInfoCircle, FaMicrophone, FaTrash, FaArrowUp} from "react-icons/fa";
+import {FaPaperPlane, FaTimes, FaSmile, FaCamera, FaInfoCircle, FaMicrophone, FaTrash, FaArrowUp} from "react-icons/fa";
 import OverlayTrigger from 'react-bootstrap/OverlayTrigger'
 import Tooltip from 'react-bootstrap/Tooltip'
 import Dialog from 'react-bootstrap-dialog'
@@ -19,7 +19,7 @@ import {chat_messages, is_typing} from '../../../redux'
 import axiosInstance from '../../axiosInstance'
 import { css } from "@emotion/core";
 import PulseLoader from "react-spinners/PulseLoader";
-
+import dImg from '../../../static/images/chat_background.png'
 
 const MessageList = forwardRef((props, ref) => {{
 
@@ -45,6 +45,7 @@ const MessageList = forwardRef((props, ref) => {{
   const [msgLoading, setMsgLoading] = useState(true);
   const session_is_typing = useSelector(state => state.session.is_typing);
   const [isTypingMsg, setIsTypingMsg] = useState({})
+  const [uploadImgSrc, setUploadImgSrc] = useState('');
 
   useEffect(() => {
       document.addEventListener('mousedown', handleClickOutside, false);
@@ -73,7 +74,9 @@ const MessageList = forwardRef((props, ref) => {{
 
   useEffect(() => {
     let ele = document.getElementById('messagesBottom');
-    ele.scrollIntoView({behavior: "smooth"});
+    if(ele){
+      ele.scrollIntoView({behavior: "smooth"});
+    }
   }, [currChatMsgs])
 
   useEffect(() => {
@@ -146,7 +149,10 @@ const MessageList = forwardRef((props, ref) => {{
   };
   
   const scrollToBottom = () => {
-    document.getElementById('messagesBottom').scrollIntoView({behavior: "smooth"})
+    let ele = document.getElementById('messagesBottom');
+    if(ele){
+      ele.scrollIntoView({behavior: "smooth"});
+    }
   };
 
   const scrollToTop = () => {
@@ -290,9 +296,19 @@ const MessageList = forwardRef((props, ref) => {{
   }
 
   const handleKeyDown = (e) => {
+    let temp = {};
     if(e.key === 'Enter'){
-      sendNewMessage(e.target.value);
+      temp['content'] = e.target.value;
+      if(uploadImgSrc){
+        temp['img_url'] = uploadImgSrc;
+        temp['type'] = 'image';
+        sendNewMessage(temp);
+      }else{
+        temp['type'] = 'text';
+        sendNewMessage(temp);
+      }
       e.target.value = '';
+      setUploadImgSrc('');
       setInputMsg('');
       handleMsgSeen();
       setIsTypingData(false);
@@ -300,22 +316,52 @@ const MessageList = forwardRef((props, ref) => {{
   }
 
   const handleMessageInput = () => {
+    let temp = {};
     let input_msg = document.getElementById('composeMsg').value;
-    sendNewMessage(input_msg);
+    temp['content'] = input_msg;
+    if(uploadImgSrc){
+      temp['img_url'] = uploadImgSrc;
+      temp['type'] = 'image';
+      sendNewMessage(temp);
+    }else{
+      temp['type'] = 'text';
+      sendNewMessage(temp);
+    }
     handleMsgSeen();
+    setUploadImgSrc('');
     setIsTypingData(false);
     document.getElementById('composeMsg').value = '';
     setInputMsg('');
   }
 
+  const handleProfileImageChange = (e) => {
+    e.preventDefault();
+    let reader = new FileReader();
+    let file = e.target.files[0];
+    reader.onloadend = async () => {
+        let result = await reader.result;
+        if (result) {
+            setUploadImgSrc(result)
+            scrollToBottom();
+        }
+    };
+    reader.readAsDataURL(file);
+};
+
   const sendNewMessage = (message) => {
-    if(message.length > 0){
-      scrollToBottom();
-      let params = location.pathname.split('/');
-      let chatId = params.length > 3?params[params.length - 2]: null;
-      let data = {'from': curr_user_data.id, 'content': message, 'chatId': chatId}
-      WebSocketInstance.newChatMessage(data);
+    scrollToBottom();
+    let data = {};
+    let params = location.pathname.split('/');
+    let chatId = params.length > 3?params[params.length - 2]: null;
+    if(message.type === 'text'){
+      if(message.content.length > 0){
+        data = {'from': curr_user_data.id, 'content': {'msg': message.content, 'image_url': ''}, 'chatId': chatId, 'type': message.type}
+      }
+    }else{
+        data = {'from': curr_user_data.id, 'content': {'msg': message.content, 'image_url': message.img_url}, 'chatId': chatId, 'type': message.type}
     }
+    WebSocketInstance.newChatMessage(data);
+
   }
 
   const setIsTypingData = (status) => {
@@ -329,6 +375,10 @@ const MessageList = forwardRef((props, ref) => {{
     temp[location.state.chat_id] = true
     temp['recipient_id'] = currUserData.user_id;
     props.onHandleSeen(temp);
+  }
+
+  const cancelImgMsg = () => {
+    setUploadImgSrc('');
   }
 
   return(
@@ -391,9 +441,24 @@ const MessageList = forwardRef((props, ref) => {{
                   <span style={{ fontSize: '0.8rem', color: '#0A73F0' }}>{currUserData.name} is typing ...</span>
                 </Col>
               </Row>:''}
-            {showEmojiPicker?<div ref={emojiInputRef} style={{ bottom: '15%', left: '66%', position: 'fixed' }}>
-              <Picker onEmojiClick={onEmojiClick} />
-            </div>:""}
+              {uploadImgSrc?
+                <Col style={{ padding:'0px' }} xs={12} sm={12} md={12} lg={12} xl={12}>
+                  <Row style={{padding: '0px', margin: '0px'}}>
+                    <Col xl={4} lg={4} md={8} sm={8} xs={8} style={{ padding:'0px', position: 'relative' }}>
+                      <FaTimes onClick={cancelImgMsg} style={{ color:'red', cursor: 'pointer', position: 'absolute', right: '-16px', top: '-10px' }}/>
+                      <img className="upload_img_msg img-fluid" src={uploadImgSrc} />
+                    </Col>
+                  </Row>
+                </Col>
+                :''}
+            {showEmojiPicker?
+            <Col xs={12} sm={12} md={12} lg={12} xl={12}>
+              <Row style={{padding: '0px', margin: '0px'}}>
+                <Col ref={emojiInputRef} style={{ padding:'0px', bottom: '15%', left: '66%', position: 'fixed' }}>
+                  <Picker onEmojiClick={onEmojiClick} />
+                </Col>
+              </Row>
+            </Col>:""}
         </Col>
         <Col id="messagesBottom" ref={(el) => { messagesEnd = el }} xs={12} sm={12} md={12} lg={12} xl={12}>
           <Row className="compose" style={{ padding: '0px', margin: '0px' }}>
@@ -402,13 +467,15 @@ const MessageList = forwardRef((props, ref) => {{
                 <Form.Group controlId="composeMsg" className="compose-input">
                   <Form.Control onClick={() => handleMsgSeen()} onKeyDown={(e) => handleKeyDown(e)}
             onChange={e => handleChange(e)} autoComplete="off" name="inputMsg" type="text"
-                                value={inputMsg} placeholder="Type a message. @name"
+                                value={inputMsg} placeholder={uploadImgSrc?"Add some caption to your image.":"Type a message. @name"}
                   >
                   </Form.Control>
                 </Form.Group>
               </Form>
             </Col>
             <Col className="composeButtons" xs={12} sm={12} md={12} lg={4} xl={4}>
+            <Row style={{margin: '0px', padding: '0px'}}>
+                <Col xl={1} lg={1} md={1} sm={1} xs={1}>
                 <OverlayTrigger
                       key="bottom"
                       placement="top"
@@ -416,6 +483,8 @@ const MessageList = forwardRef((props, ref) => {{
                               <span>Send</span>
                           </Tooltip>}
                   ><FaPaperPlane onClick={() => handleMessageInput()} className={inputMsg.length>0?"enable_send_btn":"disable_send_btn"}/></OverlayTrigger>
+                </Col>
+                <Col xl={1} lg={1} md={1} sm={1} xs={1}>
                 <OverlayTrigger
                       key="bottom"
                       placement="top"
@@ -426,6 +495,8 @@ const MessageList = forwardRef((props, ref) => {{
                       }
                   ><FaSmile onClick={() => handleEmojiPicker()} className="composeIcons"/>
                   </OverlayTrigger>
+                </Col>
+                <Col xl={1} lg={1} md={1} sm={1} xs={1}>
                 <OverlayTrigger
                       key="bottom"
                       placement="top"
@@ -434,7 +505,15 @@ const MessageList = forwardRef((props, ref) => {{
                               <span>Upload an Image</span>
                           </Tooltip>
                       }
-                  ><FaCamera className="composeIcons"/></OverlayTrigger>
+                  ><div className="message_image_upload">
+                    <label for="upload_img_msg">
+                      <FaCamera className="composeIcons"/>
+                    </label>
+                    <input accept="image/*" onChange={handleProfileImageChange} id="upload_img_msg" type="file" />
+                  </div>
+                </OverlayTrigger>
+                </Col>
+                <Col xl={1} lg={1} md={1} sm={1} xs={1}>
                 <OverlayTrigger
                       key="bottom"
                       placement="top"
@@ -444,6 +523,8 @@ const MessageList = forwardRef((props, ref) => {{
                           </Tooltip>
                       }
                   ><FaMicrophone className="composeIcons"/></OverlayTrigger>
+                </Col>
+              </Row>
             </Col>
           </Row>
         </Col>

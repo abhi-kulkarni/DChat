@@ -62,3 +62,11 @@
   border-top-right-radius: 2px;
   border-bottom-right-radius: 2px;
 }
+
+.img_msg{
+  border-radius: 0px !important;
+  color:black !important;
+  padding: 5px !important;
+  font-size: 1rem !important;
+  background: #f4f4f8 !important;
+}

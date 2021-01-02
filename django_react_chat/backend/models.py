@@ -70,6 +70,7 @@ class Message(models.Model):
         User, related_name='messages', on_delete=models.CASCADE, default=None)
     content = models.TextField()
     timestamp = models.DateTimeField(auto_now_add=True)
+    message_type = models.CharField(default="text", max_length=200)
 
     def __str__(self):
         return self.user.username
