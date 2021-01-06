@@ -1,12 +1,5 @@
 const path = require('path');
-let DEBUG = true;
-var mode;
-if(DEBUG){
-    mode = 'development'
-}else{
-    mode = 'production'
-}
-// var mode = process.env.NODE_ENV || 'development';
+var mode = process.env.NODE_ENV || 'development';
 var query = {
     disable: true,
     optipng: {

@@ -29,13 +29,15 @@ SECRET_KEY = 'e-s%_4r)p^f^^wx!8^#=z0zewg67cv!ve2v712pdmh5f=@jya7'
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
 
-ALLOWED_HOSTS = []
+ALLOWED_HOSTS = ['3.7.46.49', 'localhost', '127.0.0.1']
+
 
 
 # Application definition
 
 INSTALLED_APPS = [
     'channels',
+    'webpack_loader',
     'django.contrib.admin',
     'django.contrib.auth',
     'django.contrib.contenttypes',
@@ -58,6 +60,13 @@ REST_FRAMEWORK = {
     'rest_framework.authentication.BasicAuthentication',
     'rest_framework_simplejwt.authentication.JWTAuthentication',
 )
+}
+
+WEBPACK_LOADER = {
+  'DEFAULT': {
+    'BUNDLE_DIR_NAME': 'frontend',
+    'STATS_FILE': os.path.join(BASE_DIR, 'frontend/src/webpack-stats.json')
+  }
 }
 
 SIMPLE_JWT = {
@@ -93,7 +102,11 @@ MIDDLEWARE = [
 
 CORS_ALLOW_CREDENTIALS = True
 
-CORS_ORIGIN_ALLOW_ALL = True
+CORS_ORIGIN_ALLOW_ALL = False
+
+CORS_ORIGIN_WHITELIST = ['http://localhost:3000']
+
+CORS_ORIGIN_REGEX_WHITELIST = ['http://localhost:3000']
 
 CSRF_COOKIE_NAME = "csrftoken"
 
@@ -102,7 +115,7 @@ ROOT_URLCONF = 'main.urls'
 TEMPLATES = [
     {
         'BACKEND': 'django.template.backends.django.DjangoTemplates',
-        'DIRS': [],
+        'DIRS': [os.path.join(BASE_DIR, 'frontend/src/dist')],
         'APP_DIRS': True,
         'OPTIONS': {
             'context_processors': [
@@ -190,3 +203,9 @@ SITE_URL = "http://127.0.0.1:8000"
 # https://docs.djangoproject.com/en/3.1/howto/static-files/
 
 STATIC_URL = '/static/'
+
+STATIC_ROOT = os.path.join(BASE_DIR, 'static')
+
+STATICFILES_DIRS = [
+   os.path.join(BASE_DIR, "frontend/src/static/"),
+ ]
