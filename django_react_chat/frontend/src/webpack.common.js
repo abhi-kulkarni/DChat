@@ -4,6 +4,7 @@ const HtmlWebpackPlugin = require('html-webpack-plugin');
 const HtmlWebpackRootPlugin = require('html-webpack-root-plugin');
 const CopyWebpackPlugin = require('copy-webpack-plugin');
 const BundleTracker = require('webpack-bundle-tracker')
+const LinkTypePlugin = require('html-webpack-link-type-plugin').HtmlWebpackLinkTypePlugin;
 
 var query = {
     disable: true,
@@ -16,31 +17,35 @@ var query = {
 };
 
 module.exports = {
-entry: {
-    app: ['babel-polyfill', path.resolve(__dirname, 'index.js')]
-},
-context: path.join(__dirname, 'dist'),
+entry: ['babel-polyfill', './index.js'],
 plugins: [
-    // new CleanWebpackPlugin(['dist/*']) for < v2 versions of CleanWebpackPlugin
     new CleanWebpackPlugin(),
     new BundleTracker({
         path: __dirname,
         filename: './webpack-stats.json',
     }),
     new HtmlWebpackPlugin({
-    title: 'Production',
-    template:  path.join(__dirname, 'static/templates/template.html'),
+        template:  path.join(__dirname, '../templates/frontend/index.html'),
+    }),
+    new LinkTypePlugin({
+        '*.css' : 'text/css',
+        '*.js'  : 'text/javascript',
+        '*.png' : 'image/png',
+        '*.jpg' : 'image/jpeg',
+        '*.jpeg': 'image/jpeg',
+        '*.gif' : 'image/gif',
+        '*.webp': 'image/webp',
+        '*.bmp' : 'image/bmp',
     }),
     new CopyWebpackPlugin({
         patterns: [
-            { from: path.resolve(__dirname, 'static') }
+            { from: path.resolve(__dirname, './static/images'), to: path.resolve(__dirname, '../static/images') }
         ]
     })
 ],
 output: {
-    path: path.resolve(__dirname, 'dist'),
-    publicPath: './',
-    filename: 'app.js',
+    path: path.resolve(__dirname, '../static/frontend'),
+    filename: '[name].js',
 },
 module: {
     // configuration regarding modules

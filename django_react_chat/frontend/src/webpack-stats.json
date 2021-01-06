@@ -1,1 +1,1 @@
-{"status":"done","publicPath":"./","chunks":{"app":[{"name":"app.js","publicPath":"./app.js","path":"/home/abhishek/Projects/django-react-chat/django_react_chat/frontend/src/dist/app.js"}]}}
+{"status":"done","publicPath":"auto","chunks":{"main":[{"name":"main.js","publicPath":"automain.js","path":"/home/abhishek/Projects/django-react-chat/django_react_chat/frontend/static/frontend/main.js"}]}}

@@ -4,9 +4,8 @@
   "description": "",
   "webpack.config.js": "index.js",
   "scripts": {
-    "start": "webpack serve --config webpack.dev.js",
+    "dev": "webpack serve --config webpack.dev.js",
     "build": "webpack --config webpack.prod.js",
-    "dev": "webpack serve --config webpack.config.js",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
   "author": "abhishek",
@@ -49,6 +48,7 @@
     "copy-webpack-plugin": "^7.0.0",
     "css-loader": "^5.0.1",
     "file-loader": "^6.2.0",
+    "html-webpack-link-type-plugin": "^1.0.4",
     "html-webpack-plugin": "^4.5.1",
     "html-webpack-root-plugin": "^0.10.0",
     "image-webpack-loader": "^7.0.1",

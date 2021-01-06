@@ -5,6 +5,6 @@ const common = require('./webpack.common.js');
    mode: 'development',
    devtool: 'inline-source-map',
    devServer: {
-     contentBase: './dist',
-   },
+    writeToDisk: true,
+  }
  });
