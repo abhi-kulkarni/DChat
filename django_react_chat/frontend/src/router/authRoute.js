@@ -18,7 +18,7 @@ class AuthRoute extends Component {
         }    
     }
 
-    async componentWillMount() {
+    async componentDidMount() {
         let {history, auth, location, session} = this.props;
         let isLoggedIn = this.props.session.isLoggedIn;
         if(location.pathname === '/signin/' || location.pathname === '/signin' || location.pathname === '/signup/' || location.pathname === '/signup'){

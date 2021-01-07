@@ -15,7 +15,6 @@ import './ConversationList.css';
 import { FaComment, FaCommentSlash, FaCheck, FaPlus, FaRegPaperPlane, FaCogs, FaUserFriends, FaTrash, FaTimes, FaCheckCircle, FaShare, FaTasks, FaUserPlus } from 'react-icons/fa';
 import Button from 'react-bootstrap/Button'
 import Modal from 'react-bootstrap/Modal'
-import defaultImg from '../../../static/images/default_profile_picture.jpg'
 import axiosInstance from '../../axiosInstance'
 import {useDispatch, useSelector} from "react-redux";
 import WebSocketInstance from '../../../websocket'
@@ -29,6 +28,8 @@ import CustomBadge from '../../CustomBadge/badge';
 import $ from 'jquery'
 import { css } from "@emotion/core";
 import PulseLoader from "react-spinners/PulseLoader";
+import {defaultProfilePictureImageDataUri} from '../../../constants'
+import {defaultGroupProfilePictureImageDataUri} from '../../../constants'
 
 const ConversationList = (props) => {
 
@@ -359,7 +360,7 @@ const manageChats = (action, recipient_user, chat_id) => {
     axiosInstance.get('get_all_friends/').then(res => {
         if(res.data.ok) {
           let newConversations = res.data && res.data.hasOwnProperty('users') && res.data.users.map((user, index) => {
-          let profile_picture = user.profile_picture?user.profile_picture:defaultImg;
+          let profile_picture = user.profile_picture?user.profile_picture:defaultProfilePictureImageDataUri;
             return {
               id: index,
               user_id: user.id,
@@ -619,14 +620,14 @@ const manageChats = (action, recipient_user, chat_id) => {
       <Col style={{ paddingRight: '0%', paddingLeft: '0%' }} xs={12} sm={12} md={12} lg={12} xl={12}>
       {
           chats && chats.length > 0?
-          chats.map(item => {
+          chats.map((item, index) => {
             return ( 
-              <Row id={item.chat.chat_id} ref={getOrCreateRef(item.chat.id)} className="div_hover" style={{ paddingRight: '0%', paddingLeft: '0%', margin: '4% 0% 4% 0%', cursor: 'pointer', borderTopRightRadius: '25px', borderBottomRightRadius: '25px', backgroundColor:location.state && location.state.chat_id === item.chat.chat_id?'#ececec': 'white'}}>
+              <Row key={index} id={item.chat.chat_id} ref={getOrCreateRef(item.chat.id)} className="div_hover" style={{ paddingRight: '0%', paddingLeft: '0%', margin: '4% 0% 4% 0%', cursor: 'pointer', borderTopRightRadius: '25px', borderBottomRightRadius: '25px', backgroundColor:location.state && location.state.chat_id === item.chat.chat_id?'#ececec': 'white'}}>
               <Col style={{ paddingRight: '0%' }} xs={12} sm={12} md={12} lg={12} xl={12}>
                 <Row style={{ padding: '2% 0% 2% 0%', margin: '0px' }}>
                   <Col style={{ paddingLeft: '0px'}} onClick={() => onSelectUser(item.chat)} xs={6} sm={3} md={3} lg={3} xl={3}>
                       <img width="45"
-                          height="45" className="img-fluid conversation-photo" src={item.chat.photo?item.chat.photo:defaultImg} alt="conversation" />
+                          height="45" className="img-fluid conversation-photo" src={item.chat.photo?item.chat.photo:defaultProfilePictureImageDataUri} alt="conversation" />
                       <div style={{position: 'absolute', backgroundColor: session_chat_status && session_chat_status.hasOwnProperty(item.chat.user_id) && session_chat_status[item.chat.user_id] === 'online'?'#58A847':'#efefef', borderRadius: '100%', width: '0.59rem', height: '0.59rem', right: '0px', left:'35px', top: '0px', border: '1px solid darkgrey'}}></div>
                   </Col>
                   <Col onClick={() => onSelectUser(item.chat)} style={{ paddingTop: '1%', paddingLeft: '2%', paddingRight: '0%' }} xs={4} sm={7} md={7} lg={7} xl={7}>
@@ -706,10 +707,10 @@ const manageChats = (action, recipient_user, chat_id) => {
                       <Tab eventKey="friends" title="Friends">
                           <div style={{ margin:'0px', padding: '0px', height: '400px', overflowY: 'scroll' }}>
                               {session_chat_requests && session_chat_requests.hasOwnProperty('friends') && session_chat_requests.friends.length > 0?session_chat_requests.friends.map((friend, index) => {
-                              return (<Row style={{ padding: index == 0?'5% 0% 0% 0%':'0% 0% 0% 0%', margin: '0% 0% 1% 0%' }}>
+                              return (<Row key={index} style={{ padding: index == 0?'5% 0% 0% 0%':'0% 0% 0% 0%', margin: '0% 0% 1% 0%' }}>
                                   <Col xs={4} sm={{span:2, offset: 3}} md={{span:2, offset: 3}} lg={{span:2, offset: 3}} xl={{span:2, offset: 3}}>
                                   <img style={{margin: "0% 25%", width: "40px", height: "40px", borderRadius: "50%"}}
-                                      src={friend.profile_picture ? friend.profile_picture : defaultImg}
+                                      src={friend.profile_picture ? friend.profile_picture : defaultProfilePictureImageDataUri}
                                       alt="profile_img"/>
                                   </Col>
                                   <Col xs={4} sm={3} md={3} lg={3} xl={3}>
@@ -749,10 +750,10 @@ const manageChats = (action, recipient_user, chat_id) => {
                       <Tab eventKey="chats" title="Chats">
                           <div style={{ margin:'0px', padding: '0px', height: '400px', overflowY: 'scroll' }}>
                               {session_chat_requests && session_chat_requests.hasOwnProperty('chats') && session_chat_requests.chats.length > 0?session_chat_requests.chats.map((chat, index) => {
-                                  return (<Row style={{ padding: index == 0?'5% 0% 0% 0%':'0% 0% 0% 0%', margin: '0% 0% 1% 0%' }}>
+                                  return (<Row key={index} style={{ padding: index == 0?'5% 0% 0% 0%':'0% 0% 0% 0%', margin: '0% 0% 1% 0%' }}>
                                       <Col xs={4} sm={{span:2, offset: 3}} md={{span:2, offset: 3}} lg={{span:2, offset: 3}} xl={{span:2, offset: 3}}>
                                       <img style={{margin: "0% 25%", width: "40px", height: "40px", borderRadius: "50%"}}
-                                          src={chat.profile_picture ? chat.profile_picture : defaultImg}
+                                          src={chat.profile_picture ? chat.profile_picture : defaultProfilePictureImageDataUri}
                                           alt="profile_img"/>
                                       </Col>
                                       <Col xs={4} sm={3} md={3} lg={2} xl={2}>
@@ -781,10 +782,10 @@ const manageChats = (action, recipient_user, chat_id) => {
                       <Tab eventKey="chat_requests" title="Chat Requests">
                           <div style={{ margin:'0px', padding: '0px', height: '400px', overflowY: 'scroll' }}>
                               {session_chat_requests && session_chat_requests.hasOwnProperty('chat_requests') && session_chat_requests.chat_requests.length > 0?session_chat_requests.chat_requests.map((chatReq, index) => {
-                                  return (<Row style={{ padding: index == 0?'5% 0% 0% 0%':'0% 0% 0% 0%', margin: '0% 0% 1% 0%' }}>
+                                  return (<Row key={index} style={{ padding: index == 0?'5% 0% 0% 0%':'0% 0% 0% 0%', margin: '0% 0% 1% 0%' }}>
                                       <Col xs={4} sm={{span:2, offset: 3}} md={{span:2, offset: 3}} lg={{span:2, offset: 3}} xl={{span:2, offset: 3}}>
                                       <img style={{margin: "0% 25%", width: "40px", height: "40px", borderRadius: "50%"}}
-                                          src={chatReq.profile_picture ? chatReq.profile_picture : defaultImg}
+                                          src={chatReq.profile_picture ? chatReq.profile_picture : defaultProfilePictureImageDataUri}
                                           alt="profile_img"/>
                                       </Col>
                                       <Col xs={4} sm={3} md={3} lg={2} xl={2}>
@@ -823,10 +824,10 @@ const manageChats = (action, recipient_user, chat_id) => {
                       <Tab eventKey="sent_chat_requests" title="Sent Chat Requests">
                           <div style={{ margin:'0px', padding: '0px', height: '400px', overflowY: 'scroll' }}>
                               {session_chat_requests && session_chat_requests.hasOwnProperty('sent_chat_requests') && session_chat_requests.sent_chat_requests.length > 0?session_chat_requests.sent_chat_requests.map((chatReq, index) => {
-                                  return (<Row style={{ padding: index == 0?'5% 0% 0% 0%':'0% 0% 0% 0%', margin: '0% 0% 1% 0%' }}>
+                                  return (<Row key={index} style={{ padding: index == 0?'5% 0% 0% 0%':'0% 0% 0% 0%', margin: '0% 0% 1% 0%' }}>
                                       <Col xs={4} sm={{span:2, offset: 3}} md={{span:2, offset: 3}} lg={{span:2, offset: 3}} xl={{span:2, offset: 3}}>
                                       <img style={{margin: "0% 25%", width: "40px", height: "40px", borderRadius: "50%"}}
-                                          src={chatReq.profile_picture ? chatReq.profile_picture : defaultImg}
+                                          src={chatReq.profile_picture ? chatReq.profile_picture : defaultProfilePictureImageDataUri}
                                           alt="profile_img"/>
                                       </Col>
                                       <Col xs={4} sm={3} md={3} lg={2} xl={2}>

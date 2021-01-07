@@ -13,11 +13,11 @@ import OverlayTrigger from 'react-bootstrap/OverlayTrigger'
 import Tabs from 'react-bootstrap/Tabs'
 import Tab from 'react-bootstrap/Tab'
 import Tooltip from 'react-bootstrap/Tooltip'
-import defaultImg from '../static/images/default_profile_picture.jpg'
 import { FaUserPlus, FaCheck, FaTimes, FaCheckCircle, FaUserTimes } from "react-icons/fa";
 import Dialog from 'react-bootstrap-dialog'
 import WebSocketInstance from '../websocket'
 import moment from 'moment'
+import {defaultProfilePictureImageDataUri} from '../constants'
 
 function Friends(props) {
 
@@ -201,10 +201,10 @@ function Friends(props) {
                         <Tab eventKey="users" title="Users">
                             <div style={{ margin:'0px', padding: '0px', height: '400px', overflowY: 'scroll' }}>
                                 {friendRequestData && friendRequestData.hasOwnProperty('users') && friendRequestData.users.length > 0?friendRequestData.users.map((user, index) => {
-                                return (<Row style={{ padding: index == 0?'5% 0% 0% 0%':'0% 0% 0% 0%', margin: '0% 0% 1% 0%' }}>
+                                return (<Row key={index} style={{ padding: index == 0?'5% 0% 0% 0%':'0% 0% 0% 0%', margin: '0% 0% 1% 0%' }}>
                                     <Col xs={4} sm={{span:2, offset: 3}} md={{span:2, offset: 3}} lg={{span:2, offset: 3}} xl={{span:2, offset: 3}}>
                                     <img style={{margin: "0% 25%", width: "40px", height: "40px", borderRadius: "50%"}}
-                                        src={user.profile_picture ? user.profile_picture : defaultImg}
+                                        src={user.profile_picture ? user.profile_picture : defaultProfilePictureImageDataUri}
                                         alt="profile_img"/>
                                     </Col>
                                     <Col xs={4} sm={3} md={3} lg={3} xl={3}>
@@ -244,10 +244,10 @@ function Friends(props) {
                         <Tab eventKey="friends" title="Friends">
                             <div style={{ margin:'0px', padding: '0px', height: '400px', overflowY: 'scroll' }}>
                                 {friendRequestData && friendRequestData.hasOwnProperty('friends') && friendRequestData.friends.length > 0?friendRequestData.friends.map((friend, index) => {
-                                    return (<Row style={{ padding: index == 0?'5% 0% 0% 0%':'0% 0% 0% 0%', margin: '0% 0% 1% 0%' }}>
+                                    return (<Row key={index} style={{ padding: index == 0?'5% 0% 0% 0%':'0% 0% 0% 0%', margin: '0% 0% 1% 0%' }}>
                                         <Col xs={4} sm={{span:2, offset: 3}} md={{span:2, offset: 3}} lg={{span:2, offset: 3}} xl={{span:2, offset: 3}}>
                                         <img style={{margin: "0% 25%", width: "40px", height: "40px", borderRadius: "50%"}}
-                                            src={friend.profile_picture ? friend.profile_picture : defaultImg}
+                                            src={friend.profile_picture ? friend.profile_picture : defaultProfilePictureImageDataUri}
                                             alt="profile_img"/>
                                         </Col>
                                         <Col xs={4} sm={3} md={3} lg={2} xl={2}>
@@ -276,10 +276,10 @@ function Friends(props) {
                         <Tab eventKey="friend_requests" title="Friend Requests">
                             <div style={{ margin:'0px', padding: '0px', height: '400px', overflowY: 'scroll' }}>
                                 {friendRequestData && friendRequestData.hasOwnProperty('friend_requests') && friendRequestData.friend_requests.length > 0?friendRequestData.friend_requests.map((friendReq, index) => {
-                                    return (<Row style={{ padding: index == 0?'5% 0% 0% 0%':'0% 0% 0% 0%', margin: '0% 0% 1% 0%' }}>
+                                    return (<Row key={index} style={{ padding: index == 0?'5% 0% 0% 0%':'0% 0% 0% 0%', margin: '0% 0% 1% 0%' }}>
                                         <Col xs={4} sm={{span:2, offset: 3}} md={{span:2, offset: 3}} lg={{span:2, offset: 3}} xl={{span:2, offset: 3}}>
                                         <img style={{margin: "0% 25%", width: "40px", height: "40px", borderRadius: "50%"}}
-                                            src={friendReq.profile_picture ? friendReq.profile_picture : defaultImg}
+                                            src={friendReq.profile_picture ? friendReq.profile_picture : defaultProfilePictureImageDataUri}
                                             alt="profile_img"/>
                                         </Col>
                                         <Col xs={4} sm={3} md={3} lg={2} xl={2}>
@@ -318,10 +318,10 @@ function Friends(props) {
                         <Tab eventKey="sent_friend_requests" title="Sent Friend Requests">
                             <div style={{ margin:'0px', padding: '0px', height: '400px', overflowY: 'scroll' }}>
                                 {friendRequestData && friendRequestData.hasOwnProperty('sent_friend_requests') && friendRequestData.sent_friend_requests.length > 0?friendRequestData.sent_friend_requests.map((friendReq, index) => {
-                                    return (<Row style={{ padding: index == 0?'5% 0% 0% 0%':'0% 0% 0% 0%', margin: '0% 0% 1% 0%' }}>
+                                    return (<Row key={index} style={{ padding: index == 0?'5% 0% 0% 0%':'0% 0% 0% 0%', margin: '0% 0% 1% 0%' }}>
                                         <Col xs={4} sm={{span:2, offset: 3}} md={{span:2, offset: 3}} lg={{span:2, offset: 3}} xl={{span:2, offset: 3}}>
                                         <img style={{margin: "0% 25%", width: "40px", height: "40px", borderRadius: "50%"}}
-                                            src={friendReq.profile_picture ? friendReq.profile_picture : defaultImg}
+                                            src={friendReq.profile_picture ? friendReq.profile_picture : defaultProfilePictureImageDataUri}
                                             alt="profile_img"/>
                                         </Col>
                                         <Col xs={4} sm={3} md={3} lg={2} xl={2}>

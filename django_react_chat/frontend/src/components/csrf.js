@@ -21,7 +21,7 @@ let csrf_token = getCookie('csrftoken');
 
 const CSRFToken = () => {
     return (
-        <input type="hidden" name="csrf_middleware_token" value={csrf_token} />
+        <input type="hidden" name="csrf_middleware_token" value={csrf_token?csrf_token:''} />
     );
 };
 export default CSRFToken;
