@@ -17,13 +17,14 @@ from datetime import timedelta
 import rest_framework_jwt
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
-BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+BASE_DIR = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+
 
 # SECURITY WARNING: keep the secret key used in production secret!
-SECRET_KEY = config('SECRET_KEY')
+SECRET_KEY = os.environ.get('SECRET_KEY', config('SECRET_KEY'))
 
 # SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = True
+DEBUG = os.environ.get('SECRET_KEY', config('DEBUG'))
 
 ALLOWED_HOSTS = ['3.7.46.49', 'localhost', '127.0.0.1']
 
@@ -69,7 +70,7 @@ SIMPLE_JWT = {
     'ROTATE_REFRESH_TOKENS': True,
     'BLACKLIST_AFTER_ROTATION': False,
     'ALGORITHM': 'HS256',
-    'SIGNING_KEY': config('SECRET_KEY'),
+    'SIGNING_KEY': SECRET_KEY,
     'VERIFYING_KEY': None,
     'AUTH_HEADER_TYPES': ('JWT',),
     'USER_ID_FIELD': 'id',
@@ -96,11 +97,11 @@ MIDDLEWARE = [
 
 CORS_ALLOW_CREDENTIALS = True
 
-CORS_ORIGIN_ALLOW_ALL = False
+CORS_ORIGIN_ALLOW_ALL = True
 
-CORS_ORIGIN_WHITELIST = ['http://localhost:3000']
+CORS_ORIGIN_WHITELIST = ['http://127.0.0.1:3000']
 
-CORS_ORIGIN_REGEX_WHITELIST = ['http://localhost:3000']
+CORS_ORIGIN_REGEX_WHITELIST = ['http://127.0.0.1:3000']
 
 CSRF_COOKIE_NAME = "csrftoken"
 
@@ -157,7 +158,6 @@ DATABASES = {
 }
 
 AUTH_USER_MODEL = "backend.User"
-
 
 # Password validation
 # https://docs.djangoproject.com/en/3.1/ref/settings/#auth-password-validators

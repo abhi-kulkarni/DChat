@@ -5,6 +5,8 @@ const HtmlWebpackRootPlugin = require('html-webpack-root-plugin');
 const CopyWebpackPlugin = require('copy-webpack-plugin');
 const BundleTracker = require('webpack-bundle-tracker')
 const LinkTypePlugin = require('html-webpack-link-type-plugin').HtmlWebpackLinkTypePlugin;
+const webpack = require('webpack')
+const dotenv = require('dotenv');
 
 var query = {
     disable: true,
@@ -16,7 +18,9 @@ var query = {
     }
 };
 
-module.exports = {
+
+module.exports  = (args) => ({
+
 entry: ['babel-polyfill', './index.js'],
 plugins: [
     new CleanWebpackPlugin(),
@@ -24,19 +28,20 @@ plugins: [
         path: __dirname,
         filename: './webpack-stats.json',
     }),
+    new webpack.DefinePlugin({
+        'process.env': JSON.stringify(dotenv.config({'path': args.development?'./.env.development':'./.env.development'}).parsed),
+        'args': JSON.stringify(args)
+    }),
     new HtmlWebpackPlugin({
         template:  path.join(__dirname, '../templates/frontend/index.html'),
+        minify: {
+            collapseWhitespace: true,
+            removeComments: true,
+            removeRedundantAttributes: true,
+            useShortDoctype: true
+        }
     }),
-    new LinkTypePlugin({
-        '*.css' : 'text/css',
-        '*.js'  : 'text/javascript',
-        '*.png' : 'image/png',
-        '*.jpg' : 'image/jpeg',
-        '*.jpeg': 'image/jpeg',
-        '*.gif' : 'image/gif',
-        '*.webp': 'image/webp',
-        '*.bmp' : 'image/bmp',
-    }),
+    new LinkTypePlugin({'*.css':'text/css', '*.js':'text/javascript'}),
     new CopyWebpackPlugin({
         patterns: [
             { from: path.resolve(__dirname, './static/images'), to: path.resolve(__dirname, '../static/images') }
@@ -73,5 +78,5 @@ module: {
                 `image-webpack-loader?${JSON.stringify(query)}`]
         }
     ],
-},
-};
+}
+});

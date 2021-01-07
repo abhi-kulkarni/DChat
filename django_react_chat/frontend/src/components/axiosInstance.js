@@ -4,8 +4,12 @@ import axiosRetry from 'axios-retry';
 axios.defaults.xsrfCookieName = 'csrftoken';
 axios.defaults.xsrfHeaderName = 'X-CSRFToken';
 
+console.log(process.env)
+
+const envBaseUrl = process.env.REACT_APP_BASE_API_URL;
+
 const axiosInstance = axios.create({
-    baseURL: 'http://127.0.0.1:8000/api/',
+    baseURL: envBaseUrl,
     headers: {
         'timeout': 10000,
         'Authorization': "JWT " + localStorage.getItem('accessToken'),

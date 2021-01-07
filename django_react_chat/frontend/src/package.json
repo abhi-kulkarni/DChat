@@ -4,8 +4,8 @@
   "description": "",
   "webpack.config.js": "index.js",
   "scripts": {
-    "dev": "webpack serve --config webpack.dev.js",
-    "build": "webpack --config webpack.prod.js",
+    "dev": "webpack serve --env development --config webpack.dev.js",
+    "build": "webpack --env production --config webpack.prod.js",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
   "author": "abhishek",
@@ -47,6 +47,7 @@
     "clean-webpack-plugin": "^3.0.0",
     "copy-webpack-plugin": "^7.0.0",
     "css-loader": "^5.0.1",
+    "dotenv": "^8.2.0",
     "file-loader": "^6.2.0",
     "html-webpack-link-type-plugin": "^1.0.4",
     "html-webpack-plugin": "^4.5.1",
