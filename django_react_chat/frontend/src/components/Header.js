@@ -3,7 +3,6 @@ import Navbar from "react-bootstrap/Navbar";
 import Nav from "react-bootstrap/Nav";
 import DropdownButton from "react-bootstrap/DropdownButton";
 import Dropdown from "react-bootstrap/Dropdown";
-import brandImg from '../static/images/brand_img.png'
 import {useDispatch, useSelector} from "react-redux";
 import {useHistory, Link} from 'react-router-dom'
 import '../index.css'
@@ -11,7 +10,6 @@ import {spinner_overlay, clear_session, sign_out, user_data, forgot_password_cli
 import AtomSpinner from './Atomspinner'
 import axios from 'axios'
 import axiosInstance from '../components/axiosInstance'
-import defaultImg from '../static/images/default_profile_picture.jpg'
 import Row from 'react-bootstrap/Row'
 import Col from 'react-bootstrap/Col'
 import Form from 'react-bootstrap/Form'
@@ -29,6 +27,8 @@ import CustomBadge from '../components/CustomBadge/badge';
 import WebSocketInstance from '../websocket'
 import Moment from 'react-moment';
 import 'moment-timezone';
+import {defaultProfilePictureImageDataUri} from '../constants/'
+import {brandImageDataUri} from '../constants/'
 
 function Header(props) {
 
@@ -561,7 +561,7 @@ function Header(props) {
                 <Navbar.Brand href={isLoggedIn?'/home': '/'}>
                 <img
                     alt="Brand Image"
-                    src={brandImg}
+                    src={brandImageDataUri}
                     width="40"
                     height="35"
                     className="img-fluid d-inline-block align-top"
@@ -596,8 +596,8 @@ function Header(props) {
                                                 fontSize: '12px'
                                             }}>Notifications</Popover.Title>
                                             <Popover.Content>
-                                            {notificationData.length > 0?notificationData.map(item => {
-                                                return (<Row style={{margin: '0px', padding: '0px'}}>
+                                            {notificationData.length > 0?notificationData.map((item, index) => {
+                                                return (<Row key={index} style={{margin: '0px', padding: '0px'}}>
                                                     <Col style={{ padding: '0px' }} xs={1} sm={1} md={1} lg={1} xl={1}>
                                                         {item.notification_type =='chat'?<FaComments style={{ fontSize: '0.8rem', margin: '0px', color: '#5C8DF2' }}/>:<FaUserPlus style={{ fontSize: '0.8rem', margin: '0px', color: '#58A847' }}/>}
                                                     </Col>
@@ -623,7 +623,7 @@ function Header(props) {
                                     alignRight
                                     title={<img
                                         style={{margin: "0px 0px 0px 0px", width: "40px", height: "40px", borderRadius: "50%"}}
-                                        src={curr_user_data && curr_user_data.profile_picture ? curr_user_data.profile_picture : defaultImg}
+                                        src={curr_user_data && curr_user_data.profile_picture ? curr_user_data.profile_picture : defaultProfilePictureImageDataUri}
                                         alt="profile_img"/>}
                                         id="dropdown-menu-align-right"
                                 >

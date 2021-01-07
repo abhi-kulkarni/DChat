@@ -368,7 +368,6 @@ def get_all_chats(request):
                 usr_obj['name'] = temp['curr_user']['username']
                 usr_obj['user_id'] = temp['curr_user']['id']
                 usr_obj['chat_id'] = chat.id
-                usr_obj['text'] = 'Hello world! This is a long message that needs to be truncated.'
                 temp['chat'] = usr_obj
                 temp['chat']['isFriend'] = ChatFriend.objects.are_friends(request.user, participant) == True
             users.append(participant)
@@ -396,7 +395,8 @@ def message_to_json(message, chat_id):
         'author': message.user.username,
         'content': message.content,
         'timestamp': str(message.timestamp),
-        'chatId': chat_id
+        'chatId': chat_id,
+        'message_type': message.message_type
     }
 
 @api_view(["GET"])

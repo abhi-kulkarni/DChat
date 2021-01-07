@@ -6,8 +6,8 @@ function AtomSpinner(props) {
 
     return (
         <div>
-            <div class="circle"></div>
-            <div class="circle" id="vertical"></div>
+            <div className="circle"></div>
+            <div className="circle" id="vertical"></div>
         </div>
     )
 }

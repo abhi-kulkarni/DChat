@@ -282,7 +282,22 @@ def get_recent_msg_data(user_id, dtype):
         if recent_message:
             recent_message = recent_message[0]
             recent_msg_data = message_to_json(recent_message, str(chat_obj.id))
+            is_text = False
+            is_image = False
+            is_audio = False
+            if recent_msg_data != '':
+                if recent_msg_data['message_type'] == 'image':
+                    is_image = True
+                elif recent_msg_data['message_type'] == 'text':
+                    is_text = True
+                elif recent_msg_data['message_type'] == 'audio':
+                    is_audio = True
+            if is_image:
+                recent_msg_data['content'] = 'Image'
+            elif is_audio:
+                recent_msg_data['content'] = 'Audio'
             recent_msg_data['recipient_id'] = recipient_user_id
+            recent_msg_data['message_type'] = recent_message.message_type
             recent_msg_data['last_seen'] = json.loads(chat_obj.last_seen) if chat_obj.last_seen else {}
             recent_msg_data_dict[str(chat_obj.id)] = recent_msg_data
     
@@ -302,7 +317,8 @@ def message_to_json(message, chat_id):
         'author': message.user.username,
         'content': message.content,
         'timestamp': str(message.timestamp),
-        'chatId': chat_id
+        'chatId': chat_id,
+        'message_type': message.message_type
     }
 
 
@@ -332,7 +348,18 @@ def get_all_chats_data(user_id):
         for participant in participants:
             if participant.id != user.id:
                 messages = chat.messages.order_by('-timestamp').all()
-                author_id = message_to_json(messages[:1][0], str(chat.id))['author_id'] if len(list(messages)) > 0 else ''
+                curr_msg = message_to_json(messages[:1][0], str(chat.id)) if len(list(messages)) > 0 else ''
+                author_id = curr_msg['author_id'] if curr_msg else ''
+                is_text = False
+                is_image = False
+                is_audio = False
+                if curr_msg != '':
+                    if curr_msg['message_type'] == 'image':
+                        is_image = True
+                    elif curr_msg['message_type'] == 'text':
+                        is_text = True
+                    elif curr_msg['message_type'] == 'audio':
+                        is_audio = True
                 recent_msg = messages[:1][0].content if len(list(messages)) > 0 else ''
                 temp['curr_user'] = UserSerializer(participant).data
                 usr_obj = {}
@@ -343,7 +370,12 @@ def get_all_chats_data(user_id):
                 usr_obj['chat_id'] = chat.id
                 usr_obj['author_id'] = author_id
                 usr_obj['last_seen'] = json.loads(chat.last_seen) if chat.last_seen else {}
-                usr_obj['text'] = recent_msg
+                if is_image:
+                    usr_obj['text'] = 'Image'
+                elif is_audio:
+                    usr_obj['text'] = 'Audio'
+                else:
+                    usr_obj['text'] = recent_msg
                 temp['chat'] = usr_obj
                 temp['chat']['isFriend'] = ChatFriend.objects.are_friends(user, participant) == True
             users.append(participant)

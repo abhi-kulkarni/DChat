@@ -148,7 +148,7 @@
 .remove_chat {
   color: #EB3E37;
   cursor: pointer;
-  font-size: 0.8rem;
+  font-size: 1rem;
 }
 
 .message_count{

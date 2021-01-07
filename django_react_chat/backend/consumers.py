@@ -29,9 +29,14 @@ class Consumer(WebsocketConsumer):
     def new_message(self, data):
 
         user = get_user(data['from'])
+        content = ''
+        if data['type'] == 'text':
+            content = data['message']['msg']
+        else:
+            content = json.dumps(data['message'])
         message = Message.objects.create(
             user=user,
-            content=data['message'])
+            content=content, message_type=data['type'])
         current_chat = get_current_chat(data['chatId'])
         current_chat.messages.add(message)
         current_chat.save()
@@ -78,7 +83,8 @@ class Consumer(WebsocketConsumer):
             'content': message.content,
             'timestamp': str(message.timestamp),
             'chatId': chat_id,
-            'type': m_type
+            'type': m_type,
+            'message_type': message.message_type
         }
     
     def fetch_friend_requests(self, data):

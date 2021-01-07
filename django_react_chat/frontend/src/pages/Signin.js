@@ -11,7 +11,7 @@ import OverlayTrigger from 'react-bootstrap/OverlayTrigger'
 import Tooltip from 'react-bootstrap/Tooltip'
 import {Orientation} from "../components/Orientation";
 import {FaEye, FaEyeSlash, FaEnvelopeOpen, FaUserShield, FaCheckCircle} from "react-icons/fa";
-import API_URL from '../constants/'
+import {API_URL} from '../constants/'
 import {spinner_overlay, sign_in, user_data, user_created_success, friend_requests, chat_requests, notifications} from '../redux'
 import AtomSpinner from '../components/Atomspinner'
 import axios from 'axios'

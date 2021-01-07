@@ -5,7 +5,7 @@ axios.defaults.xsrfCookieName = 'csrftoken';
 axios.defaults.xsrfHeaderName = 'X-CSRFToken';
 
 const axiosInstance = axios.create({
-    baseURL: 'http://127.0.0.1:8000/api/',
+    baseURL: process.env.REACT_APP_BASE_API_URL,
     headers: {
         'timeout': 10000,
         'Authorization': "JWT " + localStorage.getItem('accessToken'),
