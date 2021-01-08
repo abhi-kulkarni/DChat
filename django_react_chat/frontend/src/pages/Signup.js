@@ -13,7 +13,7 @@ import {
   FaArrowLeft,
   FaExclamationTriangle,
 } from "react-icons/fa";
-import { API_URL } from "../constants/";
+import { API_URL } from "../constants";
 import axios from "axios";
 import { useHistory } from "react-router-dom";
 import { user_created_success, spinner_overlay } from "../redux";
