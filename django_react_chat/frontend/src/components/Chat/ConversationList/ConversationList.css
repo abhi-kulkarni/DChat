@@ -3,33 +3,33 @@
   flex-direction: column;
 }
 
-.conversation-list-row{
+.conversation-list-row {
   padding: 0px;
   margin: 0px;
 }
 
-.manage_chats{
+.manage_chats {
   margin: 3% 4% 1% 0%;
   font-size: 1rem;
   float: right;
-  color: #0578FA;
+  color: #0578fa;
   cursor: pointer;
 }
 
-.settings{
-  color: #0578FA;
+.settings {
+  color: #0578fa;
   margin-left: 2%;
   cursor: pointer;
   font-size: 1rem;
 }
 
-.new_group{
-  color: #0578FA;
+.new_group {
+  color: #0578fa;
   cursor: pointer;
   font-size: 1rem;
 }
 
-#load_more{
+#load_more {
   box-shadow: none;
   outline: none;
   margin-left: 38%;
@@ -37,60 +37,60 @@
 }
 
 .add_chat {
-  color: #58A847;
+  color: #58a847;
   cursor: pointer;
   font-size: 1rem;
   margin-top: 5%;
 }
 
 .remove_chat {
-  color: #EB3E37;
+  color: #eb3e37;
   cursor: pointer;
   font-size: 1rem;
   margin-top: 6%;
 }
 
-.accept_chat_request{
-  color: #58A847;
+.accept_chat_request {
+  color: #58a847;
   cursor: pointer;
   font-size: 1rem;
   margin-top: 4%;
 }
 
-.reject_chat_request{
-  color: #EB3E37;
+.reject_chat_request {
+  color: #eb3e37;
   cursor: pointer;
   font-size: 1rem;
   margin-left: 20px;
   margin-top: 4%;
 }
 
-.cancel_chat_request{
-  color: #EB3E37;
+.cancel_chat_request {
+  color: #eb3e37;
   cursor: pointer;
   font-size: 1rem;
   margin-top: 4%;
 }
 
-.sent_chat_request{
-  color: #58A847;
+.sent_chat_request {
+  color: #58a847;
   cursor: pointer;
   font-size: 1rem;
   margin-top: 5%;
 }
 
 #modalSearchConversations::placeholder {
-  text-align: center!important;
+  text-align: center !important;
 }
 
 #modalSearchConversations:focus::placeholder {
   text-align: left !important;
 }
 
-#modalSearchConversations{
+#modalSearchConversations {
   box-shadow: none;
   outline: none;
-  border-top:none!important;
+  border-top: none !important;
 }
 
 .conversation-list-item {
@@ -120,23 +120,22 @@
 
 .conversation-snippet {
   font-size: 0.8rem;
-  white-space: nowrap; 
-  width: 85%; 
+  white-space: nowrap;
+  width: 85%;
   overflow: hidden;
-  text-overflow: ellipsis; 
+  text-overflow: ellipsis;
   color: #888;
   margin: 0;
   padding-left: 0px !important;
 }
 
-
-.div_hover { 
-  background-color: #FFFFFF; 
+.div_hover {
+  background-color: #ffffff;
   display: block;
 }
 
-.div_hover:hover { 
-  background-color: #ececec !important; 
+.div_hover:hover {
+  background-color: #ececec !important;
 }
 
 .noContent {
@@ -146,14 +145,14 @@
 }
 
 .remove_chat {
-  color: #EB3E37;
+  color: #eb3e37;
   cursor: pointer;
   font-size: 1rem;
 }
 
-.message_count{
-  position:fixed !important;
-  right: 0px!important;
-  top:0px !important;
+.message_count {
+  position: fixed !important;
+  right: 0px !important;
+  top: 0px !important;
   padding-left: 15px !important;
 }

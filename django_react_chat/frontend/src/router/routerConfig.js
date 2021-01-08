@@ -1,4 +1,4 @@
-import SignIn from "../pages/Signin"
+import SignIn from "../pages/Signin";
 import SignUp from "../pages/Signup";
 import Home from "../pages/Home";
 import Chat from "../pages/Chat";
@@ -8,62 +8,69 @@ import Profile from "../pages/Profile";
 
 import CustomLayout from "../layouts/Layout";
 
-const routes = [{
+const routes = [
+  {
     path: "/",
     component: SignIn,
     layout: CustomLayout,
     exact: true,
-}, {
+  },
+  {
     path: "/signin",
     component: SignIn,
     layout: CustomLayout,
     exact: true,
-    name: 'login'
-}, {
+    name: "login",
+  },
+  {
     path: "/signup",
     component: SignUp,
     layout: CustomLayout,
     exact: true,
-    name: 'signup'
-},{
+    name: "signup",
+  },
+  {
     path: "/home",
     component: Home,
     layout: CustomLayout,
     exact: true,
-    name: 'home'
-},{
+    name: "home",
+  },
+  {
     path: "/profile",
     component: Profile,
     layout: CustomLayout,
     exact: true,
-    name: 'profile'
-},
-{
+    name: "profile",
+  },
+  {
     path: "/chat",
     component: Chat,
     layout: CustomLayout,
     exact: true,
-    name: 'chat'
-},{
+    name: "chat",
+  },
+  {
     path: "/chat/:id/",
     component: Chat,
     layout: CustomLayout,
     exact: true,
-    name: 'chat_detail'
-},{
+    name: "chat_detail",
+  },
+  {
     path: "/change_password",
     component: ChangePassword,
     layout: CustomLayout,
     exact: true,
-    name: 'change_password'
-},
-{
+    name: "change_password",
+  },
+  {
     path: "/friends",
     component: Friends,
     layout: CustomLayout,
     exact: true,
-    name: 'friends'
-}
+    name: "friends",
+  },
 ];
 
-export default routes
+export default routes;

@@ -24,25 +24,23 @@
 }
 
 .conversation-snippet {
-  font-size: 0.8rem;;
-  white-space: nowrap; 
-  width: 85%; 
+  font-size: 0.8rem;
+  white-space: nowrap;
+  width: 85%;
   overflow: hidden;
-  text-overflow: ellipsis; 
+  text-overflow: ellipsis;
   color: #888;
   margin: 0;
   padding-left: 0px !important;
 }
 
-
-
-.div_hover { 
-  background-color: #FFFFFF; 
-  display:none;
+.div_hover {
+  background-color: #ffffff;
+  display: none;
 }
 
-.div_hover:hover { 
-  background-color: #ececec !important; 
+.div_hover:hover {
+  background-color: #ececec !important;
 }
 
 .noContent {
@@ -52,14 +50,14 @@
 }
 
 .remove_chat {
-  color: #EB3E37;
+  color: #eb3e37;
   cursor: pointer;
   font-size: 0.8rem;
 }
 
-.message_count{
-  position:fixed !important;
-  right: 0px!important;
-  top:0px !important;
+.message_count {
+  position: fixed !important;
+  right: 0px !important;
+  top: 0px !important;
   padding-left: 15px !important;
 }

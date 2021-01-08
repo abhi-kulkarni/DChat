@@ -1,24 +1,34 @@
-@import url('https://fonts.googleapis.com/css?family=Fira+Sans:400,500,600,700,800');
+@import url("https://fonts.googleapis.com/css?family=Fira+Sans:400,500,600,700,800");
 
 * {
   box-sizing: border-box;
 }
 body {
-  background: #FFFFFF !important;
+  background: #ffffff !important;
   font-weight: 400;
-  font-family: 'Fira Sans', sans-serif; 
+  font-family: "Fira Sans", sans-serif;
 }
 
 .cursor-pointer {
   cursor: pointer;
 }
 
-h1,h2,h3,h4,h5,h6,label,span {
+h1,
+h2,
+h3,
+h4,
+h5,
+h6,
+label,
+span {
   font-weight: 500;
-  font-family: 'Fira Sans', sans-serif;
+  font-family: "Fira Sans", sans-serif;
 }
 
-body, html, .App, #root {
+body,
+html,
+.App,
+#root {
   width: 100%;
   height: 100%;
 }
@@ -48,27 +58,27 @@ body, html, .App, #root {
 }
 
 .form-group {
-  margin-bottom: 0.4rem!important;
+  margin-bottom: 0.4rem !important;
 }
-.container{
-  height: 100%!important;
-  width: 100%!important;
-}
-
-.content{
-    height:auto!important;
-    overflow-y: auto;
-    position: fixed;
-    top: 80px;
-    bottom: 80px;
-    left: 0;
-    right: 0;
+.container {
+  height: 100% !important;
+  width: 100% !important;
 }
 
-.signup_div{
+.content {
+  height: auto !important;
+  overflow-y: auto;
+  position: fixed;
+  top: 80px;
+  bottom: 80px;
+  left: 0;
+  right: 0;
+}
+
+.signup_div {
   height: 25vh !important;
-  width: 15rem!important;
-  padding: 2rem!important;
+  width: 15rem !important;
+  padding: 2rem !important;
 }
 
 .errorMessage {
@@ -76,12 +86,12 @@ body, html, .App, #root {
   font-size: 0.75em;
 }
 
-.user_created_message_login{
+.user_created_message_login {
   color: forestgreen;
   font-size: 1em;
 }
 
-.profile_edit_success_msg{
+.profile_edit_success_msg {
   color: forestgreen;
   font-size: 0.85em;
 }
@@ -92,12 +102,12 @@ body, html, .App, #root {
 }
 
 .validate_email_message {
-  color:green;
-  font-size: 0.80em;
+  color: green;
+  font-size: 0.8em;
 }
-.sign_in_error_message{
-  color:red;
-  font-size: 0.80em;
+.sign_in_error_message {
+  color: red;
+  font-size: 0.8em;
 }
 
 @media screen and (max-width: 480px) {
@@ -105,7 +115,6 @@ body, html, .App, #root {
     overflow-y: scroll;
   }
 }
-
 
 .circle {
   position: absolute;
@@ -118,67 +127,68 @@ body, html, .App, #root {
   margin: auto;
   border: 8px solid #212e4b;
   border-radius: 50%;
-  }
-  #vertical {
+}
+#vertical {
   -webkit-transform: rotate(90deg);
   transform: rotate(90deg);
-  -webkit-animation: spin 4s linear infinite,pulse 1s linear infinite alternate;
-  animation: spin 4s linear infinite,pulse 1s linear infinite alternate;
-  }
-  .circle:not(#vertical) {
-  -webkit-animation: spin2 4s linear infinite,pulse 1s linear infinite alternate;
-  animation: spin2 4s linear infinite,pulse 1s linear infinite alternate;
-  }
-  @-webkit-keyframes spin {
+  -webkit-animation: spin 4s linear infinite, pulse 1s linear infinite alternate;
+  animation: spin 4s linear infinite, pulse 1s linear infinite alternate;
+}
+.circle:not(#vertical) {
+  -webkit-animation: spin2 4s linear infinite,
+    pulse 1s linear infinite alternate;
+  animation: spin2 4s linear infinite, pulse 1s linear infinite alternate;
+}
+@-webkit-keyframes spin {
   100% {
-      -webkit-transform: rotate(450deg);
-      transform: rotate(450deg);
+    -webkit-transform: rotate(450deg);
+    transform: rotate(450deg);
   }
-  }
-  @-webkit-keyframes spin2 {
+}
+@-webkit-keyframes spin2 {
   100% {
-      -webkit-transform: rotate(360deg);
-      transform: rotate(360deg);
+    -webkit-transform: rotate(360deg);
+    transform: rotate(360deg);
   }
-  }
-  @keyframes spin {
+}
+@keyframes spin {
   100% {
-      -webkit-transform: rotate(450deg);
-      transform: rotate(450deg);
+    -webkit-transform: rotate(450deg);
+    transform: rotate(450deg);
   }
-  }
-  @keyframes spin2 {
+}
+@keyframes spin2 {
   100% {
-      -webkit-transform: rotate(360deg);
-      transform: rotate(360deg);
+    -webkit-transform: rotate(360deg);
+    transform: rotate(360deg);
   }
-  }
-  @-webkit-keyframes pulse {
+}
+@-webkit-keyframes pulse {
   0% {
-      width: 5px;
-      height: 200px;
+    width: 5px;
+    height: 200px;
   }
   100% {
-      width: 100px;
-      height: 5px;
-  }
-  0% {
-      width: 5px;
-      height: 200px;
-  }
-  }
-  @keyframes pulse {
-  0% {
-      width: 5px;
-      height: 200px;
-  }
-  100% {
-      width: 100px;
-      height: 5px;
+    width: 100px;
+    height: 5px;
   }
   0% {
-      width: 5px;
-      height: 200px;
+    width: 5px;
+    height: 200px;
+  }
+}
+@keyframes pulse {
+  0% {
+    width: 5px;
+    height: 200px;
+  }
+  100% {
+    width: 100px;
+    height: 5px;
+  }
+  0% {
+    width: 5px;
+    height: 200px;
   }
 }
 
@@ -199,22 +209,22 @@ body, html, .App, #root {
   float: left;
   text-align: center;
   padding-top: 25%;
-  opacity: .80;
+  opacity: 0.8;
 }
 
-#dropdown-menu-align-right{
-  box-shadow:none!important;
-  border:none;
-  background-color: #F8F9FA!important;
+#dropdown-menu-align-right {
+  box-shadow: none !important;
+  border: none;
+  background-color: #f8f9fa !important;
   padding-top: 0px;
   padding-right: 0px;
   margin-top: 0px;
-  padding-left:0px;
+  padding-left: 0px;
 }
 
 #dropdown-menu-align-right:focus {
   box-shadow: none !important;
-} 
+}
 
 .custom_row {
   display: flex;
@@ -232,41 +242,41 @@ body, html, .App, #root {
   }
 }
 
-@-moz-keyframes blinker {  
-  50% {
-    opacity: 0;
-  }
-  }
-
-@-webkit-keyframes blinker {  
+@-moz-keyframes blinker {
   50% {
     opacity: 0;
   }
 }
 
-.remove_friend{
-  color: #EB3E37;
+@-webkit-keyframes blinker {
+  50% {
+    opacity: 0;
+  }
+}
+
+.remove_friend {
+  color: #eb3e37;
   cursor: pointer;
   font-size: 1rem;
   margin-top: 4%;
 }
 
 .add_friend {
-  color: #0A73F0;
+  color: #0a73f0;
   cursor: pointer;
   font-size: 1rem;
   margin-top: 4%;
 }
 
-.cancel_friend_request{
-  color: #EB3E37;
+.cancel_friend_request {
+  color: #eb3e37;
   cursor: pointer;
   font-size: 1rem;
   margin-top: 4%;
 }
 
-.reject_friend_request{
-  color: #EB3E37;
+.reject_friend_request {
+  color: #eb3e37;
   cursor: pointer;
   font-size: 1rem;
   margin-left: 20px;
@@ -274,25 +284,24 @@ body, html, .App, #root {
 }
 
 .accept_friend_request {
-  color: #58A847;
+  color: #58a847;
   cursor: pointer;
   font-size: 1rem;
   margin-top: 4%;
 }
 
-.sent_friend_request{
-  color: #58A847;
+.sent_friend_request {
+  color: #58a847;
   cursor: pointer;
   font-size: 1rem;
   margin-top: 4%;
 }
 
-
-#notification_popover{
-  width: 225px!important
+#notification_popover {
+  width: 225px !important;
 }
 
-.popover-header{
+.popover-header {
   text-align: center;
-  padding-left: 10%!important;
+  padding-left: 10% !important;
 }

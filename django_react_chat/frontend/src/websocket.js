@@ -1,6 +1,5 @@
 import { SOCKET_URL } from "./settings";
 
-
 class WebSocketService {
   static instance = null;
   callbacks = {};
@@ -17,27 +16,26 @@ class WebSocketService {
   }
 
   connect(type, chatUrl) {
-
     let path = null;
     let self = this;
 
-    if(type === 'chat'){
-      chatUrl = chatUrl.replace(/-/g, '_');
+    if (type === "chat") {
+      chatUrl = chatUrl.replace(/-/g, "_");
       path = `${SOCKET_URL}/ws/${type}/${chatUrl}/`;
-    }else{
-      if(type){
+    } else {
+      if (type) {
         path = `${SOCKET_URL}/ws/${type}/`;
-      }  
+      }
     }
-    if(path){
+    if (path) {
       this.socketRef = new WebSocket(path);
       this.socketRef.onopen = () => {
         console.log("WebSocket open");
       };
-      this.socketRef.onmessage = e => {
+      this.socketRef.onmessage = (e) => {
         self.socketNewMessage(e.data);
       };
-      this.socketRef.onerror = e => {
+      this.socketRef.onerror = (e) => {
         console.log(e.message);
       };
       this.socketRef.onclose = () => {
@@ -49,7 +47,7 @@ class WebSocketService {
 
   disconnect() {
     this.socketRef.removeEventListener("open", () => {
-        //pass
+      //pass
     });
     this.socketRef.removeEventListener("message", () => {
       //pass
@@ -62,11 +60,9 @@ class WebSocketService {
     });
 
     this.socketRef.close();
-
   }
 
   socketNewMessage(data) {
-
     const parsedData = JSON.parse(data);
     const command = parsedData.command;
 
@@ -79,22 +75,25 @@ class WebSocketService {
     if (command === "new_message" && this.callbacks.hasOwnProperty(command)) {
       this.callbacks[command](parsedData.message);
     }
-    if (command === "friend_requests" && this.callbacks.hasOwnProperty(command)) {
+    if (
+      command === "friend_requests" &&
+      this.callbacks.hasOwnProperty(command)
+    ) {
       this.callbacks[command](JSON.parse(parsedData.friend_requests));
     }
     if (command === "chat_requests" && this.callbacks.hasOwnProperty(command)) {
       this.callbacks[command](JSON.parse(parsedData.chat_requests));
     }
-    if(command === "chat_status" && this.callbacks.hasOwnProperty(command)) {
+    if (command === "chat_status" && this.callbacks.hasOwnProperty(command)) {
       this.callbacks[command](parsedData.chat_status);
     }
-    if(command === "is_typing" && this.callbacks.hasOwnProperty(command)) {
+    if (command === "is_typing" && this.callbacks.hasOwnProperty(command)) {
       this.callbacks[command](parsedData.is_typing);
     }
-    if(command === "recent_msg" && this.callbacks.hasOwnProperty(command)) {
+    if (command === "recent_msg" && this.callbacks.hasOwnProperty(command)) {
       this.callbacks[command](parsedData.message);
     }
-    if(command === "last_seen" && this.callbacks.hasOwnProperty(command)) {
+    if (command === "last_seen" && this.callbacks.hasOwnProperty(command)) {
       this.callbacks[command](parsedData.last_seen);
     }
   }
@@ -123,11 +122,18 @@ class WebSocketService {
       recipient_user_id: recipientUserId,
       action: action,
       notification_data: notificationData,
-      command:'fetch_friend_requests'
+      command: "fetch_friend_requests",
     });
   }
 
-  fetchChatRequests(userId, recipientUserId, action, chatId, notificationData, type) {
+  fetchChatRequests(
+    userId,
+    recipientUserId,
+    action,
+    chatId,
+    notificationData,
+    type
+  ) {
     this.sendMessage({
       user_id: userId,
       recipient_user_id: recipientUserId,
@@ -135,33 +141,33 @@ class WebSocketService {
       action: action,
       notification_data: notificationData,
       type: type,
-      command:'fetch_chat_requests'
+      command: "fetch_chat_requests",
     });
   }
 
-  setChatStatus(userId, status, type){
+  setChatStatus(userId, status, type) {
     this.sendMessage({
       user_id: userId,
       status: status,
       type: type,
-      command:'chat_status'
+      command: "chat_status",
     });
   }
 
-  setIsTypingStatus(userId, status, chatId, type){
+  setIsTypingStatus(userId, status, chatId, type) {
     this.sendMessage({
       user_id: userId,
       status: status,
       type: type,
       chat_id: chatId,
-      command:'is_typing'
+      command: "is_typing",
     });
   }
 
-  setLastSeen(data){
+  setLastSeen(data) {
     this.sendMessage({
       data: data,
-      command:'last_seen'
+      command: "last_seen",
     });
   }
 
@@ -171,11 +177,20 @@ class WebSocketService {
     this.callbacks["is_typing"] = isTypingCallBack;
   }
 
-  friendRequestNotificationCallbacks(friendRequestCallback, sessionFriendRequestCallback){
+  friendRequestNotificationCallbacks(
+    friendRequestCallback,
+    sessionFriendRequestCallback
+  ) {
     this.callbacks["friend_requests"] = friendRequestCallback;
   }
 
-  chatRequestNotificationCallbacks(chatRequestCallback, chatStatusCallback, recentMsgCallback, lastSeenMsgCallback, isTypingCallBack){
+  chatRequestNotificationCallbacks(
+    chatRequestCallback,
+    chatStatusCallback,
+    recentMsgCallback,
+    lastSeenMsgCallback,
+    isTypingCallBack
+  ) {
     this.callbacks["chat_requests"] = chatRequestCallback;
     this.callbacks["chat_status"] = chatStatusCallback;
     this.callbacks["recent_msg"] = recentMsgCallback;
@@ -199,10 +214,9 @@ class WebSocketService {
     return this.socketRef;
   }
 
-  getCurrentWsList(){
+  getCurrentWsList() {
     return [...new Set(this.ws)];
   }
-
 }
 
 const WebSocketInstance = WebSocketService.getInstance();

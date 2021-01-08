@@ -4,7 +4,7 @@
 }
 
 .compose::placeholder {
-  text-align: center!important;
+  text-align: center !important;
 }
 
 .compose:focus::placeholder {
@@ -38,8 +38,8 @@
   background: none;
 }
 
-#composeMsg{
-  border-radius: 0.9rem!important;
+#composeMsg {
+  border-radius: 0.9rem !important;
   box-shadow: none;
   outline: none;
 }
@@ -57,60 +57,59 @@
   color: #99999c;
 }
 
-
 #sticky-footer {
   flex-shrink: none;
 }
 
-.composeButtons{
+.composeButtons {
   padding-left: 0% !important;
-  height: calc(1.5em + 0.5rem)
+  height: calc(1.5em + 0.5rem);
 }
 
-.composeIcons{
+.composeIcons {
   cursor: pointer;
   font-size: 1.2rem;
-  color: #0578FA;
+  color: #0578fa;
   margin-left: 10%;
 }
 
-.clear_chat{
-  color: #EB3E37;
+.clear_chat {
+  color: #eb3e37;
   cursor: pointer;
   font-size: 1rem;
 }
 
-.info{
-  color: #58A847;
+.info {
+  color: #58a847;
   cursor: pointer;
   font-size: 1rem;
 }
 
-.disable_send_btn{
+.disable_send_btn {
   opacity: 0.6;
 }
 
-.enable_send_btn{
-  color: #0578FA;
-  font-size: '1.2rem';
-  cursor: pointer; 
+.enable_send_btn {
+  color: #0578fa;
+  font-size: "1.2rem";
+  cursor: pointer;
 }
 
-.scrollToTop{
+.scrollToTop {
   cursor: pointer;
   font-size: 1.2rem;
-  color: #0578FA;
+  color: #0578fa;
   margin-left: 5%;
 }
 
-.message_toolbar{
+.message_toolbar {
   padding: 0px;
   z-index: 10;
   position: sticky;
   top: 0;
 }
 
-.message_image_upload>input {
+.message_image_upload > input {
   display: none;
   cursor: pointer;
 }
