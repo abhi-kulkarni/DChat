@@ -29,7 +29,7 @@ SECRET_KEY = 'e-s%_4r)p^f^^wx!8^#=z0zewg67cv!ve2v712pdmh5f=@jya7'
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
 
-ALLOWED_HOSTS = []
+ALLOWED_HOSTS = ['127.0.0.1', 'localhost']
 
 
 # Application definition
@@ -99,10 +99,14 @@ CSRF_COOKIE_NAME = "csrftoken"
 
 ROOT_URLCONF = 'main.urls'
 
+CORS_ORIGIN_WHITELIST = (
+    'http://localhost',
+)
+
 TEMPLATES = [
     {
         'BACKEND': 'django.template.backends.django.DjangoTemplates',
-        'DIRS': [os.path.join(BASE_DIR, 'frontend/static/dist')],
+        'DIRS': [os.path.join(BASE_DIR, 'frontend/src/build')],
         'APP_DIRS': True,
         'OPTIONS': {
             'context_processors': [
@@ -194,5 +198,5 @@ STATIC_URL = '/static/'
 STATIC_ROOT = os.path.join(BASE_DIR, 'static')
 
 STATICFILES_DIRS = [
-   os.path.join(BASE_DIR, "frontend/static/"),
+   os.path.join(BASE_DIR, "frontend/src/build/static"),
 ]

@@ -4,13 +4,15 @@ import axiosRetry from "axios-retry";
 axios.defaults.xsrfCookieName = "csrftoken";
 axios.defaults.xsrfHeaderName = "X-CSRFToken";
 
+
 const axiosInstance = axios.create({
-  baseURL: process.env.REACT_APP_BASE_API_URL,
+  baseURL: 'http://127.0.0.1:8000/api/',
   headers: {
     timeout: 10000,
     Authorization: "JWT " + localStorage.getItem("accessToken"),
     "Content-Type": "application/json",
     accept: "application/json",
+    'Access-Control-Allow-Origin': '*',
   },
 });
 
@@ -37,7 +39,6 @@ axiosInstance.interceptors.response.use(
             "JWT " + response.data.access;
           originalRequest.headers["Authorization"] =
             "JWT " + response.data.access;
-
           return axiosInstance(originalRequest);
         })
         .catch((err) => {

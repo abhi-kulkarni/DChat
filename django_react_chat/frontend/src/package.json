@@ -2,6 +2,8 @@
   "name": "src",
   "version": "0.1.0",
   "private": true,
+  "homepage": ".",
+  "proxy": "http://127.0.0.1:8000",
   "dependencies": {
     "@babel/core": "7.12.3",
     "@pmmmwh/react-refresh-webpack-plugin": "0.4.2",
@@ -92,7 +94,7 @@
     "workbox-webpack-plugin": "5.1.4"
   },
   "scripts": {
-    "dev": "node scripts/start.js",
+    "dev": "node  scripts/start.js",
     "build": "node scripts/build.js",
     "test": "node scripts/test.js"
   },
@@ -167,11 +169,18 @@
     "resetMocks": true
   },
   "babel": {
-    "plugins": [
-      "react-hot-loader/babel"
-    ],
     "presets": [
-      "react-app"
+      "@babel/env",
+      "@babel/preset-react",
+      {
+        "plugins": [
+          "@babel/plugin-proposal-class-properties",
+          "emotion"
+        ]
+      }
     ]
+  },
+  "devDependencies": {
+    "@babel/plugin-proposal-class-properties": "^7.12.1"
   }
 }
