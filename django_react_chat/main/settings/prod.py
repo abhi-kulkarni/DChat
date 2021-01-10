@@ -4,7 +4,7 @@ from main.settings.base import *
 
 ALLOWED_HOSTS = ['3.7.46.49']
 
-STATIC_URL = '/home/ubuntu/django-react-chat/django_react_chat/static/'
+STATIC_URL = '/home/ubuntu/static/'
 
 try:
     from main.settings.local import *
