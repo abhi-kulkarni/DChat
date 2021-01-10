@@ -193,7 +193,7 @@ SITE_URL = os.environ.get('BASE_URL', config('BASE_URL'))
 
 STATIC_URL = '/static/'
 
-STATIC_ROOT = os.path.join(BASE_DIR, 'static')
+STATIC_ROOT = os.path.join(BASE_DIR, 'frontend/static')
 
 STATICFILES_DIRS = [
    os.path.join(BASE_DIR, "frontend/src/build/static"),
