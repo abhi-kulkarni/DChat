@@ -8,7 +8,7 @@ https://docs.djangoproject.com/en/3.1/howto/deployment/asgi/
 """
 
 import os
-
+from decouple import config
 from django.core.asgi import get_asgi_application
 
 if os.environ.get('ENV', config('ENV')) == 'dev':

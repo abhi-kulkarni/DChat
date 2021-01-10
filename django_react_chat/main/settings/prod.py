@@ -1,4 +1,5 @@
 from main.settings.base import *
+from decouple import config
 
 # Override base.py settings here
 
