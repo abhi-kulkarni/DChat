@@ -126,7 +126,7 @@ CHANNEL_LAYERS = {
     'default': {
         'BACKEND': 'channels_redis.core.RedisChannelLayer',
         'CONFIG': {
-            "hosts": [('127.0.0.1', 6379)],
+            "hosts": [(os.environ.get('REDIS_SERVER', config('REDIS_SERVER')), 6379)],
         },
     },
 }
@@ -144,9 +144,6 @@ DATABASES = {
         'PORT': os.environ.get('DB_PORT', config('DB_PORT')),
         'OPTIONS': {
             'charset': 'utf8mb4'
-        },
-        'TEST': {
-            'NAME': os.environ.get('TEST_DB_NAME', config('TEST_DB_NAME')),
         }
     }
 }
