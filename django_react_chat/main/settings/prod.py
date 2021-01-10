@@ -5,7 +5,7 @@ from decouple import config
 
 ALLOWED_HOSTS = ['3.7.46.49']
 
-STATIC_URL = '/home/ubuntu/static/'
+STATIC_URL = '/home/ubuntu/'
 
 try:
     from main.settings.local import *
