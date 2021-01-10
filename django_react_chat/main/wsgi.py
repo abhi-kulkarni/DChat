@@ -11,7 +11,7 @@ import os
 
 from django.core.wsgi import get_wsgi_application
 
-if os.environ['ENV'] == 'dev':
+if os.environ.get('ENV', config('ENV')) == 'dev':
     os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'main.settings.dev')
 else:
     os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'main.settings.prod')
