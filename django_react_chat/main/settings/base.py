@@ -111,6 +111,7 @@ TEMPLATES = [
         },
     },
 ]
+
 CSRF_COOKIE_NAME = "csrftoken"
 
 WSGI_APPLICATION = 'main.wsgi.application'
