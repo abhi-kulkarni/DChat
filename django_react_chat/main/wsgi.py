@@ -11,7 +11,7 @@ import os
 from decouple import config
 from django.core.wsgi import get_wsgi_application
 
-if os.environ.get('ENV', config('ENV')) == 'dev':
+if config('ENV') == 'dev':
     os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'main.settings.dev')
 else:
     os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'main.settings.prod')

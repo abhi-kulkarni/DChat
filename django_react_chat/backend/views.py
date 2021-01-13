@@ -65,6 +65,7 @@ def signout(request):
 
 
 @api_view(["POST"])
+@permission_classes([AllowAny])
 def signup(request):
     error_msg = 'Some error occured.'
     try:

@@ -21,10 +21,10 @@ class WebSocketService {
 
     if (type === "chat") {
       chatUrl = chatUrl.replace(/-/g, "_");
-      path = `${SOCKET_URL}/ws/${type}/${chatUrl}/`;
+      path = `ws://127.0.0.1/ws/${type}/${chatUrl}/`;
     } else {
       if (type) {
-        path = `${SOCKET_URL}/ws/${type}/`;
+        path = `ws://127.0.0.1/ws/${type}/`;
       }
     }
     if (path) {
