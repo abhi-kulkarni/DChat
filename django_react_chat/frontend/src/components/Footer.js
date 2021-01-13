@@ -12,7 +12,7 @@ function Footer(props) {
         <Navbar.Collapse id="responsive-navbar-nav">
           <Nav className="ml-auto">
             <Nav.Link href="/" style={{ fontSize: "0.8rem" }}>
-              © 2020 Copyright Neutrino.io
+              © 2020 Copyright RollingMatrix.com
             </Nav.Link>
           </Nav>
         </Navbar.Collapse>

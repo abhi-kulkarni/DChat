@@ -804,7 +804,7 @@ function Header(props) {
             className="img-fluid d-inline-block align-top"
           />{" "}
           <span style={{ padding: "5%", fontSize: "1.1rem", color: "gray" }}>
-            Neutrino.io
+            Rolling Matrix
           </span>
         </Navbar.Brand>
         <Navbar.Toggle aria-controls="responsive-navbar-nav" />
