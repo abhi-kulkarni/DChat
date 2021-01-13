@@ -6,7 +6,7 @@ from decouple import config
 
 def main():
     """Run administrative tasks."""
-    if os.environ.get('ENV', config('ENV')) == 'dev':
+    if config('ENV') == 'dev':
         os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'main.settings.dev')
     else:
         os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'main.settings.prod')

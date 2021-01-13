@@ -55,6 +55,8 @@ module.exports = {
   appBuild: resolveApp('build'),
   appPublic: resolveApp('public'),
   appHtml: resolveApp('../templates/frontend/index.html'),
+  appBuildStatic:resolveApp('build/static'),
+  appStatic:resolveApp('../static'),
   appIndexJs: resolveModule(resolveApp, 'index'),
   appPackageJson: resolveApp('package.json'),
   appSrc: resolveApp('src'),

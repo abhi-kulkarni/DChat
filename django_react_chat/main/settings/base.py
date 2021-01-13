@@ -28,8 +28,6 @@ SECRET_KEY = config('SECRET_KEY')
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = config('DEBUG')
 
-ALLOWED_HOSTS = ['127.0.0.1', 'localhost']
-
 # Application definition
 
 INSTALLED_APPS = [
@@ -97,10 +95,6 @@ CORS_ORIGIN_ALLOW_ALL = True
 CSRF_COOKIE_NAME = "csrftoken"
 
 ROOT_URLCONF = 'main.urls'
-
-CORS_ORIGIN_WHITELIST = (
-    'http://localhost',
-)
 
 TEMPLATES = [
     {

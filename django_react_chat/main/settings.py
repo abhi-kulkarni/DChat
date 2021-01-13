@@ -17,20 +17,16 @@ from datetime import timedelta
 import rest_framework_jwt
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
-BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+BASE_DIR = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 # Quick-start development settings - unsuitable for production
 # See https://docs.djangoproject.com/en/3.1/howto/deployment/checklist/
 
 # SECURITY WARNING: keep the secret key used in production secret!
-SECRET_KEY = os.environ.get('SECRET_KEY', config('SECRET_KEY'))
-
+SECRET_KEY = config('SECRET_KEY')
 
 # SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = True
-
-ALLOWED_HOSTS = ['127.0.0.1', 'localhost']
-
+DEBUG = config('DEBUG')
 
 # Application definition
 
@@ -55,6 +51,7 @@ REST_FRAMEWORK = {
 ),
 'DEFAULT_AUTHENTICATION_CLASSES': (
     'rest_framework.authentication.SessionAuthentication',
+    'rest_framework.authentication.TokenAuthentication',
     'rest_framework.authentication.BasicAuthentication',
     'rest_framework_simplejwt.authentication.JWTAuthentication',
 )
@@ -99,10 +96,6 @@ CSRF_COOKIE_NAME = "csrftoken"
 
 ROOT_URLCONF = 'main.urls'
 
-CORS_ORIGIN_WHITELIST = (
-    'http://localhost',
-)
-
 TEMPLATES = [
     {
         'BACKEND': 'django.template.backends.django.DjangoTemplates',
@@ -128,7 +121,11 @@ CHANNEL_LAYERS = {
     'default': {
         'BACKEND': 'channels_redis.core.RedisChannelLayer',
         'CONFIG': {
-            "hosts": [('127.0.0.1', 6379)],
+            "hosts": [(config('REDIS_SERVER'), 6379)],
+	    "channel_capacity": {
+               "http.request": 200,
+               "websocket.send*": 20,
+             },
         },
     },
 }
@@ -138,17 +135,14 @@ CHANNEL_LAYERS = {
 
 DATABASES = {
     'default': {
-        'ENGINE': os.environ.get('DB_ENGINE', config('DB_ENGINE')),
-        'NAME': os.environ.get('DB_NAME', config('DB_NAME')),
-        'USER': os.environ.get('DB_USER', config('DB_USER')),
-        'PASSWORD': os.environ.get('DB_PASSWORD', config('DB_PASSWORD')),
-        'HOST': os.environ.get('DB_HOST', config('DB_HOST')),
-        'PORT': os.environ.get('DB_PORT', config('DB_PORT')),
+        'ENGINE': config('DB_ENGINE'),
+        'NAME': config('DB_NAME'),
+        'USER': config('DB_USER'),
+        'PASSWORD': config('DB_PASSWORD'),
+        'HOST': config('DB_HOST'),
+        'PORT': config('DB_PORT'),
         'OPTIONS': {
             'charset': 'utf8mb4'
-        },
-        'TEST': {
-            'NAME': os.environ.get('TEST_DB_NAME', config('TEST_DB_NAME')),
         }
     }
 }
@@ -188,7 +182,7 @@ USE_L10N = True
 
 USE_TZ = True
 
-SITE_URL = os.environ.get('BASE_URL', config('BASE_URL'))
+SITE_URL = config('BASE_URL')
 
 # Static files (CSS, JavaScript, Images)
 # https://docs.djangoproject.com/en/3.1/howto/static-files/
