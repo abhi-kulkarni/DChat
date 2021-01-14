@@ -5,6 +5,7 @@ import React, {
   forwardRef,
   useImperativeHandle,
 } from "react";
+import {isMobile, isMobileOnly} from 'react-device-detect';
 import Toolbar from "../Toolbar";
 import Message from "../Message";
 import moment from "moment";
@@ -22,7 +23,7 @@ import {
   FaInfoCircle,
   FaMicrophone,
   FaTrash,
-  FaArrowUp,
+  FaShare,
 } from "react-icons/fa";
 import OverlayTrigger from "react-bootstrap/OverlayTrigger";
 import Tooltip from "react-bootstrap/Tooltip";
@@ -332,7 +333,7 @@ const MessageList = forwardRef((props, ref) => {
           temp["img_url"] = uploadImgSrc;
           temp["type"] = "image";
           sendNewMessage(temp);
-        } else {
+        } else if(e.target.value.length > 0) {
           temp["type"] = "text";
           sendNewMessage(temp);
         }
@@ -532,44 +533,6 @@ const MessageList = forwardRef((props, ref) => {
           ) : (
             ""
           )}
-          {uploadImgSrc ? (
-            <Col
-              style={{ padding: "0px" }}
-              xs={12}
-              sm={12}
-              md={12}
-              lg={12}
-              xl={12}
-            >
-              <Row style={{ padding: "0px", margin: "0px" }}>
-                <Col
-                  xl={4}
-                  lg={4}
-                  md={8}
-                  sm={8}
-                  xs={8}
-                  style={{ padding: "0px", position: "relative" }}
-                >
-                  <FaTimes
-                    onClick={cancelImgMsg}
-                    style={{
-                      color: "red",
-                      cursor: "pointer",
-                      position: "absolute",
-                      right: "-16px",
-                      top: "-10px",
-                    }}
-                  />
-                  <img
-                    className="upload_img_msg img-fluid"
-                    src={uploadImgSrc}
-                  />
-                </Col>
-              </Row>
-            </Col>
-          ) : (
-            ""
-          )}
           {showEmojiPicker ? (
             <Col xs={12} sm={12} md={12} lg={12} xl={12}>
               <Row style={{ padding: "0px", margin: "0px" }}>
@@ -601,7 +564,25 @@ const MessageList = forwardRef((props, ref) => {
           lg={12}
           xl={12}
         >
-          <Row className="compose" style={{ padding: "0px", margin: "0px" }}>
+        {uploadImgSrc ? 
+          <Row style={{padding: '0px', margin: isMobileOnly?'0px 0px 70px 0px':'0px 0px 40px 0px', height: '100%' ,backgroundColor: '#f4f5f7', borderRadius: '10px'}}>
+            <Col style={{ width: '100%', height: '100%' }} className="square" xl={4} lg={4} md={6} sm={11} xs={10}>
+              <img style={{ padding: '15px', maxHeight: '100%', maxWidth: '100%', minWidth: '100%'}} src={uploadImgSrc} />
+            </Col>
+            <Col style={{ paddingLeft: '0px' }} xl={1} lg={1} md={1} sm={1} xs={1}>
+            <OverlayTrigger
+                key="bottom"
+                placement="top"
+                overlay={
+                  <Tooltip id="cancel_img_msg_tooltip">
+                    <span>Cancel</span>
+                  </Tooltip>
+                }
+              ><FaTimes onClick={() => cancelImgMsg()} style={{ marginTop: '8px', marginLeft: '-8px', cursor: 'pointer', color: 'red', float: 'left' }} />
+              </OverlayTrigger>
+            </Col>
+          </Row>: ""}
+          <Row className="compose" style={{ padding: "0px", margin: "10px 0px 0px 0px" }}>
             <Col
               style={{ paddingLeft: "0px" }}
               xs={6}
@@ -645,7 +626,7 @@ const MessageList = forwardRef((props, ref) => {
                     overlay={
                       <Tooltip
                         style={{
-                          display: inputMsg.length > 0 ? "block" : "none",
+                          display: inputMsg.length > 0 || uploadImgSrc ? "block" : "none",
                         }}
                         id="send_msg_tooltip"
                       >
@@ -656,7 +637,7 @@ const MessageList = forwardRef((props, ref) => {
                     <FaPaperPlane
                       onClick={() => handleMessageInput()}
                       className={
-                        inputMsg.length > 0
+                        inputMsg.length > 0 || uploadImgSrc
                           ? "enable_send_btn"
                           : "disable_send_btn"
                       }

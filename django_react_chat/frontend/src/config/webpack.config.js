@@ -37,6 +37,13 @@ const shouldUseSourceMap = process.env.GENERATE_SOURCEMAP !== 'false';
 const webpackDevClientEntry = require.resolve(
   'react-dev-utils/webpackHotDevClient'
 );
+
+const customWebpackDevClientEntry = require.resolve(
+  'webpack-dev-server/client'
+) + '?http://localhost:3000';
+
+const customHotReloadDev = require.resolve('webpack/hot/only-dev-server');
+
 const reactRefreshOverlayEntry = require.resolve(
   'react-dev-utils/refreshOverlayInterop'
 );
@@ -183,7 +190,8 @@ module.exports = function (webpackEnv) {
             //
             // When using the experimental react-refresh integration,
             // the webpack plugin takes care of injecting the dev client for us.
-            webpackDevClientEntry,
+            customWebpackDevClientEntry,
+            customHotReloadDev,
             // Finally, this is your app's code:
             paths.appIndexJs,
             // We include the app code last so that if there is a runtime error during
@@ -385,6 +393,12 @@ module.exports = function (webpackEnv) {
                 limit: imageInlineSizeLimit,
                 name: 'static/media/[name].[hash:8].[ext]',
               },
+            },
+            // Custom Hot reload Code
+            {
+              test: /\.(js|mjs|jsx|ts|tsx)$/,
+              include: paths.appSrc,
+              loader: 'react-hot',
             },
             // Process application JS with Babel.
             // The preset includes JSX, Flow, TypeScript, and some ESnext features.
@@ -612,6 +626,7 @@ module.exports = function (webpackEnv) {
         new ReactRefreshWebpackPlugin({
           overlay: {
             entry: webpackDevClientEntry,
+
             // The expected exports are slightly different from what the overlay exports,
             // so an interop is included here to enable feedback on module-level errors.
             module: reactRefreshOverlayEntry,

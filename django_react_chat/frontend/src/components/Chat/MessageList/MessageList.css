@@ -113,3 +113,14 @@
   display: none;
   cursor: pointer;
 }
+
+.i {
+  height: 150px;
+  width: 150px;
+}
+
+.square {
+  padding: 0px!important;
+  height: 150px;
+  width: 150px;
+}

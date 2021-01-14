@@ -1,4 +1,3 @@
-import { hot } from 'react-hot-loader/root';
 import React, { Component } from "react";
 import { withRouter } from "react-router-dom";
 import CustomRouter from "./router";
@@ -12,5 +11,4 @@ return (
 );
 }
 
-
-export default hot(withRouter(App));
+export default withRouter(App);

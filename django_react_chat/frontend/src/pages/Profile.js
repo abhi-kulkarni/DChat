@@ -53,7 +53,7 @@ function Profile(props) {
       <div id="overlay">
         <AtomSpinner />
       </div>
-      Hello {JSON.stringify(curr_user_data.username)}
+      Hello {curr_user_data?JSON.stringify(curr_user_data.username):''}
     </div>
   );
 }
