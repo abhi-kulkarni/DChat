@@ -76,7 +76,6 @@ JWT_AUTH: {
     'JWT_RESPONSE_PAYLOAD_HANDLER': 'main.utils.custom_jwt_response_handler'
 }
 
-
 MIDDLEWARE = [
     'corsheaders.middleware.CorsMiddleware',
     'django.middleware.security.SecurityMiddleware',
@@ -89,8 +88,6 @@ MIDDLEWARE = [
 ]
 
 CORS_ALLOW_CREDENTIALS = True
-
-CORS_ORIGIN_ALLOW_ALL = True
 
 CSRF_COOKIE_NAME = "csrftoken"
 
@@ -111,8 +108,6 @@ TEMPLATES = [
         },
     },
 ]
-
-CSRF_COOKIE_NAME = "csrftoken"
 
 WSGI_APPLICATION = 'main.wsgi.application'
 
@@ -168,7 +163,6 @@ AUTH_PASSWORD_VALIDATORS = [
         'NAME': 'django.contrib.auth.password_validation.NumericPasswordValidator',
     },
 ]
-
 
 # Internationalization
 # https://docs.djangoproject.com/en/3.1/topics/i18n/

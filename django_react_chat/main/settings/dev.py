@@ -1,9 +1,12 @@
-
 from main.settings.base import *
 from decouple import config
 
-# Override base.py settings here
 ALLOWED_HOSTS = ['127.0.0.1', 'localhost']
+
+CORS_ORIGIN_WHITELIST = [
+    'http://localhost:3000',
+    'http://127.0.0.1:3000'
+]
 
 try:
     from main.settings.local import *
