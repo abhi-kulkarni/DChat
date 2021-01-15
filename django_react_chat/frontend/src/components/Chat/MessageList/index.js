@@ -64,6 +64,8 @@ const MessageList = forwardRef((props, ref) => {
     const session_is_typing = useSelector((state) => state.session.is_typing);
     const [isTypingMsg, setIsTypingMsg] = useState({});
     const [uploadImgSrc, setUploadImgSrc] = useState("");
+    const Compress = require('compress.js')
+    const compress = new Compress()
 
     useEffect(() => {
       document.addEventListener("mousedown", handleClickOutside, false);
@@ -368,14 +370,36 @@ const MessageList = forwardRef((props, ref) => {
       e.preventDefault();
       let reader = new FileReader();
       let file = e.target.files[0];
-      reader.onloadend = async () => {
-        let result = await reader.result;
-        if (result) {
-          setUploadImgSrc(result);
+      const files = [...e.target.files]
+      compress.compress(files, {
+        size: 4, // the max size in MB, defaults to 2MB
+        quality: .40, // the quality of the image, max is 1,
+        maxWidth: 1920, // the max width of the output image, defaults to 1920px
+        maxHeight: 1920, // the max height of the output image, defaults to 1920px
+        resize: true, // defaults to true, set false if you do not want to resize the image width and height
+      }).then((data) => {
+        let compressedImg = data[0]
+        let prefix = compressedImg.prefix;
+        let base64str = compressedImg.data
+        let imgExt = compressedImg.ext
+        let file = Compress.convertBase64ToFile(base64str, imgExt);
+        let output_img_src = prefix+base64str;
+        if(file.size > 1048576){
+          alert("File is too big!");
+        }else{
+          console.log(file.size);
+          setUploadImgSrc(output_img_src);
           scrollToBottom();
         }
-      };
-      reader.readAsDataURL(file);
+      })
+      // reader.onloadend = async () => {
+      //   let result = await reader.result;
+      //   if (result) {
+      //     setUploadImgSrc(result);
+      //     scrollToBottom();
+      //   }
+      // };
+      // reader.readAsDataURL(file);
     };
 
     const sendNewMessage = (message) => {
