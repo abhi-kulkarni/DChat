@@ -313,8 +313,8 @@ const MessageList = forwardRef((props, ref) => {
     };
 
     const handleEmojiPicker = () => {
-      let showEmojiPicker = !showEmojiPicker;
-      setShowEmojiPicker(showEmojiPicker);
+      let showEmojiPicker_obj = !showEmojiPicker;
+      setShowEmojiPicker(showEmojiPicker_obj);
     };
 
     const handleChange = (e) => {
@@ -451,133 +451,113 @@ const MessageList = forwardRef((props, ref) => {
     };
 
     return (
-      <Row className="conversation-list-row">
-        <div style={{ display: "none" }}>
-          <Dialog
+      <div className="wrapper_msg_list">
+        <div className="header_msg_list">
+          <Row styl={{padding: '0px', margin: '0px'}}>
+            <Col
+            className="message_toolbar"
             ref={(el) => {
-              CustomDialog = el;
+              messagesStart = el;
             }}
-          />
-        </div>
-        <Col
-          className="message_toolbar"
-          ref={(el) => {
-            messagesStart = el;
-          }}
-          xs={12}
-          sm={12}
-          md={12}
-          lg={12}
-          xl={12}
-        >
-          <Toolbar
-            title={currUserData.name ? currUserData.name : "Begin Conversation"}
-            leftItems={[
-              <OverlayTrigger
-                key="bottom"
-                placement="top"
-                overlay={
-                  <Tooltip id="info_tooltip">
-                    <span>Info</span>
-                  </Tooltip>
-                }
-              >
-                <FaInfoCircle className="info" />
-              </OverlayTrigger>,
-            ]}
-            rightItems={[
-              <OverlayTrigger
-                key="bottom"
-                placement="top"
-                overlay={
-                  <Tooltip id="clear_chat_tooltip">
-                    <span>Clear Chat</span>
-                  </Tooltip>
-                }
-              >
-                <FaTrash
-                  onClick={() => clearChatRef("1")}
-                  className="clear_chat"
-                />
-              </OverlayTrigger>,
-            ]}
-          />
-        </Col>
-
-        <Col
-          style={{ marginBottom: "calc(1.5em + 3rem + 2px)" }}
-          xs={12}
-          sm={12}
-          md={12}
-          lg={12}
-          xl={12}
-        >
-          {msgLoading ? (
-            <div className="container">
-              <PulseLoader
-                css={override}
-                size={30}
-                color={"#0A73F0"}
-                loading={msgLoading}
-              />
-            </div>
-          ) : (
-            ""
-          )}
-          {renderMessages()}
-          {isTypingMsg &&
-          isTypingMsg.hasOwnProperty(currUserData.user_id) &&
-          isTypingMsg[currUserData.user_id] ? (
-            <Row style={{ padding: "0px", margin: "15px 0px 0px 0px" }}>
-              <Col xs={4} sm={3} md={2} lg={1} xl={1}>
-                <PulseLoader
-                  size={8}
-                  css={typingcss}
-                  color={"#0A73F0"}
-                  loading={
-                    isTypingMsg &&
-                    isTypingMsg.hasOwnProperty(currUserData.user_id)
-                      ? isTypingMsg[currUserData.user_id]
-                      : false
+            xs={12}
+            sm={12}
+            md={12}
+            lg={12}
+            xl={12}
+          >
+            <Toolbar
+              title={currUserData.name ? currUserData.name : "Begin Conversation"}
+              leftItems={[
+                <OverlayTrigger
+                  key="bottom"
+                  placement="top"
+                  overlay={
+                    <Tooltip id="info_tooltip">
+                      <span>Info</span>
+                    </Tooltip>
                   }
-                />
-              </Col>
-              <Col
-                style={{ padding: "0px" }}
-                xs={7}
-                sm={7}
-                md={7}
-                lg={11}
-                xl={11}
-              >
-                <span style={{ fontSize: "0.8rem", color: "#0A73F0" }}>
-                  {currUserData.name} is typing ...
-                </span>
-              </Col>
-            </Row>
-          ) : (
-            ""
-          )}
-          {showEmojiPicker ? (
-            <Col xs={12} sm={12} md={12} lg={12} xl={12}>
-              <Row style={{ padding: "0px", margin: "0px" }}>
-                <Col
-                  ref={emojiInputRef}
-                  style={{
-                    padding: "0px",
-                    bottom: "15%",
-                    left: "66%",
-                    position: "fixed",
-                  }}
                 >
-                  <Picker onEmojiClick={onEmojiClick} />
+                  <FaInfoCircle className="info" />
+                </OverlayTrigger>,
+              ]}
+              rightItems={[
+                <OverlayTrigger
+                  key="bottom"
+                  placement="top"
+                  overlay={
+                    <Tooltip id="clear_chat_tooltip">
+                      <span>Clear Chat</span>
+                    </Tooltip>
+                  }
+                >
+                  <FaTrash
+                    onClick={() => clearChatRef("1")}
+                    className="clear_chat"
+                  />
+                </OverlayTrigger>,
+              ]}
+            />
+          </Col>
+          </Row>
+        </div>
+        <div className="content_msg_list">
+          <div style={{ overFlowY: 'scroll', height: '1px' }}>
+            {renderMessages()}
+            {isTypingMsg &&
+            isTypingMsg.hasOwnProperty(currUserData.user_id) &&
+            isTypingMsg[currUserData.user_id] ? (
+              <Row style={{ padding: "0px", margin: "15px 0px 0px 0px" }}>
+                <Col xs={4} sm={3} md={2} lg={1} xl={1}>
+                  <PulseLoader
+                    size={8}
+                    css={typingcss}
+                    color={"#0A73F0"}
+                    loading={
+                      isTypingMsg &&
+                      isTypingMsg.hasOwnProperty(currUserData.user_id)
+                        ? isTypingMsg[currUserData.user_id]
+                        : false
+                    }
+                  />
+                </Col>
+                <Col
+                  style={{ padding: "0px" }}
+                  xs={7}
+                  sm={7}
+                  md={7}
+                  lg={11}
+                  xl={11}
+                >
+                  <span style={{ fontSize: "0.8rem", color: "#0A73F0" }}>
+                    {currUserData.name} is typing ...
+                  </span>
                 </Col>
               </Row>
-            </Col>
-          ) : (
-            ""
-          )}
-        </Col>
+            ) : (
+              ""
+            )}
+            {showEmojiPicker ? (
+              <Col xs={12} sm={12} md={12} lg={12} xl={12}>
+                <Row style={{ padding: "0px", margin: "0px" }}>
+                  <Col
+                    ref={emojiInputRef}
+                    style={{
+                      padding: "0px",
+                      bottom: "15%",
+                      left: "66%",
+                      position: "fixed",
+                    }}
+                  >
+                    <Picker onEmojiClick={onEmojiClick} />
+                  </Col>
+                </Row>
+              </Col>
+            ) : (
+              ""
+            )}
+          </div>
+        </div>
+        <div className="footer_msg_list">
         <Col
           id="messagesBottom"
           ref={(el) => {
@@ -590,7 +570,7 @@ const MessageList = forwardRef((props, ref) => {
           xl={12}
         >
         {uploadImgSrc ? 
-          <Row style={{padding: '0px', margin: isMobileOnly?'0px 0px 70px 0px':'0px 0px 40px 0px', height: '100%' ,backgroundColor: '#f4f5f7', borderRadius: '10px'}}>
+          <Row style={{padding: '0px', height: '100%' ,backgroundColor: '#f4f5f7', borderRadius: '10px'}}>
             <Col style={{ width: '100%', height: '100%' }} className="square" xl={4} lg={4} md={6} sm={11} xs={10}>
               <img style={{ padding: '15px', maxHeight: '100%', maxWidth: '100%', minWidth: '100%'}} src={uploadImgSrc} />
             </Col>
@@ -607,14 +587,14 @@ const MessageList = forwardRef((props, ref) => {
               </OverlayTrigger>
             </Col>
           </Row>: ""}
-          <Row className="compose" style={{ padding: "0px", margin: "10px 0px 0px 0px" }}>
+          <Row style={{padding: '0px', margin: '0px'}}>
             <Col
-              style={{ paddingLeft: "0px" }}
-              xs={6}
-              sm={6}
+              style={{ padding: "0px" }}
+              xs={12}
+              sm={12}
               md={7}
-              lg={7}
-              xl={7}
+              lg={9}
+              xl={10}
             >
               <Form onSubmit={(e) => e.preventDefault()}>
                 <Form.Group controlId="composeMsg" className="compose-input">
@@ -639,9 +619,9 @@ const MessageList = forwardRef((props, ref) => {
               className="composeButtons"
               xs={12}
               sm={12}
-              md={12}
-              lg={4}
-              xl={4}
+              md={5}
+              lg={3}
+              xl={2}
             >
               <Row style={{ margin: "0px", padding: "0px" }}>
                 <Col xl={1} lg={1} md={1} sm={1} xs={1}>
@@ -723,9 +703,10 @@ const MessageList = forwardRef((props, ref) => {
                 </Col>
               </Row>
             </Col>
-          </Row>
-        </Col>
-      </Row>
+            </Row>
+            </Col>
+        </div>
+      </div>
     );
   }
 });

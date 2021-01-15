@@ -27,7 +27,7 @@ const Messenger = forwardRef((props, ref) => {
         <Col className="conversation_list" xs={5} sm={5} md={5} lg={3} xl={3}>
           <ConversationList hasSeen={seen} />
         </Col>
-        <Col className="msg_list" xs={7} sm={7} md={7} lg={9} xl={9}>
+        <Col xs={7} sm={7} md={7} lg={9} xl={9}>
           {location.state ? <MessageList onHandleSeen={handleSeen} /> : ""}
         </Col>
       </Row>
