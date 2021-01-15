@@ -384,16 +384,17 @@ const MessageList = forwardRef((props, ref) => {
         let imgExt = compressedImg.ext
         let file = Compress.convertBase64ToFile(base64str, imgExt);
         let output_img_src = prefix+base64str;
+        console.log(output_img_src);
         if(file.size > 1048576){
           alert("File is too big!");
         }else{
-          console.log(file.size);
           setUploadImgSrc(output_img_src);
           scrollToBottom();
         }
       })
       // reader.onloadend = async () => {
       //   let result = await reader.result;
+      //   console.log(result)
       //   if (result) {
       //     setUploadImgSrc(result);
       //     scrollToBottom();
