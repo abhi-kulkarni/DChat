@@ -24,10 +24,10 @@ const Messenger = forwardRef((props, ref) => {
 
     return (
       <Row style={{ padding: "0px", margin: "0px", minHeight: "0px" }}>
-        <Col className="conversation_list" xs={5} sm={5} md={5} lg={3} xl={3}>
+        <Col className="conversation_list" xs={5} sm={5} md={4} lg={3} xl={3}>
           <ConversationList hasSeen={seen} />
         </Col>
-        <Col xs={7} sm={7} md={7} lg={9} xl={9}>
+        <Col xs={7} sm={7} md={8} lg={9} xl={9}>
           {location.state ? <MessageList onHandleSeen={handleSeen} /> : ""}
         </Col>
       </Row>

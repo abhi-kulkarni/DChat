@@ -5,7 +5,7 @@ import React, {
   forwardRef,
   useImperativeHandle,
 } from "react";
-import {isMobile, isMobileOnly} from 'react-device-detect';
+import {isMobile, isMobileOnly, isTablet} from 'react-device-detect';
 import Toolbar from "../Toolbar";
 import Message from "../Message";
 import moment from "moment";
@@ -384,7 +384,6 @@ const MessageList = forwardRef((props, ref) => {
         let imgExt = compressedImg.ext
         let file = Compress.convertBase64ToFile(base64str, imgExt);
         let output_img_src = prefix+base64str;
-        console.log(output_img_src);
         if(file.size > 1048576){
           alert("File is too big!");
         }else{
@@ -392,15 +391,6 @@ const MessageList = forwardRef((props, ref) => {
           scrollToBottom();
         }
       })
-      // reader.onloadend = async () => {
-      //   let result = await reader.result;
-      //   console.log(result)
-      //   if (result) {
-      //     setUploadImgSrc(result);
-      //     scrollToBottom();
-      //   }
-      // };
-      // reader.readAsDataURL(file);
     };
 
     const sendNewMessage = (message) => {
@@ -502,7 +492,24 @@ const MessageList = forwardRef((props, ref) => {
         </div>
         <div className="content_msg_list">
           <div style={{ overFlowY: 'scroll', height: '1px' }}>
+          {msgLoading ? (
+            <div className="container">
+              <PulseLoader
+                css={override}
+                size={30}
+                color={"#0A73F0"}
+                loading={msgLoading}
+              />
+            </div>
+          ) : (
+            ""
+          )}
             {renderMessages()}
+            <div id="messagesBottom"
+              ref={(el) => {
+              messagesEnd = el;
+            }}>
+            </div>
             {isTypingMsg &&
             isTypingMsg.hasOwnProperty(currUserData.user_id) &&
             isTypingMsg[currUserData.user_id] ? (
@@ -536,19 +543,15 @@ const MessageList = forwardRef((props, ref) => {
             ) : (
               ""
             )}
-            {showEmojiPicker ? (
+            {showEmojiPicker && !isMobile && !isTablet? (
               <Col xs={12} sm={12} md={12} lg={12} xl={12}>
                 <Row style={{ padding: "0px", margin: "0px" }}>
-                  <Col
-                    ref={emojiInputRef}
-                    style={{
+                  <Col xl={4} lg={4} md={4} sm={4} xs={4} style={{ padding: '0px' }}>
+                    <Picker ref={emojiInputRef}
+                      style={{
                       padding: "0px",
-                      bottom: "15%",
-                      left: "66%",
                       position: "fixed",
-                    }}
-                  >
-                    <Picker onEmojiClick={onEmojiClick} />
+                    }} onEmojiClick={onEmojiClick} />
                   </Col>
                 </Row>
               </Col>
@@ -559,10 +562,6 @@ const MessageList = forwardRef((props, ref) => {
         </div>
         <div className="footer_msg_list">
         <Col
-          id="messagesBottom"
-          ref={(el) => {
-            messagesEnd = el;
-          }}
           xs={12}
           sm={12}
           md={12}
@@ -571,11 +570,9 @@ const MessageList = forwardRef((props, ref) => {
         >
         {uploadImgSrc ? 
           <Row style={{padding: '0px', height: '100%' ,backgroundColor: '#f4f5f7', borderRadius: '10px'}}>
-            <Col style={{ width: '100%', height: '100%' }} className="square" xl={4} lg={4} md={6} sm={11} xs={10}>
-              <img style={{ padding: '15px', maxHeight: '100%', maxWidth: '100%', minWidth: '100%'}} src={uploadImgSrc} />
-            </Col>
-            <Col style={{ paddingLeft: '0px' }} xl={1} lg={1} md={1} sm={1} xs={1}>
-            <OverlayTrigger
+            <Col className="img_div_msg_list" xl={2} lg={2} md={6} sm={11} xs={10}>
+              <img className="img-fluid square_msg_list" style={{ position: 'relative', padding: '15px' }} src={uploadImgSrc} />
+              <OverlayTrigger
                 key="bottom"
                 placement="top"
                 overlay={
@@ -583,7 +580,7 @@ const MessageList = forwardRef((props, ref) => {
                     <span>Cancel</span>
                   </Tooltip>
                 }
-              ><FaTimes onClick={() => cancelImgMsg()} style={{ marginTop: '8px', marginLeft: '-8px', cursor: 'pointer', color: 'red', float: 'left' }} />
+              ><FaTimes onClick={() => cancelImgMsg()} style={{ position:'absolute', borderRadius: '50%',  border: '1px solid gray', backgroundColor: 'white', cursor: 'pointer', color: 'gray' }} />
               </OverlayTrigger>
             </Col>
           </Row>: ""}

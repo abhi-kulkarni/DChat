@@ -144,3 +144,16 @@
   padding: 0 5px;
   overflow-y: scroll;
 }
+
+.img_div_msg_list{
+  padding: 0px !important;
+  height: 150px;
+  width: 150px;
+}
+
+.square_msg_list {
+  padding: 5px!important;
+  height: 150px;
+  width: 350px;
+  border-radius: 10px;
+}
