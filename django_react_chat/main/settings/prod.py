@@ -16,10 +16,6 @@ SECURE_HSTS_SECONDS = 31536000
 
 # STATIC_URL = '/home/ubuntu/'
 
-StaticRootS3BotoStorage = lambda: S3Boto3Storage(location='rolling_matrix/static')
-
-MediaRootS3BotoStorage = lambda: S3Boto3Storage(location='rolling_matrix/media')
-
 AWS_ACCESS_KEY_ID = config('AWS_ACCESS_KEY_ID')
 
 AWS_SECRET_ACCESS_KEY = config('AWS_SECRET_ACCESS_KEY')
@@ -30,10 +26,9 @@ AWS_S3_FILE_OVERWRITE = False
 
 AWS_DEFAULT_ACL = None
 
-DEFAULT_FILE_STORAGE = MediaRootS3BotoStorage
+STATICFILES_STORAGE = 'myapp.s3utils.StaticRootS3BotoStorage'
 
-STATICFILES_STORAGE = StaticRootS3BotoStorage
-
+DEFAULT_FILE_STORAGE = 'myapp.s3utils.MediaRootS3BotoStorage'
 
 try:
     from main.settings.local import *
