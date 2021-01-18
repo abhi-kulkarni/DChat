@@ -26,11 +26,25 @@ AWS_S3_FILE_OVERWRITE = False
 
 AWS_DEFAULT_ACL = None
 
+AWS_S3_CUSTOM_DOMAIN = '%s.s3.amazonaws.com' % AWS_STORAGE_BUCKET_NAME
+
+AWS_S3_OBJECT_PARAMETERS = {
+    'CacheControl': 'max-age=86400',
+}
+AWS_LOCATION = 'static'
+
+STATICFILES_DIRS = [
+    os.path.join(BASE_DIR, 'rolling_matrix/static'),
+]
+STATIC_URL = 'https://%s/%s/' % (AWS_S3_CUSTOM_DOMAIN, AWS_LOCATION)
+
+AWS_QUERYSTRING_AUTH = False
+
+STATICFILES_STORAGE = 'storages.backends.s3boto3.S3Boto3Storage'
+
 STATICFILES_STORAGE = 'main.utils.StaticRootS3BotoStorage'
 
 DEFAULT_FILE_STORAGE = 'main.utils.MediaRootS3BotoStorage'
-
-AWS_QUERYSTRING_AUTH = False
 
 try:
     from main.settings.local import *
