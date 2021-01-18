@@ -26,9 +26,9 @@ AWS_S3_FILE_OVERWRITE = False
 
 AWS_DEFAULT_ACL = None
 
-STATICFILES_STORAGE = 'myapp.s3utils.StaticRootS3BotoStorage'
+STATICFILES_STORAGE = 'main.utils.StaticRootS3BotoStorage'
 
-DEFAULT_FILE_STORAGE = 'myapp.s3utils.MediaRootS3BotoStorage'
+DEFAULT_FILE_STORAGE = 'main.utils.MediaRootS3BotoStorage'
 
 try:
     from main.settings.local import *
