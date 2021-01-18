@@ -30,6 +30,8 @@ STATICFILES_STORAGE = 'main.utils.StaticRootS3BotoStorage'
 
 DEFAULT_FILE_STORAGE = 'main.utils.MediaRootS3BotoStorage'
 
+AWS_QUERYSTRING_AUTH = False
+
 try:
     from main.settings.local import *
 except:
