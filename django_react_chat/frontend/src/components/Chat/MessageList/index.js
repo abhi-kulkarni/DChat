@@ -99,6 +99,12 @@ const MessageList = forwardRef((props, ref) => {
     }, [currChatMsgs]);
 
     useEffect(() => {
+      let params = location.pathname.split("/");
+      let chatId = params.length > 3 ? params[params.length - 2] : null;
+      getCurrentChatMsgs(chatId);
+    }, [])
+
+    useEffect(() => {
       if (WebSocketInstance.state() === 1) {
         let params = location.pathname.split("/");
         let chatId = params.length > 3 ? params[params.length - 2] : null;
