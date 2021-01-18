@@ -34,10 +34,12 @@ AWS_S3_OBJECT_PARAMETERS = {
 
 AWS_LOCATION = 'static'
 
+AWS_TEMPLATE_LOCATION = 'static/dist'
+
 TEMPLATES = [
     {
         'BACKEND': 'django.template.backends.django.DjangoTemplates',
-        'DIRS': ['https://%s/%s/' % (AWS_S3_CUSTOM_DOMAIN, AWS_LOCATION)],
+        'DIRS': ['https://%s/%s/' % (AWS_S3_CUSTOM_DOMAIN, AWS_TEMPLATE_LOCATION)],
         'APP_DIRS': True,
         'OPTIONS': {
             'context_processors': [
