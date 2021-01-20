@@ -64,8 +64,11 @@ const MessageList = forwardRef((props, ref) => {
     const session_is_typing = useSelector((state) => state.session.is_typing);
     const [isTypingMsg, setIsTypingMsg] = useState({});
     const [uploadImgSrc, setUploadImgSrc] = useState("");
+    const [imgExt, setImgExt] = useState("")
+    const [uploadedFileName, setUploadedFileName] = useState("")
     const Compress = require('compress.js')
     const compress = new Compress()
+    const [formData, setFormData] = useState([]);
 
     useEffect(() => {
       document.addEventListener("mousedown", handleClickOutside, false);
@@ -340,6 +343,9 @@ const MessageList = forwardRef((props, ref) => {
         if (uploadImgSrc) {
           temp["img_url"] = uploadImgSrc;
           temp["type"] = "image";
+          temp["img_type"] = imgExt;
+          temp["file_name"] = uploadedFileName;
+          console.log(temp)
           sendNewMessage(temp);
         } else if(e.target.value.length > 0) {
           temp["type"] = "text";
@@ -348,6 +354,8 @@ const MessageList = forwardRef((props, ref) => {
         e.target.value = "";
         setUploadImgSrc("");
         setInputMsg("");
+        setImgExt("")
+        setUploadedFileName("")
         handleMsgSeen();
         setIsTypingData(false);
       }
@@ -372,7 +380,7 @@ const MessageList = forwardRef((props, ref) => {
       setInputMsg("");
     };
 
-    const handleProfileImageChange = (e) => {
+    const handleUploadImageChange = (e) => {
       e.preventDefault();
       let reader = new FileReader();
       let file = e.target.files[0];
@@ -384,15 +392,18 @@ const MessageList = forwardRef((props, ref) => {
         maxHeight: 1920, // the max height of the output image, defaults to 1920px
         resize: true, // defaults to true, set false if you do not want to resize the image width and height
       }).then((data) => {
+        console.log(data)
         let compressedImg = data[0]
         let prefix = compressedImg.prefix;
         let base64str = compressedImg.data
-        let imgExt = compressedImg.ext
-        let file = Compress.convertBase64ToFile(base64str, imgExt);
+        let img_ext = compressedImg.ext
+        let file = Compress.convertBase64ToFile(base64str, img_ext);
         let output_img_src = prefix+base64str;
         if(file.size > 1048576){
           alert("File is too big!");
         }else{
+          setImgExt(img_ext);
+          setUploadedFileName(data[0].alt);
           setUploadImgSrc(output_img_src);
           scrollToBottom();
         }
@@ -416,7 +427,7 @@ const MessageList = forwardRef((props, ref) => {
       } else {
         data = {
           from: curr_user_data.id,
-          content: { msg: message.content, image_url: message.img_url },
+          content: { msg: message.content, image_url: message.img_url, type: message.img_type, file_name: message.file_name },
           chatId: chatId,
           type: message.type,
         };
@@ -684,7 +695,7 @@ const MessageList = forwardRef((props, ref) => {
                       </label>
                       <input
                         accept="image/*"
-                        onChange={handleProfileImageChange}
+                        onChange={handleUploadImageChange}
                         id="upload_img_msg"
                         type="file"
                       />

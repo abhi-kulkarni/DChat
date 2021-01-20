@@ -9,6 +9,10 @@ from friendship.models import Friend, Follow, Block, FriendshipRequest
 from .models import User, ChatFriend, ChatManager, ChatRequest, Chat, Notification, Room
 from django.core.cache import cache
 from channels.db import database_sync_to_async
+import boto3
+from botocore.client import Config
+from botocore.exceptions import ClientError
+from decouple import config
 
 def manage_friend_request_data(ip, action, notification_data):
     
@@ -412,3 +416,30 @@ def get_last_seen_data(users):
         last_seen[str(user_id)] = last_seen_dict
 
     return last_seen
+
+def create_presigned_url(bucket_name, bucket_key):
+    
+    s3_client = boto3.client('s3')
+    try:
+        response = s3_client.generate_presigned_url('get_object',
+                                                    Params={'Bucket': bucket_name,
+                                                            'Key': bucket_key},
+                                                    ExpiresIn=604800)
+
+    except ClientError as e:
+        logging.error(e)
+        return None
+
+    return response
+
+def get_presigned_url(file_name):
+
+    s3_signature_dict ={
+    'v4':'s3v4',
+    'v2':'s3'
+    }
+    s3_signature = s3_signature_dict['v2']
+    weeks = 8
+    seven_days_as_seconds = 604800
+    generated_signed_url = create_presigned_url(config('AWS_STORAGE_BUCKET_NAME'), file_name)
+    print(generated_signed_url)

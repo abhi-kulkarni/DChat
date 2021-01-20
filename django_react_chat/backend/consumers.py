@@ -8,6 +8,11 @@ from django.dispatch import receiver, Signal
 import redis
 from backend.serializers import RoomSerializer
 import asyncio
+import boto
+import base64
+from decouple import config
+from boto.s3.connection import S3Connection
+from boto.s3.key import Key
 
 class Consumer(WebsocketConsumer):
 
@@ -41,6 +46,24 @@ class Consumer(WebsocketConsumer):
         current_chat.messages.add(message)
         current_chat.save()
         recent_msg_data = get_recent_msg_data(data['from'], "new")
+
+        # upload_file = base64.b64decode(json.loads(content)['image_url'].split(',')[-1])
+        # upload_filename = json.loads(content)['file_name']
+        # upload_file_type = json.loads(content)['type']
+        
+        # AWS_ACCESS_KEY_ID = config('AWS_ACCESS_KEY_ID')
+        # AWS_SECRET_ACCESS_KEY = config('AWS_SECRET_ACCESS_KEY')
+        # bucket_name = config("AWS_STORAGE_BUCKET_NAME")
+
+        # conn = S3Connection(AWS_ACCESS_KEY_ID, AWS_SECRET_ACCESS_KEY, host='s3.ap-south-1.amazonaws.com')
+        # bucket = conn.get_bucket(bucket_name)
+        # k = Key(bucket)
+        # k.key = 'chat/' + data['chatId'] + '/' + upload_filename
+        # k.set_metadata('Content-Type', upload_file_type)
+        # k.set_contents_from_string(upload_file)
+        # url = 'https://' + config("AWS_BUCKET_URL") + '/' + k.key
+        # get_presigned_url(k.key)
+        
         # self.new_message_signal.send(sender=Message, instance=message, created=True, recent_msg_data=recent_msg_data, chatId=data['chatId'], userId=data['from'], custom=True, f=self.fetch_chat_requests)
         content = {
             'command': 'new_message',
@@ -48,6 +71,7 @@ class Consumer(WebsocketConsumer):
                         'recent_msg_data': recent_msg_data, 'user_id': data['from'] },
             'chat_id': data['chatId']
         }
+
         return self.send_chat_message(content)
     
     # Any Signal Triggers
@@ -67,7 +91,7 @@ class Consumer(WebsocketConsumer):
                 kwargs['f']({'recent_msg_data':recent_msg_data, 'chat_id': chat_id, 'user_id': user_id, 'recipient_user_id': recipient_user_id, 'custom': True})
         else:
             print('DEFAULT SAVE MESSAGE')
-
+        
     def messages_to_json(self, messages, chat_id, m_type):
         result = []
         if messages:
