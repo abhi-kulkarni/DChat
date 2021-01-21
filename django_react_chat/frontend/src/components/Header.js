@@ -796,16 +796,22 @@ function Header(props) {
       </Modal>
       <Navbar collapseOnSelect expand="lg" bg="light">
         <Navbar.Brand href={isLoggedIn ? "/home" : "/"}>
-          <img
-            alt="Brand Image"
-            src={brandImageDataUri}
-            width="40"
-            height="35"
-            className="img-fluid d-inline-block align-top"
-          />{" "}
-          <span style={{ padding: "5%", fontSize: "1.1rem", color: "gray" }}>
-            Rolling Matrix
-          </span>
+          <Row>
+            <Col style={{ paddingRight: '5px' }}>
+              <img
+              alt="Brand Image"
+              src={brandImageDataUri}
+              width="40"
+              height="35"
+              className="img-fluid d-inline-block align-top"
+            />{" "}
+            </Col>
+            <Col style={{ padding: '0px', margin: '2% 0% 0% 0%' }}>
+              <span style={{ padding: "5%", fontSize: "1.1rem", color: "gray" }}>
+                Rolling Matrix
+              </span>
+            </Col>
+          </Row>
         </Navbar.Brand>
         <Navbar.Toggle aria-controls="responsive-navbar-nav" />
         <Navbar.Collapse id="responsive-navbar-nav">
