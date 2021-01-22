@@ -54,6 +54,6 @@
   overflow-x: hidden;
   padding-left: 0px;
   padding-right: 0px;
-  height: calc(100vh - 138px);
+  /* height: calc(100vh - 138px); */
   overflow-y: scroll;
 }

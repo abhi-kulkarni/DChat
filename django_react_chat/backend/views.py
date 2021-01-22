@@ -16,6 +16,12 @@ from friendship.models import Friend, Follow, Block, FriendshipRequest
 from django.core.cache import cache
 import uuid
 from .socket_views import *
+import boto
+import base64
+from decouple import config
+from boto.s3.connection import S3Connection
+from boto.s3.key import Key
+import base64
 
 class ObtainTokenPairWithEmailView(TokenObtainPairView):
     permission_classes = (permissions.AllowAny,)
@@ -476,3 +482,35 @@ def set_last_seen(request):
     chat.save()
 
     return Response({'ok': True, 'last_seen': chat.last_seen})
+
+
+@api_view(["POST"])
+@permission_classes([IsAuthenticated])
+def upload_chat_image(request):
+
+    post_data = request.data
+    input_upload_file = post_data['image']
+    upload_filename = post_data['name']
+    upload_file_type = post_data['type']
+    chat_id = post_data['chatId']
+
+    AWS_ACCESS_KEY_ID = config('AWS_ACCESS_KEY_ID')
+    AWS_SECRET_ACCESS_KEY = config('AWS_SECRET_ACCESS_KEY')
+    bucket_name = config('AWS_STORAGE_BUCKET_NAME')
+
+    try:
+        img = request.FILES.get('image')
+        session = boto3.Session(
+            aws_access_key_id=AWS_ACCESS_KEY_ID,
+            aws_secret_access_key=AWS_SECRET_ACCESS_KEY,
+        )
+        s3 = session.resource('s3')
+
+        aws_file_dir = 'chat/'+chat_id+'/'+img.name
+        s3.Bucket(bucket_name).put_object(Key='chat/'+chat_id+'/%s' % img.name, Body=img)
+        pre_signed_url = get_presigned_url(aws_file_dir)
+
+    except e:
+        return Response({'ok': False})
+    
+    return Response({'ok': True, 'image_url': pre_signed_url})

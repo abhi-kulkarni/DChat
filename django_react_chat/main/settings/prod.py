@@ -15,6 +15,8 @@ SECURE_HSTS_SECONDS = 31536000
 
 STATIC_URL = '/home/ubuntu/'
 
+MEDIA_URL = '/home/ubuntu/'
+
 try:
     from main.settings.local import *
 except:

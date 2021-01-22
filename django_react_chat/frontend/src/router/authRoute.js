@@ -69,9 +69,9 @@ class AuthRoute extends Component {
             }
           }
         } catch (error) {
-          console.log(location);
-          console.log(history);
-          console.log(error);
+          // console.log(location);
+          // console.log(history);
+          // console.log(error);
           console.log("TOKEN Error");
           history.push("/signin");
         }
@@ -80,7 +80,7 @@ class AuthRoute extends Component {
       }
     }
     let user = this.state.curr_user_data;
-    console.log("Intercept before route jump", this.props);
+    // console.log("Intercept before route jump", this.props);
     if (!this.props.path.includes("chat")) {
       let self = this;
       WebSocketInstance.connect("chat_requests", "");
@@ -99,7 +99,6 @@ class AuthRoute extends Component {
   }
 
   setChatStatus(data) {
-    console.log("inside auth");
     this.props.dispatch(chat_status(data));
   }
 

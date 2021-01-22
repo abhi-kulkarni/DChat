@@ -83,6 +83,14 @@
 }
 
 .content_div{
-  height: 20px !important;
-  width: 50px;
+  width: 150px !important;
+  word-wrap: break-word;
+  padding:0px!important;
+  margin:0px !important;
+}
+
+.content_img {
+  height: 35px !important;
+  padding: 5px 3px !important;
+  overflow-y: scroll;
 }

@@ -26,7 +26,7 @@ export default function Message(props) {
           </div>
         </div>
       ) : (
-        <div style={{ marginLeft: isMine?'calc(100% - 160px)':'0px', marginTop: "1%", padding: '5px 5px 0px 5px', background: '#f4f4f8', maxWidth: '100%', width: '160px' }}>
+        <div style={{ marginLeft: isMine?'calc(100% - 160px)':'0px', marginTop: "1%", padding: JSON.parse(data.content)["msg"]?'5px 5px 0px 5px':'5px', background: '#f4f4f8', maxWidth: '100%', width: '160px' }}>
           <Row
             className="img_msg"
             title={friendlyTimestamp}
@@ -35,9 +35,9 @@ export default function Message(props) {
              <Col className="img_div" xl={12} lg={12} md={12} sm={12} xs={12}>
               <img className="img-fluid square" src={JSON.parse(data.content)["image_url"]} />
             </Col>
-            <Col style={{ padding: '0px', margin: '0px' }}>
-            J
-            </Col>
+            {JSON.parse(data.content)["msg"]?<Col className="content_div">
+              <div className="content_img">{JSON.parse(data.content)["msg"]}</div>
+            </Col>:""}
           </Row>
         </div>
       )}

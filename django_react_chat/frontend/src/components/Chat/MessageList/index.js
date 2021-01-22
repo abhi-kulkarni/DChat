@@ -66,6 +66,8 @@ const MessageList = forwardRef((props, ref) => {
     const [uploadImgSrc, setUploadImgSrc] = useState("");
     const [imgExt, setImgExt] = useState("")
     const [uploadedFileName, setUploadedFileName] = useState("")
+    const [uploadedImage, setUploadedImage] = useState("")
+    const [uploadingImg, setUploadingImg] = useState(false)
     const Compress = require('compress.js')
     const compress = new Compress()
     const [formData, setFormData] = useState([]);
@@ -134,6 +136,13 @@ const MessageList = forwardRef((props, ref) => {
       justify-content: center;
       align-items: center;
       height: 55vh;
+    `;
+
+    const uploadImgLoadingCss = css`
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      height: 100%;
     `;
 
     const typingcss = css`
@@ -231,6 +240,31 @@ const MessageList = forwardRef((props, ref) => {
           ),
         ],
       });
+    };
+
+    const handleUploadImageChangeMethod = (e) => {
+      setUploadingImg(true);
+      let uploaded_img = e.target.files[0]
+      let params = location.pathname.split("/");
+      let chatId = params.length > 3 ? params[params.length - 2] : null;
+      let form_data = new FormData();
+      form_data.append("image", uploaded_img);
+      form_data.append("name", uploaded_img['name']);
+      form_data.append("type", uploaded_img['type']);
+      form_data.append("chatId", chatId);
+      setUploadedImage(uploaded_img)
+      axiosInstance.post("upload_chat_image/", form_data, {
+          headers: {
+            'content-type': 'multipart/form-data'
+          }
+        }).then(res => {
+            console.log(res.data);
+            setUploadingImg(true);
+            setUploadImgSrc(res.data.image_url);
+        }).catch(err => {
+          setUploadingImg(true);
+          console.log(err)
+        })
     };
 
     const clearChat = (chatId) => {
@@ -343,9 +377,6 @@ const MessageList = forwardRef((props, ref) => {
         if (uploadImgSrc) {
           temp["img_url"] = uploadImgSrc;
           temp["type"] = "image";
-          temp["img_type"] = imgExt;
-          temp["file_name"] = uploadedFileName;
-          console.log(temp)
           sendNewMessage(temp);
         } else if(e.target.value.length > 0) {
           temp["type"] = "text";
@@ -353,9 +384,7 @@ const MessageList = forwardRef((props, ref) => {
         }
         e.target.value = "";
         setUploadImgSrc("");
-        setInputMsg("");
-        setImgExt("")
-        setUploadedFileName("")
+        setUploadingImg(false);
         handleMsgSeen();
         setIsTypingData(false);
       }
@@ -375,6 +404,7 @@ const MessageList = forwardRef((props, ref) => {
       }
       handleMsgSeen();
       setUploadImgSrc("");
+      setUploadingImg(false);
       setIsTypingData(false);
       document.getElementById("composeMsg").value = "";
       setInputMsg("");
@@ -454,6 +484,7 @@ const MessageList = forwardRef((props, ref) => {
     };
 
     const cancelImgMsg = () => {
+      setUploadingImg(false)
       setUploadImgSrc("");
     };
 
@@ -585,11 +616,20 @@ const MessageList = forwardRef((props, ref) => {
           lg={12}
           xl={12}
         >
-        {uploadImgSrc ? 
+        {uploadingImg ? 
           <Row style={{padding: '0px', height: '100%' ,backgroundColor: '#f4f5f7', borderRadius: '10px'}}>
             <Col className="img_div_msg_list" xl={2} lg={2} md={6} sm={11} xs={10}>
-              <img className="img-fluid square_msg_list" style={{ position: 'relative', padding: '15px' }} src={uploadImgSrc} />
-              <OverlayTrigger
+              {uploadImgSrc ? <img className="img-fluid square_msg_list" style={{ position: 'relative', padding: '15px' }} src={uploadImgSrc} />:
+                <div className="container">
+                  <PulseLoader
+                    css={uploadImgLoadingCss}
+                    size={15}
+                    color={"#0A73F0"}
+                    loading={!uploadImgSrc}
+                  />
+              </div>
+              }
+              {uploadImgSrc ?<OverlayTrigger
                 key="bottom"
                 placement="top"
                 overlay={
@@ -598,7 +638,7 @@ const MessageList = forwardRef((props, ref) => {
                   </Tooltip>
                 }
               ><FaTimes onClick={() => cancelImgMsg()} style={{ position:'absolute', borderRadius: '50%',  border: '1px solid gray', backgroundColor: 'white', cursor: 'pointer', color: 'gray' }} />
-              </OverlayTrigger>
+              </OverlayTrigger>:""}
             </Col>
           </Row>: ""}
           <Row style={{padding: '0px', margin: '0px'}}>
@@ -690,12 +730,12 @@ const MessageList = forwardRef((props, ref) => {
                     }
                   >
                     <div className="message_image_upload">
-                      <label for="upload_img_msg">
+                      <label htmlFor="upload_img_msg">
                         <FaCamera className="composeIcons" />
                       </label>
                       <input
                         accept="image/*"
-                        onChange={handleUploadImageChange}
+                        onChange={handleUploadImageChangeMethod}
                         id="upload_img_msg"
                         type="file"
                       />

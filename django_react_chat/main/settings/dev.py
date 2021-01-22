@@ -10,6 +10,8 @@ CORS_ORIGIN_WHITELIST = [
 
 STATIC_URL = '/static/'
 
+MEDIA_URL = '/media/'
+
 try:
     from main.settings.local import *
 except:

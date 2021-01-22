@@ -442,4 +442,4 @@ def get_presigned_url(file_name):
     weeks = 8
     seven_days_as_seconds = 604800
     generated_signed_url = create_presigned_url(config('AWS_STORAGE_BUCKET_NAME'), file_name)
-    print(generated_signed_url)
+    return generated_signed_url
