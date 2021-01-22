@@ -489,7 +489,7 @@ const MessageList = forwardRef((props, ref) => {
     };
 
     return (
-      <div className="wrapper_msg_list">
+      <div style={{ height: isMobile?'80%':'100%', minHeight: isMobile?'':'100%' }} className="wrapper_msg_list">
         <div className="header_msg_list">
           <Row styl={{padding: '0px', margin: '0px'}}>
             <Col
