@@ -5,7 +5,7 @@ import React, {
   forwardRef,
   useImperativeHandle,
 } from "react";
-import {isMobile, isMobileOnly, isTablet} from 'react-device-detect';
+import {isMobile, isIOS, isMobileOnly, isTablet} from 'react-device-detect';
 import Toolbar from "../Toolbar";
 import Message from "../Message";
 import moment from "moment";
@@ -36,6 +36,7 @@ import axiosInstance from "../../axiosInstance";
 import { css } from "@emotion/core";
 import PulseLoader from "react-spinners/PulseLoader";
 import dImg from "../../../static/images/chat_background.png";
+import { Orientation } from "../../Orientation";
 
 const MessageList = forwardRef((props, ref) => {
   {
@@ -71,11 +72,36 @@ const MessageList = forwardRef((props, ref) => {
     const Compress = require('compress.js')
     const compress = new Compress()
     const [formData, setFormData] = useState([]);
+    const [orientation, setOrientation] = useState("default");
+    const [orientationCss, setOrientationCss] = useState();
 
     useEffect(() => {
       document.addEventListener("mousedown", handleClickOutside, false);
       mounted.current = true;
     }, []);
+
+    useEffect(() => {
+      let css = {};
+      console.log(orientation);
+      if(isMobileOnly){
+        if(orientation === 'portrait'){
+          if(isIOS){
+            css = { height: 'calc(100% - 92px)', minHeight: '0%' };
+          }else{
+            css = { height: '94%', minHeight: '0%' };
+          }
+        }else if(orientation === 'landscape'){
+          if(isIOS){
+            css = { height: '99%', minHeight: '0%' };
+          }else{
+            css = { height: '86%', minHeight: '0%' };
+          }
+        }else{
+          css = { height: '100%', minHeight: '100%' };
+        }
+      }
+      setOrientationCss(css);
+    }, [orientation])
 
     useEffect(() => {
       let params = location.pathname.split("/");
@@ -387,6 +413,7 @@ const MessageList = forwardRef((props, ref) => {
         setUploadingImg(false);
         handleMsgSeen();
         setIsTypingData(false);
+        setInputMsg("");
       }
     };
 
@@ -489,7 +516,8 @@ const MessageList = forwardRef((props, ref) => {
     };
 
     return (
-      <div style={{ height: isMobile?'80%':'100%', minHeight: isMobile?'':'100%' }} className="wrapper_msg_list">
+      <div style={orientationCss} className="wrapper_msg_list">
+        <Orientation getData={setOrientation} />
         <div className="header_msg_list">
           <Row styl={{padding: '0px', margin: '0px'}}>
             <Col

@@ -132,14 +132,14 @@
 /* .header_msg_list {
 } */
 
-/* .footer_msg_list { */
-  /* margin-top: '20px'; */
-/* } */
+/* .footer_msg_list { 
+   margin-bottom: '120px';
+ } */
 
 .content_msg_list {
   flex: 1;
-  /* padding-bottom: 20px!important; */
-  padding: 0 5px 20px 0 !important;
+  margin-bottom: 15px!important;
+  padding: 0 5px!important;
   overflow-y: scroll;
 }
 
