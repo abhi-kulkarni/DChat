@@ -1004,7 +1004,7 @@ const ConversationList = (props) => {
             <Col>No Results found.</Col>
           </Row>
         )}
-        {chats && chats.length > 0 && chats.length > 5 ? (
+        {/* {chats && chats.length > 0 && chats.length > 5 ? (
           <Button
             id="load_more"
             onClick={() => handleLoadMoreHideButton()}
@@ -1015,7 +1015,7 @@ const ConversationList = (props) => {
           </Button>
         ) : (
           ""
-        )}
+        )} */}
       </Col>
       <div style={{ display: "none" }}>
         <Dialog
