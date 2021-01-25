@@ -1007,7 +1007,7 @@ const ConversationList = (props) => {
         {chats && chats.length > 0 && chats.length > 5 ? (
           <Button
             id="load_more"
-            onClick={() => loadMore()}
+            onClick={() => handleLoadMoreHideButton()}
             size="sm"
             className="text-center align-items-center"
           >
