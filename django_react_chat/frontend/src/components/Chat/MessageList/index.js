@@ -99,6 +99,8 @@ const MessageList = forwardRef((props, ref) => {
         }else{
           css = { height: '100%', minHeight: '100%' };
         }
+      }else{
+        css = { height: '100%', minHeight: '100%' };
       }
       setOrientationCss(css);
     }, [orientation])
