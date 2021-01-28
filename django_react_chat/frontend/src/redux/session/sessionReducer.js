@@ -51,7 +51,6 @@ const sessionReducer = (state = initialState, action) => {
       };
     case CLEAR_SESSION:
       return {
-        state: {
           isLoggedIn: false,
           spinner_overlay: false,
           user_data: {},
@@ -64,7 +63,6 @@ const sessionReducer = (state = initialState, action) => {
           msg_count: {},
           is_typing: {},
           chat_messages: { messages: [], recent_msg_data: {}, type: "" },
-        },
       };
     case USER_CREATED_SUCCESS:
       return {
@@ -126,6 +124,8 @@ const sessionReducer = (state = initialState, action) => {
           }
         });
         temp = { ...curr_chat_requests, reqd_chat_data: new_reqd_chat_data };
+      } else if(action.payload.type === 'recent_msg_resp') {
+        temp = { ...curr_chat_requests, chats: action.payload.chat_requests };
       } else {
         temp = action.payload.chat_requests;
       }
@@ -141,19 +141,30 @@ const sessionReducer = (state = initialState, action) => {
     case NOTIFICATIONS:
       return {
         ...state,
-        notifications: action.payload.notifications,
+        notifications: [...state.notifications, ...action.payload.notifications]
       };
     case CHAT_MESSAGES:
-      return {
-        ...state,
-        chat_messages: {
+      let temp_chat_msgs = {};
+      if (action.payload.type === "clear_chat") {
+        temp_chat_msgs = {
+          messages: action.payload.messages,
+          type: action.payload.type,
+          recent_msg_data: action.payload.recent_msg_data,
+          is_typing: action.payload.is_typing
+        }
+      }else{
+        temp_chat_msgs = {
           messages: Array.isArray(action.payload.messages)
             ? action.payload.messages
             : [...state.chat_messages.messages, action.payload.messages],
           type: action.payload.type,
           recent_msg_data: action.payload.recent_msg_data,
           is_typing: action.payload.is_typing,
-        },
+        }
+      }
+      return {
+        ...state,
+        chat_messages:temp_chat_msgs
       };
     case CHAT_STATUS:
       let curr_chat_status = state.chat_status;

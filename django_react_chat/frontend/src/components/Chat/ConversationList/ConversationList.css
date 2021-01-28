@@ -156,3 +156,26 @@
   top: 0px !important;
   padding-left: 15px !important;
 }
+
+
+.chat_request_count{
+  float: right;
+  min-width: 10px;
+  padding: 3px 7px;
+  font-size: 0.7rem;
+  font-weight: 700;
+  line-height: 0.8rem;
+  color: #fff;
+  text-align: center;
+  white-space: nowrap;
+  vertical-align: baseline;
+  background-color: rgba(212, 19, 13, 1);
+  border-radius: 10px;
+  position: absolute;
+  right: -9px;
+}
+
+.chat_request_container{
+  height: 100%;
+  padding-left: 28px;
+}

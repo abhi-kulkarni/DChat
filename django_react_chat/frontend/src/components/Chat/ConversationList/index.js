@@ -60,7 +60,7 @@ import PulseLoader from "react-spinners/PulseLoader";
 import { defaultProfilePictureImageDataUri } from "../../../constants";
 import { defaultGroupProfilePictureImageDataUri } from "../../../constants";
 
-const ConversationList = (props) => {
+const ConversationList = forwardRef((props, ref) => {
   let CustomDialog = useRef(null);
   const dispatch = useDispatch();
   const history = useHistory();
@@ -69,6 +69,8 @@ const ConversationList = (props) => {
   const [modalConversations, setModalConversations] = useState([]);
   const [showManageChatsModal, setShowManageChatsModal] = useState(false);
   const [searchedConversations, setSearchConversations] = useState([]);
+  const [chatReqLastSeen, setChatReqLastSeen] = useState("");
+  const [chatReqNotificationCount, setChatReqNotificationCount] = useState(0);
   let child = useRef(null);
   const [refs, setRefs] = useState({});
   const [
@@ -97,6 +99,37 @@ const ConversationList = (props) => {
   const [seenMsg, setSeenMsg] = useState(false);
   const mounted = useRef();
   const [isTypingMsg, setIsTypingMsg] = useState({});
+  
+  useImperativeHandle(ref, (data) => ({
+    deleteChatFromMessageList(data) {
+      let session_chats = session_chat_requests.chats;
+      let reqd_chat = {};
+      session_chats.map(item => {
+        if(item.chat_id == data.chat_id){
+          reqd_chat = item;
+        }
+      })
+      manageChats("remove", reqd_chat, reqd_chat.chat_id)
+    },
+    clearChatFromMessageList(chatId) {
+      let data = {"messages": [], "recent_msg_data": {}};
+      let temp = {};
+      Object.keys(recent_msg).map(item => {
+        if(item == chatId){
+          temp[item] = "Start your conversation ..."
+        }else{
+          temp[item] = recent_msg[item];
+        }
+      })
+      setRecentMsg(temp);
+      dispatch(chat_messages(data, "clear_chat"))
+    }
+  }));
+
+  useEffect(() => {
+    setChatReqLastSeen(curr_user_data.chat_request_last_seen);
+  }, [curr_user_data])
+
 
   useEffect(() => {
     getRecentMsgData();
@@ -142,7 +175,6 @@ const ConversationList = (props) => {
         }
       });
     }
-
     if (
       session_chat_requests &&
       session_chat_requests.hasOwnProperty("last_seen")
@@ -285,6 +317,18 @@ const ConversationList = (props) => {
     }
   }, [session_chat_messages]);
 
+  useEffect(() => {
+    session_chat_requests && session_chat_requests.hasOwnProperty('chat_requests')?session_chat_requests.chat_requests.map(item => {
+      if(new Date(item.chat_request_created_on) > new Date(curr_user_data.chat_request_last_seen)){
+        let count = chatReqNotificationCount;
+        count += 1
+        setChatReqNotificationCount(count)
+      }else{
+        // console.log('OLD');
+      }
+    }):""
+  }, [session_chat_requests.chat_requests])
+
   const initializeChatStatus = (uId, status, type) => {
     waitForSocketConnection(() => {
       WebSocketInstance.setChatStatus(uId, status, type);
@@ -338,18 +382,32 @@ const ConversationList = (props) => {
         if (res.data.ok) {
           if (res.data && res.data.hasOwnProperty("chats")) {
             let chats = res.data.chats;
+            let p = [];
             let recent_msg_d = {};
-            chats.map((item) => {
+            let curr_session_chats = session_chat_requests.chats;
+            let temp_chats = [];
+            if(curr_session_chats){
+            chats.map((item) => {              
               if (item.chat.isFriend) {
+                curr_session_chats.map(participant => {
+                  if(participant.id === item.curr_user.id){
+                    participant['chat_id'] = item.chat_id
+                  }
+                  p.push(participant)
+                })
                 recent_msg_d[item.chat.chat_id] = item.chat.author_id
                   ? item.chat.author_id === curr_user_data.id
                     ? "You: " + item.chat.text
                     : item.chat.text
                   : "Start your conversation ...";
+                  temp_chats.push(item)
+
               }
             });
+          }
             setRecentMsg(recent_msg_d);
-            setChats(res.data.chats);
+            setChats(temp_chats);
+            dispatch(chat_requests(p, "recent_msg_resp"));
           }
           if (res.data && res.data.hasOwnProperty("last_seen")) {
             setLastSeenState(res.data.last_seen);
@@ -634,8 +692,36 @@ const ConversationList = (props) => {
   };
 
   const openManageChatsModal = () => {
+    setKey("friends")
     setShowManageChatsModal(true);
   };
+
+  const setTabKey = (k) => {
+    setKey(k);
+    if(k === "chat_requests"){
+      updateChatReqLastSeen();
+    }
+  }
+
+  const updateChatReqLastSeen = () => {
+    let post_data = {};
+    post_data["request_type"] = "chat";
+    post_data["last_seen"] = new Date();
+    setChatReqLastSeen(post_data["last_seen"])
+    setChatReqNotificationCount(0)
+    axiosInstance
+      .post("manage_requests_last_seen/", post_data)
+      .then((res) => {
+        if (res.data.ok) {
+          // console.log(res.data.last_seen)
+        } else {
+          console.log("Error");
+        }
+      })
+      .catch((err) => {
+        console.log(err);
+      });
+  }
 
   const closeManageChatsModal = () => {
     setShowManageChatsModal(false);
@@ -662,6 +748,7 @@ const ConversationList = (props) => {
     setRecentMsgCount(count_dict);
     dispatch(msg_count(count_dict));
     // dispatch(last_seen_time(temp));
+    console.log(data);
     data["prevPath"] = location.pathname;
     data["rerender"] = true;
     data["name"] = data["name"].charAt(0).toUpperCase() + data["name"].slice(1);
@@ -722,7 +809,7 @@ const ConversationList = (props) => {
           title="Messenger"
           leftItems={[
             <OverlayTrigger
-              key="bottom"
+              key="settings"
               placement="top"
               overlay={
                 <Tooltip id="settings_tooltip">
@@ -735,7 +822,7 @@ const ConversationList = (props) => {
           ]}
           rightItems={[
             <OverlayTrigger
-              key="bottom"
+              key="new_group"
               placement="top"
               overlay={
                 <Tooltip id="new_group_tooltip">
@@ -766,8 +853,9 @@ const ConversationList = (props) => {
         lg={12}
         xl={12}
       >
+       
         <OverlayTrigger
-          key="bottom"
+          key="manage_chats"
           placement="top"
           overlay={
             <Tooltip id="manage_chats_tooltip">
@@ -775,11 +863,14 @@ const ConversationList = (props) => {
             </Tooltip>
           }
         >
-          <FaTasks onClick={openManageChatsModal} className="manage_chats" />
+          <FaTasks onClick={openManageChatsModal} className="manage_chats"/>
         </OverlayTrigger>
+        {chatReqNotificationCount > 0?
+        <div style={{ top: '6px', right: '6px', position: 'absolute',  backgroundColor: 'red', height: '6px', width: '6px', borderRadius: '100%'}}>
+        </div>:""}
       </Col>
       <Col
-        style={{ paddingRight: "0%", paddingLeft: "0%" }}
+        style={{ paddingRight: "0%", paddingLeft: "0%"}}
         xs={12}
         sm={12}
         md={12}
@@ -797,7 +888,7 @@ const ConversationList = (props) => {
                 style={{
                   paddingRight: "0%",
                   paddingLeft: "0%",
-                  margin: "4% 0% 4% 0%",
+                  margin: index === chats.length-1?"4% 0% 55px 0%":"4% 0% 4% 0%",
                   cursor: "pointer",
                   borderTopRightRadius: "25px",
                   borderBottomRightRadius: "25px",
@@ -981,7 +1072,7 @@ const ConversationList = (props) => {
                         count={recentMsgCount[item.chat.chat_id]}
                       />
                       {/* <OverlayTrigger
-                              key="bottom"
+                              key="remove_chat"
                               placement="top"
                               overlay={
                                   <Tooltip id="remove_chat_tooltip">
@@ -1044,7 +1135,7 @@ const ConversationList = (props) => {
             className="nav-justified"
             id="manage_chats_tab"
             activeKey={key}
-            onSelect={(k) => setKey(k)}
+            onSelect={(k) => setTabKey(k)}
           >
             <Tab eventKey="friends" title="Friends">
               <div
@@ -1095,7 +1186,7 @@ const ConversationList = (props) => {
                         <Col xs={4} sm={4} md={4} lg={4} xl={4}>
                           {friend.sent_chat_request ? (
                             <OverlayTrigger
-                              key="bottom"
+                              key="sent_chat_request"
                               placement="top"
                               overlay={
                                 <Tooltip id="sent_chat_request_tooltip">
@@ -1107,7 +1198,7 @@ const ConversationList = (props) => {
                             </OverlayTrigger>
                           ) : (
                             <OverlayTrigger
-                              key="bottom"
+                              key="add_friend"
                               placement="top"
                               overlay={
                                 <Tooltip id="add_friend_tooltip">
@@ -1187,7 +1278,7 @@ const ConversationList = (props) => {
                         </Col>
                         <Col xs={4} sm={4} md={4} lg={4} xl={4}>
                           <OverlayTrigger
-                            key="bottom"
+                            key="remove_chat"
                             placement="top"
                             overlay={
                               <Tooltip id="remove_chat_tooltip">
@@ -1198,7 +1289,7 @@ const ConversationList = (props) => {
                             <FaCommentSlash
                               className="remove_chat"
                               onClick={() =>
-                                manageRemoveChatRequestRef("remove", chat)
+                                manageRemoveChatRequestRef("remove", chat, chat.chat_id)
                               }
                             />
                           </OverlayTrigger>
@@ -1220,7 +1311,14 @@ const ConversationList = (props) => {
                 )}
               </div>
             </Tab>
-            <Tab eventKey="chat_requests" title="Chat Requests">
+            <Tab eventKey="chat_requests" title={<Row style={{ padding: '0px', margin: '0px'}}>
+              <Col xl={12} lg={12} md={12} sm={12} xs={12}>
+              <span style={{ fontWeight: 'lighter' }}>Chat Requests</span>
+              {chatReqNotificationCount > 0?
+              <div style={{  float: 'right',  backgroundColor: 'red', height: '6px', width: '6px', borderRadius: '100%'}}>
+              </div>:""}
+              </Col>
+            </Row>}>
               <div
                 style={{
                   margin: "0px",
@@ -1268,7 +1366,7 @@ const ConversationList = (props) => {
                         </Col>
                         <Col xs={4} sm={4} md={4} lg={4} xl={4}>
                           <OverlayTrigger
-                            key="bottom"
+                            key="accept_cr"
                             placement="top"
                             overlay={
                               <Tooltip id="accept_cr_tooltip">
@@ -1282,7 +1380,7 @@ const ConversationList = (props) => {
                             />
                           </OverlayTrigger>
                           <OverlayTrigger
-                            key="bottom"
+                            key="reject_cr"
                             placement="top"
                             overlay={
                               <Tooltip id="reject_cr_tooltip">
@@ -1364,7 +1462,7 @@ const ConversationList = (props) => {
                           </Col>
                           <Col xs={4} sm={4} md={4} lg={4} xl={4}>
                             <OverlayTrigger
-                              key="bottom"
+                              key="cancel_cr"
                               placement="top"
                               overlay={
                                 <Tooltip id="cancel_cr_tooltip">
@@ -1417,6 +1515,6 @@ const ConversationList = (props) => {
       </Modal>
     </Row>
   );
-};
+});
 
 export default ConversationList;

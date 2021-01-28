@@ -59,6 +59,8 @@ class User(AbstractUser):
     email = models.EmailField(blank=True, unique=True)
     notifications = models.ManyToManyField(Notification, blank=True, related_name='notifications', default=None)
     channel_rooms = models.ManyToManyField(Room, blank=True, related_name='notifications', default=None)
+    chat_request_last_seen = models.DateTimeField(null=True)
+    friend_request_last_seen = models.DateTimeField(null=True)
 
     EMAIL_FIELD = 'email'
     USERNAME_FIELD = 'email'
@@ -71,7 +73,8 @@ class Message(models.Model):
     content = models.TextField()
     timestamp = models.DateTimeField(auto_now_add=True)
     message_type = models.CharField(default="text", max_length=200)
-
+    cleared = models.TextField(max_length=200, default='')
+    
     def __str__(self):
         return self.user.username
 
@@ -84,11 +87,10 @@ class Chat(models.Model):
     messages = models.ManyToManyField(Message, blank=True)
     last_seen = models.TextField(max_length=200, default='')
     status = models.BooleanField(default=False)
+    cleared = models.TextField(max_length=200, default='')
 
     def __str__(self):
         return "{}".format(self.pk)
-
-
 
 CACHE_TYPES = {
     "chat_friends": "cf-%s",

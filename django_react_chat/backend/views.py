@@ -339,6 +339,13 @@ def get_chat(request, pk):
     chat = Chat.objects.get(pk=pk)
     participants = chat.participants.all()
     messages = chat.messages.order_by('-timestamp').all()
+    c_msgs = []
+    curr_user = User.objects.get(email=request.user)
+    user_id = curr_user.id
+    for chat_msg in messages:
+            cleared_msg = json.loads(chat_msg.cleared).get(str(user_id), False)
+            if not cleared_msg:
+                c_msgs.append(chat_msg)
     users = []
     user = None
     chat_data = {}
@@ -350,10 +357,35 @@ def get_chat(request, pk):
     
     curr_user = user.data if user else {}
     participants = UserSerializer(users, many=True).data
-    msgs = messages_to_json(messages, pk)
+    msgs = messages_to_json(c_msgs, pk)
     chat_data[pk] = msgs
     return Response({'ok': True, 'participants': participants, 'curr_user': curr_user, 'chat_data': chat_data})
 
+
+@api_view(["POST"])
+@permission_classes([IsAuthenticated])
+def clear_chat(request):
+
+    post_data = request.data
+    chat_id = post_data.get('chat_id', '')
+    user_id = post_data.get('user_id', '')
+    
+    chat = Chat.objects.get(pk=chat_id)
+    participants = chat.participants.all()
+    p_list = []
+    for p in participants:
+        p_list.append(p.id)        
+    curr_clear_chat = chat.cleared
+    clear_chat_dict = {}
+    if clear_chat_dict:
+        clear_chat_dict = json.loads(curr_clear_chat)
+    if user_id in p_list:
+        clear_chat_dict[str(user_id)] = True
+    chat.cleared = json.dumps(clear_chat_dict)
+    chat.messages.all().update(cleared=json.dumps(clear_chat_dict))
+    chat.save()
+
+    return Response({'ok': True})
 
 @api_view(["GET"])
 @permission_classes([IsAuthenticated])
@@ -415,6 +447,24 @@ def get_all_notifications(request):
 
     return Response({'ok': True, 'notifications': notifications})
 
+@api_view(["POST"])
+@permission_classes([IsAuthenticated])
+def manage_requests_last_seen(request):
+    
+    post_data = request.data
+    req_type = post_data['request_type']
+    last_seen = post_data['last_seen']
+
+    curr_user = User.objects.get(pk=request.user.id)
+
+    if req_type == 'chat':
+        curr_user.chat_request_last_seen = last_seen
+    elif req_type == 'friends':
+        curr_user.friend_request_last_seen = last_seen
+    
+    curr_user.save()
+
+    return Response({'ok': True})
 
 @api_view(["GET"])
 @permission_classes([IsAuthenticated])

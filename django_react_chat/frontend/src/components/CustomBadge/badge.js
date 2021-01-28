@@ -45,13 +45,18 @@ class CustomBadge extends React.Component {
       delete this.props.style["position"];
       delete this.props.containerStyle["position"];
       this.props.containerStyle.paddingLeft = "38px";
-    } else {
+    }else {
       this.props.style.position = "absolute";
       this.props.containerStyle.position = "absolute";
+      this.props.style.fontSize = "0.7rem",
+      this.props.style.padding = "3px 6px",
+      this.props.count > 10?this.props.style.right = "4px":this.props.style.right = "7px"
+      this.props.style.top = "-30px"            
     }
     const badgeStyle = this.merge(styles.badge, this.props.style);
+    let container_styles = styles.container;
     const containerStyle = this.merge(
-      styles.container,
+      container_styles,
       this.props.containerStyle
     );
     const value =

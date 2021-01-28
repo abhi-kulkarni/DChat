@@ -34,10 +34,24 @@ class Consumer(WebsocketConsumer):
             content = data['message']['msg']
         else:
             content = json.dumps(data['message'])
+        
+        current_chat = get_current_chat(data['chatId'])
+        
+        participants = current_chat.participants.all()
+        p_list = []
+        for p in participants:
+            p_list.append(p.id)        
+        curr_clear_chat = current_chat.cleared
+        clear_chat_dict = {}
+        if clear_chat_dict:
+            clear_chat_dict = json.loads(curr_clear_chat)
+        if str(user.id) in p_list:
+            clear_chat_dict[str(user.id)] = False
+        current_chat.cleared = json.dumps(clear_chat_dict)
         message = Message.objects.create(
             user=user,
-            content=content, message_type=data['type'])
-        current_chat = get_current_chat(data['chatId'])
+            content=content, message_type=data['type'], cleared=json.dumps(clear_chat_dict))
+        
         current_chat.messages.add(message)
         current_chat.save()
         recent_msg_data = get_recent_msg_data(data['from'], "new")
@@ -113,7 +127,7 @@ class Consumer(WebsocketConsumer):
     def fetch_chat_requests(self, data):
         temp = {}
         temp['user_id'] = data['user_id']
-        temp['chat_id'] = data['chat_id']
+        temp['chat_id'] = data.get('chat_id', '')
         temp['recipient_user_id'] = data['recipient_user_id']
         ip = [data['user_id'], data['recipient_user_id']]
         op_data = manage_chat_request_data(ip, data['action'], data['chat_id'], data['notification_data'])

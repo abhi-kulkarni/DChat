@@ -17,18 +17,28 @@ const Messenger = forwardRef((props, ref) => {
     const history = useHistory();
     const location = useLocation();
     const [seen, setSeen] = useState({});
+    const conversationListRef = useRef(null);
+    const messageListRef = useRef(null);
 
     const handleSeen = (data) => {
       setSeen(data);
     };
 
+    const deleteChat = (data) => {
+      conversationListRef.current.deleteChatFromMessageList(data);
+    }
+
+    const clearChat = (data) => {
+      conversationListRef.current.clearChatFromMessageList(data);
+    }
+
     return (
       <Row style={{ padding: "0px", margin: "0px", minHeight: "0px" }}>
         <Col className="conversation_list" xs={5} sm={5} md={4} lg={3} xl={3}>
-          <ConversationList hasSeen={seen} />
+          <ConversationList ref={conversationListRef} hasSeen={seen} />
         </Col>
         <Col xs={7} sm={7} md={8} lg={9} xl={9}>
-          {location.state ? <MessageList onHandleSeen={handleSeen} /> : ""}
+          {location.state ? <MessageList onClearChat={clearChat} onDeleteChat={deleteChat} ref={messageListRef} onHandleSeen={handleSeen} /> : ""}
         </Col>
       </Row>
     );

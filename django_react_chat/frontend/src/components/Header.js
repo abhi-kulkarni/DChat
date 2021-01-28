@@ -117,7 +117,8 @@ function Header(props) {
           return item.participants.indexOf(curr_user_data.id) > -1;
         }
       });
-    data ? setNotificationData(data.reverse()) : setNotificationData([]);
+    const recentNotifications = data?data.sort((a, b) => new Date(b.created_on) - new Date(a.created_on)):[];
+    data ? setNotificationData(recentNotifications) : setNotificationData([]);
     count > 0 ? setNotificationCount(count) : setNotificationCount(0);
   }, [session_notification_data]);
 
@@ -134,7 +135,8 @@ function Header(props) {
           return item;
         }
       });
-    setNotificationData(data);
+    const recentNotifications = data?data.sort((a, b) => new Date(b.created_on) - new Date(a.created_on)):[];
+    setNotificationData(recentNotifications);
     manageNotifications(data);
     setNotificationCount(0);
     setShowNotification(!showNotification);
@@ -161,9 +163,11 @@ function Header(props) {
 
   const spinner = (display) => {
     let overlay_ele = document.getElementById("overlay");
-    overlay_ele && display
-      ? (overlay_ele.style.display = "block")
-      : (overlay_ele.style.display = "none");
+    if(overlay_ele && display){
+      if(overlay_ele!==null){
+        overlay_ele.style.display = "block"
+      }
+    }
   };
 
   const initializeSocket = () => {
@@ -830,11 +834,7 @@ function Header(props) {
                   style={{ cursor: "pointer", fontSize: "1.3rem" }}
                 />
                 <CustomBadge
-                  style={{
-                    fontSize: "0.7rem",
-                    padding: "3px 6px",
-                    right: notificationCount > 10 ? "-12px" : "-5px",
-                  }}
+                  message_count={false}
                   count={notificationCount}
                 />
                 <Overlay
@@ -858,7 +858,7 @@ function Header(props) {
                     >
                       Notifications
                     </Popover.Title>
-                    <Popover.Content>
+                    <Popover.Content style={{ maxHeight: '115px', overflow: 'auto' }}>
                       {notificationData.length > 0 ? (
                         notificationData.map((item, index) => {
                           return (

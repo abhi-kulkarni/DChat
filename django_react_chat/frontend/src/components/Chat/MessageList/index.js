@@ -24,6 +24,7 @@ import {
   FaMicrophone,
   FaTrash,
   FaShare,
+  FaCommentSlash,
 } from "react-icons/fa";
 import OverlayTrigger from "react-bootstrap/OverlayTrigger";
 import Tooltip from "react-bootstrap/Tooltip";
@@ -131,12 +132,6 @@ const MessageList = forwardRef((props, ref) => {
       }
     }, [currChatMsgs]);
 
-    // useEffect(() => {
-    //   let params = location.pathname.split("/");
-    //   let chatId = params.length > 3 ? params[params.length - 2] : null;
-    //   getCurrentChatMsgs(chatId);
-    // }, [])
-
     useEffect(() => {
       if (WebSocketInstance.state() === 1) {
         let params = location.pathname.split("/");
@@ -238,6 +233,7 @@ const MessageList = forwardRef((props, ref) => {
         .get("get_chat/" + chatId + "/")
         .then((res) => {
           if (res.data.ok) {
+            props.onClearChat(chatId);
             setCurrChatMsgs(res.data.chat_data);
           } else {
             console.log("Error");
@@ -248,14 +244,36 @@ const MessageList = forwardRef((props, ref) => {
         });
     };
 
-    const clearChatRef = (chat_id) => {
+    const clearChatRef = () => {
       CustomDialog.show({
         body: "Are you sure you want to clear this chat ?",
         actions: [
           Dialog.DefaultAction(
+            "Clear",
+            () => {
+              clearChat();
+            },
+            "btn-danger"
+          ),
+          Dialog.Action(
+            "Cancel",
+            () => {
+              CustomDialog.hide();
+            },
+            "btn-primary"
+          ),
+        ],
+      });
+    };
+    
+    const deleteChatRef = () => {
+      CustomDialog.show({
+        body: "Are you sure you want to delete this chat ?",
+        actions: [
+          Dialog.DefaultAction(
             "Delete",
             () => {
-              clearChat(chat_id);
+              props.onDeleteChat(currUserData);
             },
             "btn-danger"
           ),
@@ -295,8 +313,22 @@ const MessageList = forwardRef((props, ref) => {
         })
     };
 
-    const clearChat = (chatId) => {
-      alert("Chat Cleared");
+    const clearChat = () => {
+      let post_data = {};
+      post_data['chat_id'] = currUserData.chat_id;
+      post_data['user_id'] = curr_user_data.id;
+      axiosInstance
+        .post("clear_chat/", post_data)
+        .then((res) => {
+          if (res.data.ok) {
+            getCurrentChatMsgs(currUserData.chat_id);
+          } else {
+            console.log("Error");
+          }
+        })
+        .catch((err) => {
+          console.log(err);
+        });
     };
 
     const addMessageCallback = (message) => {
@@ -520,6 +552,13 @@ const MessageList = forwardRef((props, ref) => {
     return (
       <div style={orientationCss} className="wrapper_msg_list">
         <Orientation getData={setOrientation} />
+        <div style={{ display: "none" }}>
+        <Dialog
+          ref={(el) => {
+            CustomDialog = el;
+          }}
+        />
+        </div>
         <div className="header_msg_list">
           <Row styl={{padding: '0px', margin: '0px'}}>
             <Col
@@ -537,7 +576,7 @@ const MessageList = forwardRef((props, ref) => {
               title={currUserData.name ? currUserData.name : "Begin Conversation"}
               leftItems={[
                 <OverlayTrigger
-                  key="bottom"
+                  key="info"
                   placement="top"
                   overlay={
                     <Tooltip id="info_tooltip">
@@ -550,19 +589,33 @@ const MessageList = forwardRef((props, ref) => {
               ]}
               rightItems={[
                 <OverlayTrigger
-                  key="bottom"
-                  placement="top"
-                  overlay={
-                    <Tooltip id="clear_chat_tooltip">
-                      <span>Clear Chat</span>
-                    </Tooltip>
-                  }
-                >
-                  <FaTrash
-                    onClick={() => clearChatRef("1")}
-                    className="clear_chat"
-                  />
-                </OverlayTrigger>,
+                key="delete_chat"
+                placement="top"
+                overlay={
+                  <Tooltip id="delete_chat_tooltip">
+                    <span>Delete Chat</span>
+                  </Tooltip>
+                }
+              >
+                <FaTrash
+                  onClick={() => deleteChatRef()}
+                  className="delete_chat"
+                />
+              </OverlayTrigger>,
+               <OverlayTrigger
+               key="clear_chat"
+               placement="top"
+               overlay={
+                 <Tooltip id="clear_chat_tooltip">
+                   <span>Clear Chat</span>
+                 </Tooltip>
+               }
+             >
+               <FaCommentSlash
+                 onClick={() => clearChatRef()}
+                 className="clear_chat"
+               />
+             </OverlayTrigger>
               ]}
             />
           </Col>
