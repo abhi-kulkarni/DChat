@@ -9,6 +9,10 @@ const styles = {
     paddingLeft: "28px",
   },
 
+  customContainer: {
+    height: "100%",
+  },
+
   badge: {
     WebkitTransition: "all 450ms cubic-bezier(0.23, 1, 0.32, 1) 0ms",
     MozTransition: "all 450ms cubic-bezier(0.23, 1, 0.32, 1) 0ms",
@@ -30,6 +34,25 @@ const styles = {
     top: "-28px",
     right: "-38px",
   },
+
+  customBadge: {
+    WebkitTransition: "all 450ms cubic-bezier(0.23, 1, 0.32, 1) 0ms",
+    MozTransition: "all 450ms cubic-bezier(0.23, 1, 0.32, 1) 0ms",
+    msTransition: "all 450ms cubic-bezier(0.23, 1, 0.32, 1) 0ms",
+    transition: "all 450ms cubic-bezier(0.23, 1, 0.32, 1) 0ms",
+    display: "inline-block",
+    minWidth: "10px",
+    padding: "3px 7px",
+    fontSize: "12px",
+    fontWeight: "700",
+    lineHeight: "1",
+    color: "#fff",
+    textAlign: "center",
+    whiteSpace: "nowrap",
+    verticalAlign: "baseline",
+    backgroundColor: "rgba(212, 19, 13, 1)",
+    borderRadius: "10px",
+  },
 };
 
 class CustomBadge extends React.Component {
@@ -40,11 +63,17 @@ class CustomBadge extends React.Component {
 
   render() {
     if (this.props.message_count) {
-      this.props.style.top = "7px";
-      this.props.style.right = "0px";
       delete this.props.style["position"];
       delete this.props.containerStyle["position"];
-      this.props.containerStyle.paddingLeft = "38px";
+      if(this.props.custom){
+        this.props.containerStyle.paddingLeft = "0px";
+        this.props.style.top = "0px";
+        this.props.style.right = "0px";
+      }else{
+        this.props.containerStyle.paddingLeft = "38px";
+        this.props.style.top = "7px";
+        this.props.style.right = "0px";
+      }
     }else {
       this.props.style.position = "absolute";
       this.props.containerStyle.position = "absolute";
@@ -53,8 +82,9 @@ class CustomBadge extends React.Component {
       this.props.count > 10?this.props.style.right = "4px":this.props.style.right = "7px"
       this.props.style.top = "-30px"            
     }
-    const badgeStyle = this.merge(styles.badge, this.props.style);
-    let container_styles = styles.container;
+    let badge_style = this.props.custom?styles.customBadge:styles.badge
+    const badgeStyle = this.merge(badge_style, this.props.style);
+    let container_styles = this.props.custom?styles.customContainer:styles.container;
     const containerStyle = this.merge(
       container_styles,
       this.props.containerStyle

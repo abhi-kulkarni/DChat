@@ -33,3 +33,9 @@ export const HAS_READ = "HAS_READ";
 export const MSG_COUNT = "MSG_COUNT";
 
 export const IS_TYPING = "IS_TYPING";
+
+export const CHAT_DELETE = "CHAT_DELETE";
+
+export const LAST_CHAT_SEEN_TIME = "LAST_CHAT_SEEN_TIME"
+
+export const CURRENT_CHAT = "CURRENT_CHAT"

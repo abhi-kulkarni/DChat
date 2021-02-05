@@ -16,4 +16,7 @@ export {
   has_read,
   msg_count,
   is_typing,
+  chat_delete,
+  last_chat_seen_time,
+  current_chat
 } from "./session/sessionActions";

@@ -73,9 +73,10 @@
 }
 
 .clear_chat {
-  color: #0578fa;
+  color: #eb3e37;
   cursor: pointer;
   font-size: 1rem;
+  margin-right: 15px;
 }
 
 .delete_chat {

@@ -16,6 +16,9 @@ import {
   LAST_SEEN,
   HAS_READ,
   IS_TYPING,
+  CHAT_DELETE,
+  LAST_CHAT_SEEN_TIME,
+  CURRENT_CHAT
 } from "./sessionTypes";
 
 export const sign_in = () => {
@@ -133,5 +136,28 @@ export const chat_messages = (data = {}, type = "") => {
       type: type,
       recent_msg_data: data["recent_msg_data"],
     },
+  };
+};
+
+export const chat_delete = (data = {}) => {
+  return {
+    type: CHAT_DELETE,
+    payload: {
+      chat_delete: data,
+    },
+  };
+};
+
+export const last_chat_seen_time = (data = "") => {
+  return {
+    type: LAST_CHAT_SEEN_TIME,
+    payload: data,
+  };
+};
+
+export const current_chat = (data = {}) => {
+  return {
+    type: CURRENT_CHAT,
+    payload: data,
   };
 };

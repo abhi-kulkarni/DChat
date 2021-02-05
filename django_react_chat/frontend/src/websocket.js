@@ -39,6 +39,7 @@ class WebSocketService {
         console.log(e.message);
       };
       this.socketRef.onclose = () => {
+        console.log(this.socketRef)
         console.log("WebSocket closed let's reopen");
         self.connect();
       };
@@ -46,20 +47,7 @@ class WebSocketService {
   }
 
   disconnect() {
-    this.socketRef.removeEventListener("open", () => {
-      //pass
-    });
-    this.socketRef.removeEventListener("message", () => {
-      //pass
-    });
-    this.socketRef.removeEventListener("error", () => {
-      //pass
-    });
-    this.socketRef.removeEventListener("close", () => {
-      //pass
-    });
-
-    this.socketRef.close();
+    this.socketRef.close();  
   }
 
   socketNewMessage(data) {

@@ -12,14 +12,14 @@ import Row from "react-bootstrap/Row";
 import Col from "react-bootstrap/Col";
 import { useHistory, useLocation } from "react-router-dom";
 
-const Messenger = forwardRef((props, ref) => {
+const Messenger = (props) => {
   {
     const history = useHistory();
     const location = useLocation();
     const [seen, setSeen] = useState({});
     const conversationListRef = useRef(null);
     const messageListRef = useRef(null);
-
+    
     const handleSeen = (data) => {
       setSeen(data);
     };
@@ -38,11 +38,11 @@ const Messenger = forwardRef((props, ref) => {
           <ConversationList ref={conversationListRef} hasSeen={seen} />
         </Col>
         <Col xs={7} sm={7} md={8} lg={9} xl={9}>
-          {location.state ? <MessageList onClearChat={clearChat} onDeleteChat={deleteChat} ref={messageListRef} onHandleSeen={handleSeen} /> : ""}
+          {location.state && location.state.chat_id ? <MessageList onClearChat={clearChat} onDeleteChat={deleteChat} ref={messageListRef} onHandleSeen={handleSeen} /> : ""}
         </Col>
       </Row>
     );
   }
-});
+};
 
 export default Messenger;

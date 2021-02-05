@@ -159,6 +159,7 @@ def manage_chat_request_data(ip, action, chat_id, notification_data):
                     usr_obj['text'] = recent_msg_data_dict[str(chat.id)]['content'] if str(chat.id) in recent_msg_data_dict else ''
                     temp['chat'] = usr_obj
                     temp['chat_id'] = str(chat.id)
+                    temp['is_deleted'] = json.loads(chat.deleted) if chat.deleted else {}
                     temp['chat']['isFriend'] = ChatFriend.objects.are_friends(recieved_user, participant) == True
                 users.append(participant)
             participants = UserSerializer(users, many=True).data
@@ -166,6 +167,7 @@ def manage_chat_request_data(ip, action, chat_id, notification_data):
                 p_obj['chat_id'] = str(chat.id)
                 p.append(p_obj)
             temp['chat_id'] = str(chat.id)
+            temp['is_deleted'] = json.loads(chat.deleted) if chat.deleted else {}
             temp['participants'] = p
             chat_data.append(temp)
             i += 1
@@ -206,7 +208,7 @@ def manage_chat_request_data(ip, action, chat_id, notification_data):
             display_users.append(user_obj) if not user_obj['is_chat'] else ''
 
         data_dict = {'user_id_list': user_id_list, 'chat_id_list': friend_id_list, 'sent_chat_requests_id_list': sent_friend_requests_id_list, 'chat_requests_id_list': friend_requests_id_list}
-        data = {'friends' :display_users, 'chats':all_frs, 'chat_requests':all_fr_requests, 'sent_chat_requests':all_sent_fr_requests, 'data_dict': data_dict, 'reqd_chat_data': chat_data}
+        data = {'friends' :display_users, 'modal_chats':all_frs, 'chat_requests':all_fr_requests, 'sent_chat_requests':all_sent_fr_requests, 'data_dict': data_dict, 'reqd_chat_data': chat_data}
         curr_chat_data = {}
         for obj in chat_data:
             if obj['chat_id'] == chat_id:
@@ -231,15 +233,23 @@ def get_current_chat(chat_id):
 
 def get_last_10_messages(chat_id, user_id):
 
+    recipient_user_id = ''
     chat = Chat.objects.get(pk=chat_id)
-    # recent_msg_data = get_recent_msg_data(user_id)
-    chat_cleared = json.loads(chat.cleared).get(str(user_id), False) if chat.cleared else False
+    participants = chat.participants.all()
+    for p_obj in participants:
+        if p_obj.id!=user_id:
+            recipient_user_id = p_obj.id
+
+    chat_cleared = json.loads(chat.cleared).get(str(recipient_user_id), False) if chat.cleared else False
+    chat_deleted = json.loads(chat.deleted).get(str(recipient_user_id), False) if chat.deleted else False
+
     msgs = []
-    if not chat_cleared:
+    if not chat_deleted:
         chat_msgs = chat.messages.order_by('-timestamp').all()[:10]
         for chat_msg in chat_msgs:
-            cleared_msg = json.loads(chat_msg.cleared).get(str(user_id), False)
-            if not cleared_msg:
+            cleared_msg = json.loads(chat_msg.cleared).get(str(recipient_user_id), False) 
+            deleted_msg = json.loads(chat_msg.deleted).get(str(recipient_user_id), False)
+            if not cleared_msg and not deleted_msg:
                 msgs.append(chat_msg)
             
     return {'chat_msgs': msgs, 'recent_msg_data': {}}
@@ -323,6 +333,7 @@ def get_recent_msg_data(user_id, dtype):
             recent_msg_data['recipient_id'] = recipient_user_id
             recent_msg_data['message_type'] = recent_message.message_type
             recent_msg_data['last_seen'] = json.loads(chat_obj.last_seen) if chat_obj.last_seen else {}
+            recent_msg_data['is_deleted'] = json.loads(chat_obj.deleted) if chat_obj.deleted else {}
             recent_msg_data_dict[str(chat_obj.id)] = recent_msg_data
     
     return recent_msg_data_dict
@@ -371,13 +382,15 @@ def get_all_chats_data(user_id):
         temp = {}
         users = []
         participants = chat.participants.all()
+        p = UserSerializer
         for participant in participants:
             if participant.id != user.id:
                 c_messages = chat.messages.order_by('-timestamp').all()
                 messages = []
                 for chat_msg in c_messages:
-                    cleared_msg = json.loads(chat_msg.cleared).get(str(user_id), False)
-                    if not cleared_msg:
+                    cleared_msg = json.loads(chat_msg.cleared).get(str(participant.id), False)
+                    deleted_msg = json.loads(chat_msg.deleted).get(str(participant.id), False)
+                    if not cleared_msg and not deleted_msg:
                         messages.append(chat_msg)
                 curr_msg = message_to_json(messages[:1][0], str(chat.id)) if len(list(messages)) > 0 else ''
                 author_id = curr_msg['author_id'] if curr_msg else ''
@@ -400,6 +413,7 @@ def get_all_chats_data(user_id):
                 usr_obj['user_id'] = temp['curr_user']['id']
                 usr_obj['chat_id'] = str(chat.id)
                 usr_obj['author_id'] = author_id
+                usr_obj['is_deleted'] = json.loads(chat.deleted) if chat.deleted else {}
                 usr_obj['last_seen'] = json.loads(chat.last_seen) if chat.last_seen and not cleared_chat else {}
                 if is_image:
                     usr_obj['text'] = 'Image'
@@ -411,12 +425,13 @@ def get_all_chats_data(user_id):
                 temp['chat']['isFriend'] = ChatFriend.objects.are_friends(user, participant) == True
                 temp['chat_id'] = str(chat.id)
             users.append(participant)
-        participants = UserSerializer(users, many=True).data
-        for p_obj in participants:
-            p_obj['chat_id'] = str(chat.id)
-            p.append(p_obj)
+        # participants = UserSerializer(users, many=True).data
+        # for p_obj in participants:
+        #     p_obj['chat_id'] = str(chat.id)
+        #     p.append(p_obj)
         temp['chat_id'] = str(chat.id)
-        temp['participants'] = p
+        temp['participants'] = []
+        temp['is_deleted'] = json.loads(chat.deleted) if chat.deleted else {}
         chat_data.append(temp)
         i += 1
     

@@ -18,7 +18,7 @@ urlpatterns = [
     path('manage_friends/', manage_friends),
     path('manage_chats/', manage_chats),
     path('get_manage_friends_data/', get_manage_friends_data),
-    path('get_chat/<pk>/', get_chat),
+    path('get_chat/', get_chat),
     path('get_all_chats/', get_all_chats),
     path('get_all_notifications/', get_all_notifications),
     path('manage_notifications/', manage_notifications),

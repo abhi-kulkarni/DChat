@@ -130,12 +130,13 @@
 }
 
 .div_hover {
-  background-color: #ffffff;
+  background-color: #E0E0E0;
   display: block;
 }
 
-.div_hover:hover {
-  background-color: #ececec !important;
+.div_hover:hover{
+  display: block;
+  background-color: #E0E0E0 !important;
 }
 
 .noContent {
@@ -148,6 +149,21 @@
   color: #eb3e37;
   cursor: pointer;
   font-size: 1rem;
+}
+
+.delete_chat_container{
+  display: block;
+  max-width: 35px;
+  width: 35px;
+  border-radius: 50vw;
+  padding: 0px 10px 10px 10px;
+  background-color: #E0E0E0;
+}
+
+.delete_chat_btn_conv{
+  font-size: 0.9rem;
+  color: #0578fa;
+  margin: 7px 0px 0px 0px;
 }
 
 .message_count {
@@ -178,4 +194,37 @@
 .chat_request_container{
   height: 100%;
   padding-left: 28px;
+}
+
+.custom_badge_chat_notifications{
+  float: right !important;
+  min-width: 10px !important;
+  padding: 3px 7px !important;
+  font-size: 0.7rem !important;
+  font-weight: 700 !important;
+  line-height: 0.8rem !important;
+  color: #fff !important;
+  text-align: center !important;
+  white-space: nowrap !important;
+  vertical-align: baseline !important;
+  background-color: rgba(212, 19, 13, 1) !important;
+  border-radius: 10px !important;
+  position: absolute !important;
+  right: 0px !important;
+}
+
+.del_chat_row{
+  background-color: white;
+}
+
+.clear_chat_row{
+  background-color: white;
+}
+
+.del_chat_row:hover {
+  background-color: #E0E0E0 !important;
+}
+
+.clear_chat_row:hover{
+  background-color: #E0E0E0 !important;
 }

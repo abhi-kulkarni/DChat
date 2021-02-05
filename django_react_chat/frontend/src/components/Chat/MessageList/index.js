@@ -32,7 +32,7 @@ import Dialog from "react-bootstrap-dialog";
 import { useDispatch, useSelector } from "react-redux";
 import WebSocketInstance from "../../../websocket";
 import { useHistory, useLocation } from "react-router-dom";
-import { chat_messages, is_typing } from "../../../redux";
+import { chat_messages, is_typing, chat_delete } from "../../../redux";
 import axiosInstance from "../../axiosInstance";
 import { css } from "@emotion/core";
 import PulseLoader from "react-spinners/PulseLoader";
@@ -57,6 +57,7 @@ const MessageList = forwardRef((props, ref) => {
     const curr_chat_messages = useSelector(
       (state) => state.session.chat_messages
     );
+    const session_chat_delete = useSelector((state) => state.session.chat_delete);
     const [currUserData, setCurrUserData] = useState({});
     const [messageData, setMessageData] = useState([]);
     const [chatId, setChatId] = useState("");
@@ -83,7 +84,6 @@ const MessageList = forwardRef((props, ref) => {
 
     useEffect(() => {
       let css = {};
-      console.log(orientation);
       if(isMobileOnly){
         if(orientation === 'portrait'){
           if(isIOS){
@@ -115,10 +115,27 @@ const MessageList = forwardRef((props, ref) => {
         let curr_chat_path = "/chat/" + location.state.chat_id + "/";
         let prev_path = location.state.prevPath;
         let curr_ws_instance = WebSocketInstance.getCurrentSocketInstance();
-        if (prev_path === "/chat/" || prev_path === "/chat") {
-          disconnect = false;
-        } else if (curr_chat_path !== prev_path) {
-          disconnect = true;
+        if(session_chat_delete){
+          Object.keys(session_chat_delete).map(item => {
+            if(item === chatId){
+              let chat_delete_dict = session_chat_delete[item];
+              if (chat_delete_dict.hasOwnProperty(location.state.user_id) && chat_delete_dict[location.state.user_id]) {
+                if(WebSocketInstance.getCurrentSocketInstance()){
+                  disconnect = true;
+                }else{
+                  //pass
+                }
+              }else{
+                //pass
+              }
+            }
+          })
+        }else{
+          if (prev_path === "/chat/" || prev_path === "/chat") {
+            disconnect = false;
+          } else if (curr_chat_path !== prev_path) {
+            disconnect = true;
+          }
         }
         setChatId(chatId);
         initializeChat(chatId, disconnect);
@@ -187,22 +204,24 @@ const MessageList = forwardRef((props, ref) => {
     };
 
     const initializeChat = (chatId, disconnect) => {
-      if (disconnect) {
-        WebSocketInstance.disconnect();
-        waitForSocketConnection(() => {
-          WebSocketInstance.fetchMessages(curr_user_data.id, chatId);
-        });
-        WebSocketInstance.connect("chat", chatId);
-      } else {
-        waitForSocketConnection(() => {
-          WebSocketInstance.addCallbacks(
-            (data) => setMessagesCallback(data),
-            (data) => addMessageCallback(data),
-            (data) => setIsTyping(data)
-          );
-          WebSocketInstance.fetchMessages(curr_user_data.id, chatId);
-        });
-        WebSocketInstance.connect("chat", chatId);
+      if(chatId){
+        if (disconnect) {
+          WebSocketInstance.disconnect();
+          waitForSocketConnection(() => {
+            WebSocketInstance.fetchMessages(curr_user_data.id, chatId);
+          });
+          WebSocketInstance.connect("chat", chatId);
+        } else {
+          waitForSocketConnection(() => {
+            WebSocketInstance.addCallbacks(
+              (data) => setMessagesCallback(data),
+              (data) => addMessageCallback(data),
+              (data) => setIsTyping(data)
+            );
+            WebSocketInstance.fetchMessages(curr_user_data.id, chatId);
+          });
+          WebSocketInstance.connect("chat", chatId);
+        }
       }
     };
 
@@ -229,11 +248,15 @@ const MessageList = forwardRef((props, ref) => {
     };
 
     const getCurrentChatMsgs = (chatId) => {
+      let post_data = {};
+      post_data['chatId'] = chatId
+      post_data['user_id'] = curr_user_data.id
       axiosInstance
-        .get("get_chat/" + chatId + "/")
+        .post("get_chat/", post_data)
         .then((res) => {
           if (res.data.ok) {
             props.onClearChat(chatId);
+            dispatch(chat_messages(data, "clear_chat"))
             setCurrChatMsgs(res.data.chat_data);
           } else {
             console.log("Error");
@@ -304,7 +327,6 @@ const MessageList = forwardRef((props, ref) => {
             'content-type': 'multipart/form-data'
           }
         }).then(res => {
-            console.log(res.data);
             setUploadingImg(true);
             setUploadImgSrc(res.data.image_url);
         }).catch(err => {
@@ -483,7 +505,6 @@ const MessageList = forwardRef((props, ref) => {
         maxHeight: 1920, // the max height of the output image, defaults to 1920px
         resize: true, // defaults to true, set false if you do not want to resize the image width and height
       }).then((data) => {
-        console.log(data)
         let compressedImg = data[0]
         let prefix = compressedImg.prefix;
         let base64str = compressedImg.data
@@ -588,20 +609,20 @@ const MessageList = forwardRef((props, ref) => {
                 </OverlayTrigger>,
               ]}
               rightItems={[
-                <OverlayTrigger
-                key="delete_chat"
-                placement="top"
-                overlay={
-                  <Tooltip id="delete_chat_tooltip">
-                    <span>Delete Chat</span>
-                  </Tooltip>
-                }
-              >
-                <FaTrash
-                  onClick={() => deleteChatRef()}
-                  className="delete_chat"
-                />
-              </OverlayTrigger>,
+              //   <OverlayTrigger
+              //   key="delete_chat"
+              //   placement="top"
+              //   overlay={
+              //     <Tooltip id="delete_chat_tooltip">
+              //       <span>Delete Chat</span>
+              //     </Tooltip>
+              //   }
+              // >
+              //   <FaTrash
+              //     onClick={() => deleteChatRef()}
+              //     className="delete_chat"
+              //   />
+              // </OverlayTrigger>,
                <OverlayTrigger
                key="clear_chat"
                placement="top"

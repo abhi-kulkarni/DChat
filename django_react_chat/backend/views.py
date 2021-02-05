@@ -199,7 +199,9 @@ def manage_chats(request):
     from .socket_views import manage_notifications
 
     post_data = request.data
+    temp = {}
     recipient_user_id = post_data.get('recipient_user_id', '')
+    user_id = post_data.get('user_id', '')
     recipient_user = User.objects.get(pk=recipient_user_id)
     participants = []
     participants.append(recipient_user)
@@ -211,12 +213,27 @@ def manage_chats(request):
     if post_data['action'] == 'add':
         ChatFriend.objects.add_friend(request.user, recipient_user, message='Hi! I would like to be friends with you')      
     elif post_data['action'] == 'remove':
-        ChatFriend.objects.remove_friend(request.user, recipient_user)
+        p_list = []
+        # ChatFriend.objects.remove_friend(request.user, recipient_user)
         chat = Chat.objects.get(pk=req_chat_id)
-        chat.messages.through.objects.filter(chat_id=chat.pk).delete()
-        chat.delete()
+        curr_delete_chat = chat.deleted
+        delete_chat_dict = {}
+        if delete_chat_dict:
+            delete_chat_dict = json.loads(curr_delete_chat)
+        participants = chat.participants.all()
+        for p in participants:
+            p_list.append(p.id) 
+        if recipient_user_id in p_list:
+            delete_chat_dict[str(recipient_user_id)] = True
+        chat.deleted = json.dumps(delete_chat_dict)
+        chat.messages.all().update(deleted=json.dumps(delete_chat_dict))
+        chat.save()
+        op_data = manage_chat_request_data([user_id], "remove", req_chat_id, {})
+        temp['chat_requests'] = json.dumps(op_data)
     elif post_data['action'] == 'accept':
-        chat_friend_request = ChatRequest.objects.filter(to_user=request.user.id, from_user=recipient_user_id)[0]
+        chat_friend_request = ChatRequest.objects.filter(to_user=request.user.id, from_user=recipient_user_id)
+        if chat_friend_request:
+            chat_friend_request = chat_friend_request[0]
         chat_friend_request.accept()
         chat_obj = Chat()
         chat_obj.save()
@@ -231,9 +248,7 @@ def manage_chats(request):
     elif post_data['action'] == 'cancel':  
         chat_friend_request = ChatRequest.objects.filter(from_user=request.user.id, to_user=recipient_user_id)[0]
         chat_friend_request.delete()
-    return Response({'ok': True, 'chat_id': created_chat_id, 'notification': notification})
-    # except:
-    # return Response({'ok': False})
+    return Response({'ok': True, 'chat_id': created_chat_id, 'notification': notification, 'extra_data': temp})
 
 
 @api_view(['GET'])
@@ -332,20 +347,28 @@ def get_all_friends(request):
     else:
         return Response({"ok": False, "users": [], "friends": [], "error": "Some error occured."})
 
-@api_view(["GET"])
+@api_view(["POST"])
 @permission_classes([IsAuthenticated])
-def get_chat(request, pk):
+def get_chat(request):
 
-    chat = Chat.objects.get(pk=pk)
+    post_data = request.data
+    chat_id = post_data.get('chat_id', '')
+    user_id = post_data.get('user_id', '')
+    recipient_user_id = ''
+    chat = Chat.objects.get(pk=chat_id)
     participants = chat.participants.all()
+    for p_obj in participants:
+        if p_obj.id!=user_id:
+            recipient_user_id = p_obj.id
     messages = chat.messages.order_by('-timestamp').all()
     c_msgs = []
     curr_user = User.objects.get(email=request.user)
     user_id = curr_user.id
     for chat_msg in messages:
-            cleared_msg = json.loads(chat_msg.cleared).get(str(user_id), False)
-            if not cleared_msg:
-                c_msgs.append(chat_msg)
+        cleared_msg = json.loads(chat_msg.cleared).get(str(recipient_user_id), False)
+        deleted_msg = json.loads(chat_msg.deleted).get(str(recipient_user_id), False)
+        if not cleared_msg and not deleted_msg:
+            c_msgs.append(chat_msg)
     users = []
     user = None
     chat_data = {}

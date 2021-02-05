@@ -17,6 +17,9 @@ import {
   CHAT_STATUS,
   WS_LIST,
   LAST_SEEN,
+  CHAT_DELETE,
+  LAST_CHAT_SEEN_TIME,
+  CURRENT_CHAT
 } from "./sessionTypes";
 
 const initialState = {
@@ -28,13 +31,16 @@ const initialState = {
   friend_requests: {},
   chat_status: {},
   has_read: {},
+  last_chat_seen_time:"",
   notifications: [],
+  current_chat:{},
   chat_requests: {},
   chat_messages: { messages: [], recent_msg_data: {}, type: "" },
   ws_list: [],
   last_seen: {},
   is_typing: {},
   msg_count: {},
+  chat_delete:{},
 };
 
 const sessionReducer = (state = initialState, action) => {
@@ -57,11 +63,14 @@ const sessionReducer = (state = initialState, action) => {
           friend_requests: {},
           chat_status: {},
           notifications: [],
+          current_chat:{},
           chat_requests: {},
           last_seen: {},
+          last_chat_seen_time:"",
           has_read: {},
           msg_count: {},
           is_typing: {},
+          chat_delete:{},
           chat_messages: { messages: [], recent_msg_data: {}, type: "" },
       };
     case USER_CREATED_SUCCESS:
@@ -79,6 +88,11 @@ const sessionReducer = (state = initialState, action) => {
         ...state,
         spinner_overlay: action.payload,
       };
+    case CURRENT_CHAT:
+      return {
+        ...state,
+        current_chat: action.payload,
+      };
     case USER_DATA:
       return {
         ...state,
@@ -88,6 +102,17 @@ const sessionReducer = (state = initialState, action) => {
       return {
         ...state,
         friend_requests: action.payload,
+      };
+    case LAST_CHAT_SEEN_TIME:
+      return {
+        ...state,
+        last_chat_seen_time: action.payload,
+      };
+    case CHAT_DELETE:
+      let curr_chat_delete_dict = state.chat_delete;
+      return {
+        ...state,
+        chat_delete: action.payload.chat_delete,
       };
     case CHAT_REQUESTS:
       let temp = {};
@@ -107,12 +132,14 @@ const sessionReducer = (state = initialState, action) => {
           }
         });
         temp = { ...curr_chat_requests, is_typing: curr_typing_dict };
-      } else if (action.payload.type === "recent_msg") {
+      } else if(action.payload.type === "action_change") {
+        temp = { ...curr_chat_requests, action: "" }
+      }else if (action.payload.type === "recent_msg") {
         let new_reqd_chat_data = [];
         Object.keys(curr_chat_requests).map((item) => {
           if (item === "reqd_chat_data") {
             let curr_reqd_chat_data = curr_chat_requests[item];
-            new_reqd_chat_data = curr_reqd_chat_data.map((innerItem) => {
+            new_reqd_chat_data = curr_reqd_chat_data && curr_reqd_chat_data.map((innerItem) => {
               if (
                 innerItem.chat_id === action.payload.chat_requests["chat_id"]
               ) {
@@ -125,7 +152,7 @@ const sessionReducer = (state = initialState, action) => {
         });
         temp = { ...curr_chat_requests, reqd_chat_data: new_reqd_chat_data };
       } else if(action.payload.type === 'recent_msg_resp') {
-        temp = { ...curr_chat_requests, chats: action.payload.chat_requests };
+        temp = { ...curr_chat_requests, modal_chats: action.payload.chat_requests };
       } else {
         temp = action.payload.chat_requests;
       }
@@ -141,11 +168,14 @@ const sessionReducer = (state = initialState, action) => {
     case NOTIFICATIONS:
       return {
         ...state,
-        notifications: [...state.notifications, ...action.payload.notifications]
+        notifications: action.payload.notifications
       };
     case CHAT_MESSAGES:
       let temp_chat_msgs = {};
+      let temp_chat_reqs = {};
+      let current_chat_requests = state.chat_requests;
       if (action.payload.type === "clear_chat") {
+        temp_chat_reqs = state.chat_requests;
         temp_chat_msgs = {
           messages: action.payload.messages,
           type: action.payload.type,
@@ -153,6 +183,23 @@ const sessionReducer = (state = initialState, action) => {
           is_typing: action.payload.is_typing
         }
       }else{
+        let extra_data = action.payload.messages.hasOwnProperty('extra_data')?action.payload.messages['extra_data']:{};
+        let is_deleted = extra_data['delete_chat_dict'];
+        let is_cleared = extra_data['clear_chat_dict']
+        let curr_reqd_chat_data = current_chat_requests['reqd_chat_data'];
+        if(curr_reqd_chat_data){
+          curr_reqd_chat_data = curr_reqd_chat_data.map(item => {
+            if(item.chat_id === action.payload.messages.chatId){
+              item.is_deleted = is_deleted;
+              item.is_cleared = is_cleared;
+            }
+            return item;
+          });
+        }
+        temp_chat_reqs = {
+          ...current_chat_requests,
+          reqd_chat_data: curr_reqd_chat_data
+        }
         temp_chat_msgs = {
           messages: Array.isArray(action.payload.messages)
             ? action.payload.messages
@@ -164,7 +211,8 @@ const sessionReducer = (state = initialState, action) => {
       }
       return {
         ...state,
-        chat_messages:temp_chat_msgs
+        chat_messages:temp_chat_msgs,
+        chat_requests:temp_chat_reqs
       };
     case CHAT_STATUS:
       let curr_chat_status = state.chat_status;

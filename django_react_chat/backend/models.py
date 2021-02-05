@@ -74,6 +74,7 @@ class Message(models.Model):
     timestamp = models.DateTimeField(auto_now_add=True)
     message_type = models.CharField(default="text", max_length=200)
     cleared = models.TextField(max_length=200, default='')
+    deleted = models.TextField(max_length=200, default='')
     
     def __str__(self):
         return self.user.username
@@ -88,6 +89,7 @@ class Chat(models.Model):
     last_seen = models.TextField(max_length=200, default='')
     status = models.BooleanField(default=False)
     cleared = models.TextField(max_length=200, default='')
+    deleted = models.TextField(max_length=200, default='')
 
     def __str__(self):
         return "{}".format(self.pk)
