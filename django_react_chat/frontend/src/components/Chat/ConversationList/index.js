@@ -179,9 +179,6 @@ const ConversationList = forwardRef((props, ref) => {
   useEffect(() => {
     let c = [];
     let temp = {};
-    console.log(location.state)
-    console.log('HELLO');
-    console.log(WebSocketInstance.getCurrentSocketInstance());
     if(location.state && location.state.chat_delete){
       delete location.state.chat_delete
     }
@@ -243,7 +240,8 @@ const ConversationList = forwardRef((props, ref) => {
         session_chat_messages.hasOwnProperty("recent_msg_data") &&
         session_chat_messages["recent_msg_data"]
       ) {
-        let rest_chats_msg_count_dict = restChatsMsgCountData(session_chat_messages["recent_msg_data"]);
+        let rest_chats_msg_count_dict = {};
+        // rest_chats_msg_count_dict = restChatsMsgCountData(session_chat_messages["recent_msg_data"]);
         if (location.state) {
           if(location.state.chat_delete){
             //pass
@@ -436,9 +434,9 @@ const ConversationList = forwardRef((props, ref) => {
           }
         }
     });
-    if(location.state){
-      delete location.state.chat_delete;
-    }
+    // if(location.state){
+    //   delete location.state.chat_delete;
+    // }
     // dispatch(chat_delete(t));
     return rest_chats_count_dict
   }
@@ -1443,9 +1441,9 @@ const ConversationList = forwardRef((props, ref) => {
                 }}
               >
                 {session_chat_requests &&
-                session_chat_requests.hasOwnProperty("chats") &&
-                session_chat_requests.chats.length > 0 ? (
-                  session_chat_requests.chats.map((chat, index) => {
+                session_chat_requests.hasOwnProperty("modal_chats") &&
+                session_chat_requests.modal_chats.length > 0 ? (
+                  session_chat_requests.modal_chats.map((chat, index) => {
                     return (
                       <Row
                         key={index}

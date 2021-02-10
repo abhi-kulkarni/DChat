@@ -111,6 +111,7 @@ const MessageList = forwardRef((props, ref) => {
       let chatId = params.length > 3 ? params[params.length - 2] : null;
       if (location.state) {
         setCurrUserData(location.state);
+        console.log(location.state);
         let disconnect = false;
         let curr_chat_path = "/chat/" + location.state.chat_id + "/";
         let prev_path = location.state.prevPath;
