@@ -8,7 +8,7 @@ import React, {
 import { withRouter } from "react-router-dom";
 import axiosInstance from "../components/axiosInstance";
 import { useHistory } from "react-router-dom";
-import { notifications, manage_requests_last_seen, user_created_success, chat_status, spinner_overlay, conversation_delete, user_data, conversation_modal_data, current_selected_conversation } from "../redux";
+import { notifications, manage_request_count, user_created_success, chat_status, spinner_overlay, conversation_delete, user_data, conversation_modal_data, current_selected_conversation } from "../redux";
 import { useDispatch, useSelector } from "react-redux";
 import "../index.css";
 import AtomSpinner from "../components/Atomspinner";
@@ -25,6 +25,7 @@ import Popover from "react-bootstrap/Popover";
 import CustomBadge from "../components/CustomBadge/badge.js"
 import {isMobile, isIOS, isMobileOnly, isTablet} from 'react-device-detect';
 import Picker from "emoji-picker-react";
+import Viewer from 'react-viewer';
 import {
     FaTrashAlt,
     FaPaperPlane,
@@ -127,7 +128,7 @@ const CustomMessenger = forwardRef((props, ref) => {
     const session_conversation_delete_dict = useSelector(state => state.session.conversation_delete);
     const session_conversation_exit_dict = useSelector(state => state.session.conversation_exit);
     const session_conversation_removed_dict = useSelector(state => state.session.conversation_removed);
-    const session_manage_requests_last_seen = useSelector(state => state.session.manage_requests_last_seen);
+    const session_manage_requests_count = useSelector(state => state.session.manage_request_count);
     const [user, setUser] = useState({});
     const [inputMsg, setInputMsg] = useState("");
     const [uploadImgSrc, setUploadImgSrc] = useState("");
@@ -159,6 +160,8 @@ const CustomMessenger = forwardRef((props, ref) => {
     const [conversationStatusMsg, setConversationStatusMsg] = useState({}); 
     const [isRemoved, setIsRemoved] = useState({});
     const [conversationUserDataDict, setConversationUserDataDict] = useState({});
+    const [stateConversationStatus, setStateConversationStatus] = useState({});
+    const [ imageMsgVisible, setImageMsgVisible ] = React.useState(false);
 
     useEffect(() => {
         getConversationModalData();
@@ -188,7 +191,7 @@ const CustomMessenger = forwardRef((props, ref) => {
     useEffect(() => {
         if(currConversation.id === groupEditedSocketChange.id){
             setCurrConversation(groupEditedSocketChange);
-            dispatch(current_selected_conversation(groupEditedSocketChange))
+            // dispatch(current_selected_conversation(groupEditedSocketChange))
         }
     }, [groupEditedSocketChange])
 
@@ -272,8 +275,6 @@ const CustomMessenger = forwardRef((props, ref) => {
     }
 
     const initSocket = () => {
-        WebSocketInstance.connect("conversation", "requests");
-        // WebSocketInstance.connect("requests", "conversation", "");
         WebSocketInstance.conversationRequestNotificationCallbacks(
         (data) => setSocketConversationRequestData1(data),
         (data) => setConversationStatusData(data))
@@ -319,79 +320,6 @@ const CustomMessenger = forwardRef((props, ref) => {
             initializeConversationStatus(curr_user_data.id, "online", "reciever");
         }
     }
-
-    const setSocketConversationRequestData = (data) => {
-        if(data.is_group){
-            console.log(data);
-            console.log('GROUP');
-            let temp_msgs = {};
-            let temp_is_removed_dict = {};
-            if(data.recipients.indexOf(curr_user_data.id) > -1 && JSON.parse(data.group_data.admin).indexOf(curr_user_data.id) < 0){
-                // Add message object for each msg below
-                if(data.action === "exit"){
-                    if(data.group_data.group_exit_user.id === curr_user_data.id){
-                        temp_msgs[data.group_data.id] = "You have left the chat. You will no longer recieve any messages from this group"
-                    }else{
-                        temp_msgs[data.group_data.id] = data.group_data.group_exit_user.username + " has left the chat."
-                    }
-                }else if(data.action === "accept"){
-                    if(data.group_data.group_create_user.id === curr_user_data.id){
-                        temp_msgs[data.group_data.id] = "You have created this group."
-                    }else{
-                        temp_msgs[data.group_data.id] = data.group_data.group_create_user.username +" has created this group.\nYou have been added to this group."
-                    }
-                }else if(data.action === "update"){
-                    temp_msgs = updateSocketGroup(data, temp_is_removed_dict, temp_msgs);
-                }
-                setConversationStatusMsg(temp_msgs);
-                if(data.action !== "update"){
-                    if(data.user_id !== curr_user_data.id){
-                        manageSocketGroup(data);
-                    }
-                }
-            }else{
-                if(data.user_id !== curr_user_data.id){
-                    temp_msgs = updateSocketGroup(data, temp_is_removed_dict, temp_msgs);
-                }
-                setConversationStatusMsg(temp_msgs);
-            }
-        }else{
-            if(data.recipient_user_id === curr_user_data.id){
-                console.log(data);
-                console.log('CONVERSATION');
-                if(data.action === "remove"){
-                    // dispatch(conversation_delete(temp_friends, "remove"));
-                }else{
-                    if(data.action === "accept"){
-                        if(data.type === "new"){
-                            let temp = {};
-                            data.modal_data.all_conversations.map(item => {
-                                temp[item.user.id] = item.id; 
-                            })
-                            setConversationUserDict(temp);
-                        }
-                        setConversationUserDataDict(data.modal_data.user_data_dict);
-                        setAllConversations(data.modal_data.all_conv_data);
-                        setSearchConversations(data.modal_data.all_conv_data);
-                    }
-                }
-                let temp_friends = {};
-                    data.modal_data.modal_friends.map(item => {
-                        if(item.has_conversation){
-                            temp_friends[item.id] = true;
-                        }else{
-                            temp_friends[item.id] = false;
-                        }
-                })
-                let req_count = getConversationRequestCount(data.modal_data.modal_conversation_requests)
-                setConversationReqNotificationCount(req_count)
-                setConversationRequestModalData(data.modal_data);
-                setIsConversationFriend(temp_friends);
-                // dispatch(conversation_modal_data(data.modal_data));
-                dispatch(conversation_delete(temp_friends, "remove"));
-            }
-        }  
-    };
 
     const setSocketConversationRequestData1 = (data) => {
         if(data.user_id !== curr_user_data.id){
@@ -453,8 +381,8 @@ const CustomMessenger = forwardRef((props, ref) => {
             }else{
                 console.log(data);
                 console.log("CONVERSATION");
-                if(data.action === 'accept'){
-                    dispatch(notifications(data.notification_data));
+                if(data.action === 'accept' || data.action === 'add'){
+                    dispatch(notifications(data.notification_data, "new"));
                 }
                 getConversationModalData();
             }   
@@ -493,121 +421,6 @@ const CustomMessenger = forwardRef((props, ref) => {
         setConversationStatusMsg(temp_msgs);
     }
 
-    const manageSocketGroup = (data) => {
-
-        let group_data_dict = data.group_data_dict[curr_user_data.id];
-        let all_groups = group_data_dict.all_groups;
-        let all_conv_data_res = group_data_dict.all_conv_data;
-        let updated_modal_data = {...session_conversation_modal_data, modal_groups: all_groups, all_conv_data: all_conv_data_res}                
-        setGroupEditedSocketChange(data.group_data);
-        setAllGroups(all_groups);
-        setAllConversations(all_conv_data_res);
-        setSearchConversations(all_conv_data_res);
-        setConversationRequestModalData(updated_modal_data);
-        // dispatch(conversation_modal_data(updated_modal_data));
-    }
-
-    const updateSocketGroup = (data, temp_is_removed_dict, temp_msgs, action) => {
-
-        let removed_dict = JSON.parse(data.group_data.removed);
-        let removed_p_list = data.group_data.removed_participants;
-        let added_p_list = data.group_data.added_participants;
-        let exit_p_list = data.group_data.exit_participants;
-        temp_is_removed_dict[data.group_data.id] = merge(removed_dict, {...isRemoved});
-        if(removed_p_list.indexOf(curr_user_data.id) > -1){
-            temp_msgs[data.group_data.id] = "You have been removed from this group."
-        }else if(added_p_list.indexOf(curr_user_data.id) > -1){
-            temp_msgs[data.group_data.id] = "You have been added to this group."
-        }
-        let group_data_dict = data.group_data;
-        let curr_group_data = data.group_data_dict[curr_user_data.id];
-        let curr_groups = curr_group_data.all_groups?curr_group_data.all_groups:[];
-        let curr_all_conv_data = curr_group_data.all_conv_data?curr_group_data.all_conv_data:[];
-        let updated_groups = [];
-        let updated_conv_data = [];
-        if(removed_p_list.length <= 0 && added_p_list.length <= 0){
-            updated_groups = curr_groups.map(item => {
-                if(item.id === data.group_data.id){
-                    return group_data_dict;
-                }else{
-                    return item;
-                }
-            })
-            updated_conv_data = curr_all_conv_data.map(item => {
-                if(item.id === data.group_data.id){
-                    return group_data_dict;
-                }else{
-                    return item;
-                }
-            })
-            
-            if(data.user_id !== curr_user_data.id){
-                let property = setGroupMsg(data);
-                temp_msgs[data.group_data.id] = data.group_data.group_update_user.username+" has changed the " + property;
-            }else{
-                let property = 'group details.';
-                temp_msgs[data.group_data.id] = "You have changed the " + property;
-            }
-            
-        }else{
-            if (removed_p_list.indexOf(curr_user_data.id) > -1){
-                updated_groups = curr_groups.map(item => {
-                    if(item.id === data.group_data.id){
-                        item['is_removed'] = true;
-                        group_data_dict['is_removed'] = true;
-                    }
-                    return item;
-                })
-                updated_conv_data = curr_all_conv_data.map(item => {
-                    if(item.id === data.group_data.id){
-                        item['is_removed'] = true;
-                    }
-                    return item;
-                })
-            }
-            if (exit_p_list.indexOf(curr_user_data.id) > -1){
-                updated_groups = curr_groups.map(item => {
-                    if(item.id === data.group_data.id){
-                        item['is_exit'] = true;
-                        group_data_dict['is_exit'] = true;
-                    }
-                    return item;
-                })
-                updated_conv_data = curr_all_conv_data.map(item => {
-                    if(item.id === data.group_data.id){
-                        item['is_exit'] = true;
-                    }
-                    return item;
-                })
-            }
-
-            if (added_p_list.indexOf(curr_user_data.id) > -1){
-                updated_groups = curr_groups.map(item => {
-                    if(item.id === data.group_data.id){
-                        item['is_removed'] = false;
-                        group_data_dict['is_removed'] = false;
-                    }
-                    return item;
-                })
-                updated_conv_data = curr_all_conv_data.map(item => {
-                    if(item.id === data.group_data.id){
-                        item['is_removed'] = false;
-                    }
-                    return item;
-                })
-            }
-        }
-        let updated_modal_data = {...session_conversation_modal_data, modal_groups: updated_groups, all_conv_data: updated_conv_data};
-        setIsRemoved(temp_is_removed_dict);
-        dispatch(conversation_delete(removed_dict, "remove_group"));
-        setGroupEditedSocketChange(group_data_dict);
-        setAllGroups(updated_groups);
-        setAllConversations(updated_conv_data);
-        setSearchConversations(updated_conv_data);
-        setConversationRequestModalData(updated_modal_data);
-        // dispatch(conversation_modal_data(updated_modal_data));
-        return temp_msgs;
-    }
 
     const setGroupMsg = (data) => {
 
@@ -647,13 +460,11 @@ const CustomMessenger = forwardRef((props, ref) => {
         return obj;
     }
 
-    const getConversationModalData = () => {
-        // spinner(true, "");
+    const getConversationModalData = (refresh) => {
         setConversationLoading(true);
         axiosInstance
         .get("get_conversation_modal_data/")
         .then((res) => {
-            // spinnerStop("");
             setConversationLoading(false);
             if (res.data.ok) {
                 let all_conv_data_res = res.data.all_conv_data;
@@ -669,7 +480,8 @@ const CustomMessenger = forwardRef((props, ref) => {
                     all_conv_data: all_conv_data_res
                 };
                 let req_count = getConversationRequestCount(modal_data.modal_conversation_requests)
-                setConversationReqNotificationCount(req_count)
+                setConversationReqNotificationCount(req_count);
+                dispatch(manage_request_count(req_count, "conversations"));
                 setConversationRequestModalData(modal_data);
                 let all_groups = res.data.all_groups;
                 let temp_is_removed_dict = {};
@@ -703,7 +515,6 @@ const CustomMessenger = forwardRef((props, ref) => {
         })
         .catch((err) => {
             setConversationLoading(false);
-            // spinnerStop("");
             console.log(err);
         });
     };
@@ -745,7 +556,6 @@ const CustomMessenger = forwardRef((props, ref) => {
     };
 
     const spinnerStop = (type) => {
-        dispatch(spinner_overlay(false));
         if(type === "conversation_modal"){
             setLoaderActive(false);
             document.getElementById("loadingoverlay").style.display = "none";
@@ -963,9 +773,9 @@ const CustomMessenger = forwardRef((props, ref) => {
         post_data["is_group"] = false;
         let recipient;
         if(groupData){
-            let participants_temp = [...recipient_user, curr_user_data]
+            let participants_temp = [...recipient_user, {'name': curr_user_data.username, 'id': curr_user_data.id}]
             post_data["is_group"] = true;
-            post_data["admin"] = JSON.parse(groupData.admin);
+            post_data["admin"] = groupData.admin;
             post_data["group_profile_picture"] = groupData.group_image;
             post_data["group_name"] = groupData.group_name;
             post_data["group_description"] = groupData.group_description;
@@ -1003,10 +813,8 @@ const CustomMessenger = forwardRef((props, ref) => {
                     if(notification_data.hasOwnProperty(recipient)){
                         recipient_notification = [notification_data[recipient]]
                     }
-                    console.log(sender_notification);
-                    console.log(recipient_notification);
                     if(action === "accept"){
-                        dispatch(notifications(sender_notification));
+                        dispatch(notifications(sender_notification, "new"));
                         if(res_type === "new"){
                             if(res.data.created_conversation !== undefined){
                                 res_conversation = res.data.created_conversation;
@@ -1051,8 +859,7 @@ const CustomMessenger = forwardRef((props, ref) => {
         };
 
       const groupAdd = (data) => {
-        let group_admin = curr_user_data.id;
-        let group_data = {...data, admin: group_admin};
+        let group_data = {...data};
         manageModalConversations("accept", group_data.group_members, "", group_data);
       }
 
@@ -1240,7 +1047,7 @@ const CustomMessenger = forwardRef((props, ref) => {
 
       const conversationModalRefresh = () => {
         setConversationModalErrors("");
-        getConversationModalData();
+        getConversationModalData(true);
       }
 
       const setConversationModalData = (action, recipient_user, chat, chat_id, type, is_group) => {
@@ -1312,7 +1119,7 @@ const CustomMessenger = forwardRef((props, ref) => {
                 setAllConversations(all_conv);
                 setSearchConversations(all_conv);
                 setIsConversationFriend(temp_friends);
-                dispatch(conversation_delete(temp_friends, "remove"));
+                // dispatch(conversation_delete(temp_friends, "remove"));
                 setConversationRequestModalData({...conversationRequestsModalData, modal_friends: updated_modal_friends, modal_conversations: conversations, modal_conversation_requests: updated_modal_conversations_requests, all_conv: updated_all_conv})
             }else if(action === "remove"){
                 updated_modal_conversations = conversationRequestsModalData.modal_conversations.filter(item => {               
@@ -1333,7 +1140,7 @@ const CustomMessenger = forwardRef((props, ref) => {
                 delete temp_friends[recipient_user.id];
                 setConversationUserDict(temp);
                 setIsConversationFriend(temp_friends);
-                dispatch(conversation_delete(temp_friends, "remove"));
+                // dispatch(conversation_delete(temp_friends, "remove"));
                 // setAllConversations(updated_all_conversations);
                 setConversationRequestModalData({...conversationRequestsModalData, modal_friends: updated_modal_friends, modal_conversations: updated_modal_conversations})
             }else if(action === "reject"){
@@ -1577,6 +1384,7 @@ const CustomMessenger = forwardRef((props, ref) => {
         post_data["last_seen"] = new Date();
         setConversationReqLastSeen(post_data["last_seen"]);
         setConversationReqNotificationCount(0);
+        dispatch(manage_request_count(0, "conversations"));
         axiosInstance
           .post("manage_requests_last_seen/", post_data)
           .then((res) => {
@@ -1725,7 +1533,7 @@ const CustomMessenger = forwardRef((props, ref) => {
         temp[conversation.id] = true;
         temp['conversation'] = conversation;
         setSelectedConversation(temp);
-        dispatch(current_selected_conversation(conversation));
+        // dispatch(current_selected_conversation(conversation));
         setCurrConversation(conversation);
     }
 
@@ -2162,6 +1970,18 @@ const CustomMessenger = forwardRef((props, ref) => {
                             {windowWidth} x {windowHeight}
                             </p>)
                         })}
+                        <Button onClick={() => { setImageMsgVisible(true) }}>
+                            View Image
+                        </Button>
+                        <Viewer
+                            downloadable={true}
+                            downloadInNewWindow={true}
+                            attribute={false}
+                            visible={imageMsgVisible}
+                            onClose={() => { setImageMsgVisible(false) } }
+                            images={[{src: 'https://picsum.photos/2000/3000?grayscale', alt: '', 
+                            downloadUrl:"https://picsum.photos/2000/3000?grayscale" }]}
+                        />
                         <p className="group_participant_status_msg">{conversationStatusMsg && conversationStatusMsg.hasOwnProperty(currConversation.id)?conversationStatusMsg[currConversation.id]:""}</p>
                     </Col>
                 </Row>

@@ -24,7 +24,7 @@ import {
   IS_REFRESHED,
   CURRENT_SELECTED_CONVERSATION,
   CONVERSATION_DELETE,
-  MANAGE_REQUESTS_LAST_SEEN
+  MANAGE_REQUESTS_COUNT
 } from "./sessionTypes";
 
 const initialState = {
@@ -50,7 +50,7 @@ const initialState = {
   is_refreshed:false,
   current_selected_conversation: {},
   conversation_delete:{},
-  manage_requests_last_seen:{}
+  manage_request_count:{}
 };
 
 const sessionReducer = (state = initialState, action) => {
@@ -87,7 +87,7 @@ const sessionReducer = (state = initialState, action) => {
           is_refreshed:false,
           current_selected_conversation: {},
           conversation_delete:{},
-          manage_requests_last_seen:{}
+          manage_request_count:{}
       };
     case USER_CREATED_SUCCESS:
       return {
@@ -228,9 +228,18 @@ const sessionReducer = (state = initialState, action) => {
         ws_list: action.payload,
       };
     case NOTIFICATIONS:
+      let req_notification_type = action.payload.req_type;
+      let req_notifications = action.payload.notifications;
+      let curr_notifications = state.notifications;
+      let temp_notifications = [];
+      if(req_notification_type === 'new'){
+        temp_notifications = curr_notifications.concat(req_notifications);
+      }else{
+        temp_notifications = req_notifications;
+      }
       return {
         ...state,
-        notifications: action.payload.notifications
+        notifications: temp_notifications
       };
     case CHAT_MESSAGES:
       let temp_chat_msgs = {};
@@ -324,19 +333,19 @@ const sessionReducer = (state = initialState, action) => {
         ...state,
         last_seen: action.payload,
       };
-    case MANAGE_REQUESTS_LAST_SEEN:
-      let temp_last_seen_requests_data = {};
-      let rec_last_seen = action.payload;
+    case MANAGE_REQUESTS_COUNT:
+      let temp_requests_count_data = {};
+      let rec_count = action.payload;
       let rec_type = action.req_type;
-      let curr_manage_requests_last_seen_dict = state.manage_requests_last_seen;
+      let curr_manage_requests_count_dict = state.manage_request_count;
       if(rec_type === "conversations"){
-        temp_last_seen_requests_data = {...curr_manage_requests_last_seen_dict, conversations: rec_last_seen}
+        temp_requests_count_data = {...curr_manage_requests_count_dict, conversations: rec_count}
       }else{
-        temp_last_seen_requests_data = {...curr_manage_requests_last_seen_dict, friends: rec_last_seen}
+        temp_requests_count_data = {...curr_manage_requests_count_dict, friends: rec_count}
       }
       return {
         ...state,
-        manage_requests_last_seen: temp_last_seen_requests_data,
+        manage_request_count: temp_requests_count_data,
       };
     default:
       return state;

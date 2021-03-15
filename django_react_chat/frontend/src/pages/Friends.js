@@ -7,7 +7,7 @@ import {
   user_data,
   friend_requests,
   notifications,
-  manage_requests_last_seen
+  manage_request_count
 } from "../redux";
 import { useDispatch, useSelector } from "react-redux";
 import "../index.css";
@@ -37,6 +37,7 @@ function Friends(props) {
   const [key, setKey] = useState("users");
   const history = useHistory();
   const dispatch = useDispatch();
+  const session_manage_requests_count = useSelector(state => state.session.manage_request_count);
   const curr_user_data = useSelector((state) => state.session.user_data);
   const [friendRequestModalData, setFriendRequestModalData] = useState([]);
   const [friendReqNotificationCount, setFriendReqNotificationCount] = useState(0);
@@ -46,20 +47,21 @@ function Friends(props) {
 
   useEffect(() => {
     getFriendRequestModalData();
-    WebSocketInstance.connect("friend_requests", "");
-    // WebSocketInstance.connect("requests", "friends", "");
-    WebSocketInstance.friendRequestNotificationCallbacks((data) =>
-      setSocketFriendRequestData(data)
-    );
+    initSocket();
   }, []);
 
+  const initSocket = () => {
+    WebSocketInstance.friendRequestNotificationCallbacks((data) =>
+      setSocketFriendRequestData1(data)
+    );
+  }
 
-  const setSocketFriendRequestData = (data) => {
+  const setSocketFriendRequestData1 = (data) => {
     if(data.user_id !== curr_user_data.id){
       console.log(data);
       console.log('FRIENDS SOCKET');
-      if(data.action === 'accept'){
-        dispatch(notifications(data.notification_data));
+      if(data.action === 'accept' || data.action === 'add'){
+        dispatch(notifications(data.notification_data, "new"));
       }
       getFriendRequestModalData();
     }
@@ -109,9 +111,9 @@ function Friends(props) {
               };
               let req_count = getFriendRequestCount(modal_data.modal_friend_requests);
               setFriendReqNotificationCount(req_count);
+              dispatch(manage_request_count(req_count, "friends"));
               setFriendRequestModalData(modal_data);
               setFriendsUserDataDict(user_data_dict);
-              console.log(modal_data);
             } else {
                 //pass
             }
@@ -213,6 +215,7 @@ const updateFriendReqLastSeen = () => {
   post_data["last_seen"] = new Date();
   setFriendReqLastSeen(post_data["last_seen"]);
   setFriendReqNotificationCount(0);
+  dispatch(manage_request_count(0, "friends"));
   axiosInstance
     .post("manage_requests_last_seen/", post_data)
     .then((res) => {
@@ -246,7 +249,7 @@ const updateFriendReqLastSeen = () => {
               recipient_notification = [notification_data[recipient_user.id]]
           }
           if(action === "accept"){
-            dispatch(notifications(sender_notification));
+            dispatch(notifications(sender_notification, "new"));
           }
           setFriendRequestModalDataMethod(action, recipient_user)
           initializeSocket(
@@ -370,7 +373,7 @@ const updateFriendReqLastSeen = () => {
               >
                 {friendRequestModalData &&
                 friendRequestModalData.hasOwnProperty("modal_users") &&
-                friendRequestModalData.modal_users.length > 0 ? (
+                friendRequestModalData.modal_users && friendRequestModalData.modal_users.length > 0 ? (
                   friendRequestModalData.modal_users.map((user, index) => {
                     return (
                       <Row
@@ -478,7 +481,7 @@ const updateFriendReqLastSeen = () => {
               >
                 {friendRequestModalData &&
                 friendRequestModalData.hasOwnProperty("modal_friends") &&
-                friendRequestModalData.modal_friends.length > 0 ? (
+                friendRequestModalData.modal_friends && friendRequestModalData.modal_friends.length > 0 ? (
                   friendRequestModalData.modal_friends.map((friend, index) => {
                     return (
                       <Row
@@ -571,7 +574,7 @@ const updateFriendReqLastSeen = () => {
               >
                 {friendRequestModalData &&
                 friendRequestModalData.hasOwnProperty("modal_friend_requests") &&
-                friendRequestModalData.modal_friend_requests.length > 0 ? (
+                friendRequestModalData.modal_friend_requests && friendRequestModalData.modal_friend_requests.length > 0 ? (
                   friendRequestModalData.modal_friend_requests.map((friendReq, index) => {
                     return (
                       <Row
@@ -669,7 +672,7 @@ const updateFriendReqLastSeen = () => {
               >
                 {friendRequestModalData &&
                 friendRequestModalData.hasOwnProperty("modal_sent_friend_requests") &&
-                friendRequestModalData.modal_sent_friend_requests.length > 0 ? (
+                friendRequestModalData.modal_sent_friend_requests && friendRequestModalData.modal_sent_friend_requests.length > 0 ? (
                   friendRequestModalData.modal_sent_friend_requests.map(
                     (friendReq, index) => {
                       return (

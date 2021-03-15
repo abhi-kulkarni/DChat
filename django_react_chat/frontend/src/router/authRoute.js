@@ -28,11 +28,7 @@ class AuthRoute extends Component {
     let { history, auth, location, session } = this.props;
     let isLoggedIn = this.props.session.isLoggedIn;
     if (
-      location.pathname === "/signin/" ||
-      location.pathname === "/signin" ||
-      location.pathname === "/signup/" ||
-      location.pathname === "/signup"
-    ) {
+      location.pathname.includes('signin') || location.pathname.includes('signup')) {
       this.setState({ isAuth: true });
     } else {
       if (auth) {
@@ -53,23 +49,22 @@ class AuthRoute extends Component {
             }
           } else {
             const resp = await axiosInstance.get("is_authenticated/");
-            console.log(resp.data.user)
             const user = await resp.data.user;
             this.setState({ curr_user_data: user });
-            const friend_requests_data = await resp.data.friend_requests;
-            const chat_requests_data = await resp.data.chat_requests;
+            // const friend_requests_data = await resp.data.friend_requests;
+            // const chat_requests_data = await resp.data.chat_requests;
             const notification_data = await resp.data.notifications;
-            const modal_data = await resp.data.conversation_modal_data;
-            const conversation_delete_dict = await resp.data.conversation_delete_dict;
+            // const modal_data = await resp.data.conversation_modal_data;
+            // const conversation_delete_dict = await resp.data.conversation_delete_dict;
             const ok = await resp.data.ok;
             if (ok) {
               this.props.dispatch(sign_in());
               this.props.dispatch(user_data(user));
-              this.props.dispatch(friend_requests(friend_requests_data));
-              this.props.dispatch(chat_requests(chat_requests_data));
+              // this.props.dispatch(friend_requests(friend_requests_data));
+              // this.props.dispatch(chat_requests(chat_requests_data));
               this.props.dispatch(notifications(notification_data));
-              this.props.dispatch(conversation_modal_data(modal_data));
-              this.props.dispatch(conversation_delete(conversation_delete_dict.remove, "remove"))
+              // this.props.dispatch(conversation_modal_data(modal_data));
+              // this.props.dispatch(conversation_delete(conversation_delete_dict.remove, "remove"))
               this.setState({ isAuth: true });
             } else {
               history.push("/signin");
@@ -87,22 +82,22 @@ class AuthRoute extends Component {
       }
     }
     let user = this.props.session.user_data;
+    let self = this;
     // console.log("Intercept before route jump", this.props);
     if (!this.props.path.includes("messenger")) {
-      let self = this;
-      WebSocketInstance.connect("conversation", "requests");
-      // WebSocketInstance.connect("requests", "conversation", "status");
       WebSocketInstance.conversationRequestNotificationCallbacks(
         () => {},
-        (data) => self.setConversationStatusData(data),
-      );
-      this.waitForSocketConnection(() => {
-        WebSocketInstance.setConversationStatus(user.id, "offline", "sender");
-      });
-    } else if (this.props.path == "/messenger" || this.props.path == "/messenger/") {
-      //pass
+        (data) => self.setConversationStatusData(data)
+      )
+      this.initializeConversationStatus(user.id, "offline", "sender")
     }
   }
+
+  initializeConversationStatus = (uId, status, type) => {
+    this.waitForSocketConnection(() => {
+      WebSocketInstance.setConversationStatus(uId, status, type);
+    });
+  };
 
   setConversationStatusData(data) {
     this.props.dispatch(chat_status(data));

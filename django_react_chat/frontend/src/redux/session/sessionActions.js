@@ -23,7 +23,7 @@ import {
   IS_REFRESHED,
   CURRENT_SELECTED_CONVERSATION,
   CONVERSATION_DELETE,
-  MANAGE_REQUESTS_LAST_SEEN
+  MANAGE_REQUESTS_COUNT
 } from "./sessionTypes";
 
 export const sign_in = () => {
@@ -94,7 +94,7 @@ export const msg_count = (msg_count = {}) => {
 export const notifications = (notifications = [], type = "") => {
   return {
     type: NOTIFICATIONS,
-    payload: { notifications: notifications, type: type },
+    payload: { notifications: notifications, req_type: type },
   };
 };
 
@@ -197,9 +197,9 @@ export const conversation_delete = (data = {}, type = '') => {
   };
 };
 
-export const manage_requests_last_seen = (data = {}, type = '') => {
+export const manage_request_count = (data = {}, type = '') => {
   return {
-    type: MANAGE_REQUESTS_LAST_SEEN,
+    type: MANAGE_REQUESTS_COUNT,
     payload: data,
     req_type: type
   };

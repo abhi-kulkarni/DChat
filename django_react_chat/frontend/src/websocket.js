@@ -43,7 +43,6 @@ class WebSocketService {
         console.log(e.message);
       };
       this.socketRef.onclose = () => {
-        console.log(this.socketRef)
         console.log("WebSocket closed let's reopen");
         self.connect();
       };
@@ -88,6 +87,9 @@ class WebSocketService {
     if (command === "last_seen" && this.callbacks.hasOwnProperty(command)) {
       this.callbacks[command](parsedData.last_seen);
     }
+    if(command === "socket_data" && this.callbacks.hasOwnProperty(command)){
+      this.callbacks[command](parsedData.socket_data);
+    }
   }
 
   fetchMessages(uId, chatId) {
@@ -108,6 +110,13 @@ class WebSocketService {
     });
   }
 
+  fetchSocketData(userId){
+    this.sendMessage({
+      user_id: userId,
+      command: "fetch_socket_data",
+    });
+  }
+
   fetchFriendRequests(userId, recipientUserId, action, notificationData) {
     this.sendMessage({
       user_id: userId,
@@ -115,6 +124,7 @@ class WebSocketService {
       action: action,
       notification_data: notificationData,
       command: "fetch_friend_requests",
+      request_source:'friend_requests'
     });
   }
 
@@ -156,7 +166,8 @@ class WebSocketService {
       type: type,
       command: "fetch_conversation_requests",
       is_group: isGroup,
-      group_data:groupData
+      group_data:groupData,
+      request_source:'conversation_requests'
     });
   }
 
@@ -217,6 +228,13 @@ class WebSocketService {
     this.callbacks["conversation_requests"] = conversationRequestCallback;
     this.callbacks["conversation_status"] = conversationStatusCallback;
 
+  }
+
+  socketDataCallbacks(appDataCallback, conversationRequestDataCallback, 
+    friendRequestDataCallback, conversationDataCallback){
+    this.callbacks["socket_data"] = appDataCallback;
+    this.callbacks["conversation_requests"] = conversationRequestDataCallback;
+    this.callbacks["friend_requests"] = friendRequestDataCallback;
   }
 
   sendMessage(data) {

@@ -148,7 +148,8 @@ const GroupForm = forwardRef((props, ref) => {
             let data = {...groupFormData, admin: updatedAdminList, admin_change: temp_admin, is_admin: isAdmin, participant_change: temp, removed_participants: removedParticipantsList, added_participants: addedParticipantsList, previous_group_data: previousGroupData}; 
             props.handleEditGroup(data);
           }else{
-            props.handleAddGroup(groupFormData);
+            let data = {...groupFormData, admin: updatedAdminList}
+            props.handleAddGroup(data);
           }
         }
     };

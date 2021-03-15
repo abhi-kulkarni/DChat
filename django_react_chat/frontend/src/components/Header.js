@@ -17,6 +17,7 @@ import {
   chat_messages,
   chat_requests,
   chat_status,
+  manage_request_count
 } from "../redux";
 import AtomSpinner from "./Atomspinner";
 import axios from "axios";
@@ -53,6 +54,7 @@ import { defaultProfilePictureImageDataUri } from "../constants/";
 import { brandImageDataUri } from "../constants/";
 
 function Header(props) {
+  const session_manage_requests_count = useSelector(state => state.session.manage_request_count);
   const isLoggedIn = useSelector((state) => state.session.isLoggedIn);
   const history = useHistory();
   const dispatch = useDispatch();
@@ -81,6 +83,8 @@ function Header(props) {
   const [showNewPasswordConfirm, setShowNewPasswordConfirm] = useState(false);
   const [changePasswordModal, setChangePasswordModalShow] = useState(false);
   const [tabKey, setTabKey] = useState("password");
+  const [friendReqCount, setFriendReqCount] = useState(0);
+  const [conversationReqCount, setConversationReqCount] = useState(0);
   const [passwordFormData, setPasswordFormData] = useState({
     currentPassword: "",
     newPassword: "",
@@ -107,20 +111,50 @@ function Header(props) {
 
   useEffect(() => {
     let count = 0;
+    let friend_request_count = 0;
+    let conversation_request_count = 0;
     let data =
       session_notification_data &&
       session_notification_data.filter((item) => {
         if (item) {
           if (item.hasOwnProperty("read") && !item.read) {
             count += 1;
+            if(item.notification_type === 'friend_requests'){
+              friend_request_count += 1;
+            }else if(item.notification_type === 'conversation_requests'){
+              conversation_request_count += 1;
+            }
           }
           return item.participants.indexOf(curr_user_data.id) > -1;
         }
       });
     const recentNotifications = data?data.sort((a, b) => new Date(b.created_on) - new Date(a.created_on)):[];
     data ? setNotificationData(recentNotifications) : setNotificationData([]);
-    count > 0 ? setNotificationCount(count) : setNotificationCount(0);
+    if(count > 0){
+      setNotificationCount(count);
+      if(friend_request_count > 0){
+        setFriendReqCount(friend_request_count);
+      }else{
+        setFriendReqCount(0);
+      }
+      if(conversation_request_count > 0){
+        setConversationReqCount(conversation_request_count);
+      }else{
+        setConversationReqCount(0);
+      }
+    }else{
+      setNotificationCount(0);
+    }
   }, [session_notification_data]);
+
+  useEffect(() => {
+    if(session_manage_requests_count.hasOwnProperty('friends')){
+      setFriendReqCount(session_manage_requests_count.friends)
+    }
+    if(session_manage_requests_count.hasOwnProperty('conversations')){
+      setConversationReqCount(session_manage_requests_count.conversations)
+    }
+  }, [session_manage_requests_count])
 
   const hideNotificationPopUp = () => {
     setShowNotification(false);
@@ -151,7 +185,7 @@ function Header(props) {
       .post("manage_notifications/", post_data)
       .then((res) => {
         if (res.data.ok) {
-          dispatch(notifications(res.data.notifications, "read"));
+          dispatch(notifications(res.data.notifications));
         } else {
           console.log("Error");
         }
@@ -880,7 +914,7 @@ function Header(props) {
                                 lg={1}
                                 xl={1}
                               >
-                                {item.notification_type == "chat" ? (
+                                {item.notification_type == "conversations" || item.notification_type === "conversation_requests"  ? (
                                   <FaComments
                                     style={{
                                       fontSize: "0.8rem",
@@ -947,10 +981,11 @@ function Header(props) {
                   paddingLeft: "5px",
                 }}
               >
-                <FaAddressBook
-                onClick={() => redirectPage('/friends')}
-                  style={{ cursor: "pointer", fontSize: "1.3rem" }}
-                />
+                  {friendReqCount > 0?<div style={{ zIndex: '10', position:'absolute', marginLeft: '16px', backgroundColor: 'red', height: '6px', width: '6px', borderRadius: '100%'}}></div>:""}
+                  <FaAddressBook
+                  onClick={() => redirectPage('/friends')}
+                    style={{ position:'relative', cursor: "pointer", fontSize: "1.3rem" }}
+                  />
               </Nav.Link>
               <Nav.Link
                 style={{
@@ -959,6 +994,7 @@ function Header(props) {
                   paddingLeft: "5px",
                 }}
               >
+                {conversationReqCount > 0?<div style={{ zIndex: '10', position:'absolute', marginTop: '3px', marginLeft: '16px', backgroundColor: 'red', height: '6px', width: '6px', borderRadius: '100%'}}></div>:""}
                 <FaComments onClick={() => redirectPage('/messenger')} style={{ cursor: "pointer", fontSize: "1.6rem" }} />
               </Nav.Link>
               <DropdownButton
