@@ -9,6 +9,8 @@ import {
   chat_requests,
   notifications,
   chat_status,
+  conversation_modal_data,
+  conversation_delete
 } from "../redux";
 import axiosInstance from "../components/axiosInstance";
 import WebSocketInstance from "../websocket";
@@ -47,15 +49,18 @@ class AuthRoute extends Component {
             if (!(isLoggedIn && token_response)) {
               history.push("/signin");
             } else {
-              this.setState({ isAuth: true });
+              this.setState({ isAuth: true, curr_user_data: this.props.session.user_data });
             }
           } else {
             const resp = await axiosInstance.get("is_authenticated/");
+            console.log(resp.data.user)
             const user = await resp.data.user;
             this.setState({ curr_user_data: user });
             const friend_requests_data = await resp.data.friend_requests;
             const chat_requests_data = await resp.data.chat_requests;
             const notification_data = await resp.data.notifications;
+            const modal_data = await resp.data.conversation_modal_data;
+            const conversation_delete_dict = await resp.data.conversation_delete_dict;
             const ok = await resp.data.ok;
             if (ok) {
               this.props.dispatch(sign_in());
@@ -63,6 +68,8 @@ class AuthRoute extends Component {
               this.props.dispatch(friend_requests(friend_requests_data));
               this.props.dispatch(chat_requests(chat_requests_data));
               this.props.dispatch(notifications(notification_data));
+              this.props.dispatch(conversation_modal_data(modal_data));
+              this.props.dispatch(conversation_delete(conversation_delete_dict.remove, "remove"))
               this.setState({ isAuth: true });
             } else {
               history.push("/signin");
@@ -79,26 +86,25 @@ class AuthRoute extends Component {
         this.setState({ isAuth: true });
       }
     }
-    let user = this.state.curr_user_data;
+    let user = this.props.session.user_data;
     // console.log("Intercept before route jump", this.props);
-    if (!this.props.path.includes("chat")) {
+    if (!this.props.path.includes("messenger")) {
       let self = this;
-      WebSocketInstance.connect("chat_requests", "");
-      WebSocketInstance.chatRequestNotificationCallbacks(
+      WebSocketInstance.connect("conversation", "requests");
+      // WebSocketInstance.connect("requests", "conversation", "status");
+      WebSocketInstance.conversationRequestNotificationCallbacks(
         () => {},
-        (data) => self.setChatStatus(data),
-        () => {},
-        () => {}
+        (data) => self.setConversationStatusData(data),
       );
       this.waitForSocketConnection(() => {
-        WebSocketInstance.setChatStatus(user.id, "offline", "sender");
+        WebSocketInstance.setConversationStatus(user.id, "offline", "sender");
       });
-    } else if (this.props.path == "/chat" || this.props.path == "/chat/") {
+    } else if (this.props.path == "/messenger" || this.props.path == "/messenger/") {
       //pass
     }
   }
 
-  setChatStatus(data) {
+  setConversationStatusData(data) {
     this.props.dispatch(chat_status(data));
   }
 
@@ -122,7 +128,7 @@ class AuthRoute extends Component {
           ? this.props.layout
             ? React.createElement(
                 this.props.layout,
-                null,
+                { style: { marginTop: "0px" } },
                 React.createElement(this.props.component)
               )
             : React.createElement(this.props.component)

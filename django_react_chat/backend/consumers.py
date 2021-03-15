@@ -136,8 +136,50 @@ class Consumer(WebsocketConsumer):
         return self.send_response(temp)
     
 
-    def fetch_chat_requests(self, data):
+    def fetch_conversation_requests(self, data):
         temp = {}
+        user = None
+        extra_data = {"sender": data.get("sender", ''), "group_data": data.get('group_data', {}), "is_group": data.get('is_group', False), "action": data.get('action', ''), "chat_id": data.get('chat_id', ''), "type": data.get('type', ''), "user_id": data.get('user_id', '')}
+        if 'is_group' in data and data['is_group']:
+            temp['recipients'] = data['recipient_user_id']
+            temp['conversation_modal_data'] = get_conversation_requests(temp['recipients'], extra_data)
+        else:
+            user = User.objects.get(pk=data["recipient_user_id"])
+            temp['conversation_modal_data'] = get_conversation_requests(user, extra_data)
+            temp['recipient_user_id'] = data['recipient_user_id']
+        temp['user_id'] = data['user_id']
+        temp['command'] = 'conversation_requests'
+        temp['is_group'] = data.get('is_group', False)
+        temp['action'] = data.get('action', {})
+        temp['sender'] = data.get('sender', '')
+        temp['group_data'] = data.get('group_data', {})
+        return self.send_response(temp)  
+    
+    def fetch_friend_requests1(self, data):
+        temp = {}
+        temp['command'] = 'friend_requests'
+        temp['friends_modal_data'] = {
+        'user_id': data['user_id'], 
+        'group_data': data.get('group_data', {}), 
+        'action': data.get('action', ''), 
+        'notification_data': data.get('notification_data', '')
+        }
+        return self.send_response(temp) 
+
+    def fetch_conversation_requests1(self, data):
+        temp = {}
+        temp['command'] = 'conversation_requests'
+        temp['conversation_modal_data'] = {
+        'user_id': data['user_id'], 
+        'group_data': data.get('group_data', {}), 
+        'action': data.get('action', ''), 
+        'is_group': data.get('is_group', ''),
+        'notification_data': data.get('notification_data', '')
+        }
+        return self.send_response(temp)  
+
+    def fetch_chat_requests(self, data):
+        temp = {} 
         chat_id = data.get('chat_id', '')
         notification_data = data.get('notification_data', {})
         temp['user_id'] = data['user_id']
@@ -151,11 +193,10 @@ class Consumer(WebsocketConsumer):
         temp['command'] = 'chat_requests'
         return self.send_response(temp)   
 
-    def chat_status(self, data):
-
+    def conversation_status(self, data):
         temp = {}
-        temp['chat_status'] = {'user_id': data.get('user_id', ''), 'status': data['status'], 'type': data['type']}
-        temp['command'] = 'chat_status' 
+        temp['conversation_status'] = {'user_id': data.get('user_id', ''), 'status': data['status'], 'type': data['type']}
+        temp['command'] = 'conversation_status' 
         return self.send_response(temp)  
 
     def is_typing(self, data):
@@ -215,10 +256,11 @@ class Consumer(WebsocketConsumer):
     commands = {
         'fetch_messages': fetch_messages,
         'new_message': new_message,
-        'fetch_friend_requests': fetch_friend_requests,
+        'fetch_friend_requests': fetch_friend_requests1,
         'new_friend_request': new_friend_request,
         'fetch_chat_requests': fetch_chat_requests,
-        'chat_status': chat_status,
+        'fetch_conversation_requests':fetch_conversation_requests1,
+        'conversation_status': conversation_status,
         'last_seen': last_seen,
         'is_typing': is_typing,
     }
@@ -285,9 +327,15 @@ class Consumer(WebsocketConsumer):
                 'chat_id': data.get('chat_id', ''),
                 'messages': data.get('messages', []),
                 'notification_data': data.get('notification_data', {}),
-                'chat_status': data.get('chat_status', {}),
+                'conversation_status': data.get('conversation_status', {}),
                 'last_seen': data.get('last_seen', {}),
-                'is_typing': data.get('is_typing', {})
+                'is_typing': data.get('is_typing', {}),
+                'is_group': data.get('is_group', False),
+                'recipients': data.get('recipients', []),
+                'group_data': data.get('group_data', {}),
+                'sender': data.get('sender', {}),
+                'conversation_modal_data': data.get('conversation_modal_data', {}),
+                'friends_modal_data': data.get('friends_modal_data', {}),
             }
         )
 

@@ -242,11 +242,6 @@ function Header(props) {
         .then((res) => {
           spinnerStop();
           if (res.data.ok) {
-            console.log(`
-                        --SUBMITTING--
-                        Reset Password: ${passwordFormData.newPassword}
-                        Password: ${passwordFormData.newPasswordConfirm}
-                    `);
             signout();
           } else {
             console.log("error");
@@ -378,6 +373,14 @@ function Header(props) {
     spinnerStop();
   };
 
+  const redirectPage = (page) => {
+    let uri = page;
+    if(page === "home"){
+      uri = isLoggedIn ? "/home" : "/"
+    }
+    history.push(uri);
+  }
+
   const validatePassword = () => {
     if (store_overlay) {
       spinner(true);
@@ -430,7 +433,7 @@ function Header(props) {
         spinnerStop();
         if (response.data.ok) {
           waitForSocketConnection(() => {
-            WebSocketInstance.setChatStatus(
+            WebSocketInstance.setConversationStatus(
               curr_user_data.id,
               "offline",
               "reciever"
@@ -503,6 +506,7 @@ function Header(props) {
                     <Form.Group controlId="currentPassword">
                       <InputGroup>
                         <Form.Control
+                          autoComplete="off"
                           name="currentPassword"
                           type={showCurrentPassword ? "text" : "password"}
                           value={passwordFormData.currentPassword}
@@ -605,6 +609,7 @@ function Header(props) {
                     <Form.Group controlId="newPassword">
                       <InputGroup>
                         <Form.Control
+                          autoComplete="off"
                           name="newPassword"
                           type={showNewPassword ? "text" : "password"}
                           value={passwordFormData.showNewPassword}
@@ -645,6 +650,7 @@ function Header(props) {
                     <Form.Group controlId="newPasswordConfirm">
                       <InputGroup>
                         <Form.Control
+                          autoComplete="off"
                           name="newPasswordConfirm"
                           type={showNewPasswordConfirm ? "text" : "password"}
                           value={passwordFormData.newPasswordConfirm}
@@ -799,7 +805,7 @@ function Header(props) {
         </Modal.Footer>
       </Modal>
       <Navbar collapseOnSelect expand="lg" bg="light">
-        <Navbar.Brand href={isLoggedIn ? "/home" : "/"}>
+        <Navbar.Brand className="cursor-pointer" onClick={() => redirectPage('home')}>
           <Row>
             <Col style={{ paddingRight: '5px' }}>
               <img
@@ -940,9 +946,9 @@ function Header(props) {
                   paddingRight: "20px",
                   paddingLeft: "5px",
                 }}
-                href="/friends"
               >
                 <FaAddressBook
+                onClick={() => redirectPage('/friends')}
                   style={{ cursor: "pointer", fontSize: "1.3rem" }}
                 />
               </Nav.Link>
@@ -952,9 +958,8 @@ function Header(props) {
                   paddingRight: "30px",
                   paddingLeft: "5px",
                 }}
-                href="/chat"
               >
-                <FaComments style={{ cursor: "pointer", fontSize: "1.6rem" }} />
+                <FaComments onClick={() => redirectPage('/messenger')} style={{ cursor: "pointer", fontSize: "1.6rem" }} />
               </Nav.Link>
               <DropdownButton
                 alignRight
@@ -983,20 +988,20 @@ function Header(props) {
                   </span>
                 </Dropdown.Item>
                 <Dropdown.Item>
-                  <Link
+                  <div
                     style={{ color: "black", textDecoration: "none" }}
-                    to="/profile"
+                    onClick={() => redirectPage('/profile')}
                   >
                     Your Profile
-                  </Link>
+                  </div>
                 </Dropdown.Item>
                 <Dropdown.Item>
-                  <Link
+                  <div
                     style={{ color: "black", textDecoration: "none" }}
-                    to="/friends"
+                    onClick={() => redirectPage('/friends')}
                   >
                     Manage Friends
-                  </Link>
+                  </div>
                 </Dropdown.Item>
                 <Dropdown.Item onClick={() => openChangePasswordModal()}>
                   Change Password

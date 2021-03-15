@@ -10,7 +10,7 @@ from django.db import IntegrityError
 from django.contrib.auth import authenticate, login, logout
 from rest_framework_simplejwt.views import TokenObtainPairView
 from rest_framework import permissions
-from .serializers import MyTokenObtainPairSerializer, NotificationSerializer, FriendSerializer, FriendRequestSerializer, UserSerializer
+from .serializers import MyTokenObtainPairSerializer, ChatSerializer, NotificationSerializer, FriendSerializer, FriendRequestSerializer, UserSerializer
 from django.contrib.auth.hashers import check_password, make_password
 from friendship.models import Friend, Follow, Block, FriendshipRequest 
 from django.core.cache import cache
@@ -51,7 +51,8 @@ def is_authenticated(request):
         friend_requests = manage_friend_request_data([request.user.id], '', None)[request.user.id]
         chat_requests = manage_chat_request_data([request.user.id], '', '', None)[request.user.id]
         notifications = get_all_notifications(request.user.id)
-        return Response({'ok': True, 'user': serializer.data, 'is_logged_in': True, 'friend_requests': friend_requests, 'chat_requests': chat_requests, 'notifications': notifications})
+        conversation_modal_data = get_conversation_modal_data_method(request)
+        return Response({'ok': True, 'conversation_modal_data': conversation_modal_data, 'user': serializer.data, 'is_logged_in': True, 'friend_requests': friend_requests, 'chat_requests': chat_requests, 'notifications': notifications, 'conversation_delete_dict': conversation_modal_data['conversation_delete_dict']})
     else:
         return Response({'ok': False})
 
@@ -91,6 +92,7 @@ def signup(request):
 @api_view(["PUT"])
 @permission_classes([IsAuthenticated])
 def update_user(request, pk):
+
     curr_user = User.objects.filter(pk=pk)
     error_msg = 'Some error occured.'
     try:
@@ -103,7 +105,7 @@ def update_user(request, pk):
         return Response({'ok': False, 'error': error_msg})
     user_obj = User.objects.get(pk=pk)
     serializer = UserSerializer(user_obj)
-    return Response({'ok': True, 'data': serializer.data}, status=status.HTTP_200_OK)
+    return Response({'ok': True, 'user': serializer.data}, status=status.HTTP_200_OK)
     
 
 @api_view(["DELETE"])
@@ -125,8 +127,182 @@ def get_all_users(request):
     else:
         return Response({"ok": False, "users": [], "error": "Some error occured."})
 
+@api_view(['POST'])
+@permission_classes([IsAuthenticated])
+def add_group(request):
+    
+    post_data = request.data
+    # serializer = ChatSerializer(chat_obj)
+    return Response({'ok': True, 'group': {}})
+
+
+@api_view(['GET'])
+@permission_classes([IsAuthenticated])
+def get_curr_group(request, pk):
+    serializer = Chat.objects.objects.get(pk=pk)
+    return Response({'ok': True, 'group': serializer.data})
+
+
+@api_view(["POST"])
+@permission_classes([IsAuthenticated])
+def update_group(request):
+
+    error_msg = 'Some error occured.'
+    post_data = request.data
+    curr_group = Chat.objects.get(pk=post_data['id'])
+    added_participants = []
+    is_deleted = False
+    is_exit = False
+    is_clear = False
+    is_removed = False
+    removed_participants = []
+    deleted_participants = []
+    exit_participants = []
+    cleared_participants = []
+    if post_data['type'] == 'update':
+        is_admin = post_data['is_admin']
+        participant_change = post_data['participant_change']
+        group_name_change = post_data['group_name_change']
+        group_image_change = post_data['group_image_change']
+        group_description_change = post_data['group_description_change']
+        group_admin_change = post_data['group_admin_change']
+        if participant_change:
+            removed_participants = post_data['removed_participants']
+            added_participants = post_data['added_participants']
+            if removed_participants:
+                for obj in removed_participants:
+                    curr_removed_dict = curr_group.removed
+                    removed_dict = {}
+                    if curr_removed_dict:
+                        removed_dict = json.loads(curr_removed_dict) if curr_removed_dict else {}
+                    removed_dict[str(obj)] = True
+                    curr_group.removed = json.dumps(removed_dict)
+            if added_participants:
+                for obj in added_participants:
+                    curr_removed_dict = curr_group.removed
+                    removed_dict = {}
+                    if curr_removed_dict:
+                        removed_dict = json.loads(curr_removed_dict) if curr_removed_dict else {}
+                    removed_dict[str(obj)] = False
+                    curr_group.removed = json.dumps(removed_dict)
+        curr_group.group_name = post_data['group_name']
+        curr_group.group_description = post_data['group_description']
+        curr_group.group_profile_picture = post_data['group_profile_picture']
+        curr_group.admin = json.dumps(post_data["admin"])
+        participants = post_data['participants']
+        p_list = []
+        curr_group.participants.clear()
+        curr_has_exit_group_dict = json.loads(curr_group.has_exit)
+        curr_remove_group_dict = json.loads(curr_group.removed)
+        
+        for participant_obj in participants:
+            user = User.objects.get(pk=participant_obj['id'])
+            curr_group.participants.add(user)
+            p_list.append(UserSerializer(user).data)
+            curr_has_exit_group_dict[str(participant_obj['id'])] = False
+            curr_remove_group_dict[str(participant_obj['id'])] = False
+
+        curr_group.removed = json.dumps(curr_remove_group_dict)
+        curr_group.has_exit = json.dumps(curr_has_exit_group_dict)
+        curr_group.save()
+        if user.id in removed_participants:
+            is_removed = True
+        if user.id in deleted_participants:
+            is_deleted = True
+        if user.id in exit_participants:
+            is_exit = True
+        if user.id in cleared_participants:
+            is_clear = True
+        curr_group_serializer = ChatSerializer(curr_group).data
+        curr_group_serializer['participants_detail'] = p_list
+        admin_list = []
+        for user_obj in json.loads(curr_group.admin):
+            curr_user = User.objects.get(pk=user_obj)
+            if curr_user:
+                admin_list.append(UserSerializer(curr_user, many=False).data)
+        curr_group_serializer["admin_users"] = admin_list
+        curr_group_serializer["participant_change"] = participant_change
+        curr_group_serializer["group_admin_change"] = group_admin_change
+        curr_group_serializer["group_name_change"] = group_name_change
+        curr_group_serializer["group_description_change"] = group_description_change
+        curr_group_serializer["group_image_change"] = group_image_change
+        curr_group_serializer["removed_participants"] = removed_participants
+        curr_group_serializer["added_participants"] = added_participants
+        curr_group_serializer["exit_participants"] = exit_participants
+        curr_group_serializer["is_clear"] = is_clear
+        curr_group_serializer["is_removed"] = is_removed
+        curr_group_serializer["is_deleted"] = is_deleted
+        curr_group_serializer["is_exit"] = is_exit
+        return Response({'ok': True, 'group': curr_group_serializer}, status=status.HTTP_200_OK)
+    elif post_data['type'] == 'exit':
+        curr_user_id = post_data['curr_user_id']
+        curr_exit_dict = curr_group.exit
+        curr_has_exit_dict = curr_group.has_exit
+        curr_group_admins = json.loads(curr_group.admin) if curr_group.admin else []
+        updated_admins = []
+        exit_dict = {}
+        has_exit_dict = {}
+
+        for admin in curr_group_admins:
+            if admin != curr_user_id:
+                updated_admins.append(admin)
+
+        if curr_exit_dict:
+            exit_dict = json.loads(curr_exit_dict) if curr_exit_dict else {}
+            exit_dict[str(curr_user_id)] = True
+
+        if curr_has_exit_dict:
+            has_exit_dict = json.loads(curr_has_exit_dict) if curr_has_exit_dict else {}
+            has_exit_dict[str(curr_user_id)] = True
+        
+        for participant in curr_group.participants.all():
+            if participant.id == curr_user_id:
+                curr_group.participants.remove(participant)
+
+        participants = list(curr_group.participants.all())
+
+        if len(updated_admins) == 0:
+            updated_admins.append(participants[0].id)
+        
+        curr_group.exit = json.dumps(exit_dict)
+        curr_group.has_exit = json.dumps(has_exit_dict)
+        curr_group.admin = json.dumps(updated_admins)
+        curr_group.save()
+
+        p_list = []
+        for participant_obj in participants:
+            p_list.append(UserSerializer(participant_obj).data)
+
+        curr_group_serializer = ChatSerializer(curr_group).data
+        curr_group_serializer['participants_detail'] = p_list
+        curr_group_serializer['is_exit'] = True
+
+        admin_list = []
+        for user_obj in json.loads(curr_group.admin):
+            curr_user = User.objects.get(pk=user_obj)
+            if curr_user:
+                admin_list.append(UserSerializer(curr_user, many=False).data)
+        curr_group_serializer["admin_users"] = admin_list
+        
+        return Response({'ok': True, 'group': curr_group_serializer}, status=status.HTTP_200_OK)
+
+
+@api_view(["GET"])
+@permission_classes([IsAuthenticated])
+def delete_group(request, pk):
+    
+    curr_group = Chat.objects.get(pk=pk)
+    curr_user_id = pk
+    curr_delete_dict = curr_group.deleted
+    delete_dict = {}
+    if curr_delete_dict:
+        delete_dict = json.loads(curr_delete_dict) if curr_delete_dict else {}
+    delete_dict[str(curr_user_id)] = True
+    curr_group.save()
+    return Response({'ok': True}, status=status.HTTP_200_OK)
 
 @api_view(['POST'])
+@permission_classes([AllowAny])
 def validate_email(request):
 
     post_data = request.data
@@ -164,6 +340,19 @@ def change_password(request):
 
 
 @api_view(['POST'])
+@permission_classes([AllowAny])
+def reset_password_signin(request):
+
+    post_data = request.data
+    user_data = User.objects.get(email=post_data['email'])
+    if user_data:
+        user_data.set_password(post_data['password'])
+        user_data.save()
+        return Response({'ok': True})
+    else:
+        return Response({'ok': False})
+
+@api_view(['POST'])
 @permission_classes([IsAuthenticated])
 def manage_friends(request):
     from .socket_views import manage_notifications
@@ -172,25 +361,36 @@ def manage_friends(request):
     recipient_user_id = post_data['recipient_user_id']
     recipient_user = User.objects.get(pk=recipient_user_id)
     notification = []
-    try:
-        if post_data['action'] == 'add':
-            Friend.objects.add_friend(request.user, recipient_user, message='Hi! I would like to be friends with you')      
-        elif post_data['action'] == 'remove':
+    err_msg = ""
+    data = {}
+    # try:
+    if post_data['action'] == 'add':
+        data = Friend.objects.add_friend(request.user, recipient_user, message='Hi! I would like to be friends with you')      
+    elif post_data['action'] == 'remove':
+        try:
             Friend.objects.remove_friend(request.user, recipient_user)
-        elif post_data['action'] == 'accept':
-            friend_request = FriendshipRequest.objects.filter(to_user=request.user.id, from_user=recipient_user_id)[0]
+        except:
+            err_msg = 'Some error occured. Please refresh.'
+            return Response({'ok': False, 'error': err_msg})
+    elif post_data['action'] == 'accept':
+        friend_request = FriendshipRequest.objects.filter(to_user=request.user.id, from_user=recipient_user_id)[0]
+        try:
             friend_request.accept()
-            notification = manage_notifications(request.user, recipient_user, "friends")
-        elif post_data['action'] == 'reject':
-            friend_request = FriendshipRequest.objects.filter(to_user=request.user.id, from_user=recipient_user_id)[0]
-            friend_request.reject()
-            friend_request.delete()
-        elif post_data['action'] == 'cancel':  
-            friend_request = FriendshipRequest.objects.filter(from_user=request.user.id, to_user=recipient_user_id)[0]
-            friend_request.delete()
-        return Response({'ok': True, 'notification': notification})
-    except:
-        return Response({'ok': False})
+        except:
+            err_msg = 'Some error occured. Please refresh.'
+            return Response({'ok': False, 'error': err_msg})
+        notification = manage_notifications(request.user, recipient_user, "friends")
+    elif post_data['action'] == 'reject':
+        friend_request = FriendshipRequest.objects.filter(to_user=request.user.id, from_user=recipient_user_id)[0]
+        friend_request.reject()
+        friend_request.delete()
+    elif post_data['action'] == 'cancel':  
+        friend_request = FriendshipRequest.objects.filter(from_user=request.user.id, to_user=recipient_user_id)[0]
+        friend_request.delete()
+    if data and not isinstance(data, FriendshipRequest) and data["err"]:
+        err_msg = data["err_msg"]
+        return Response({'ok': False, 'error': err_msg})
+    return Response({'ok': True, 'notification': notification})
 
 
 @api_view(['POST'])
@@ -200,55 +400,105 @@ def manage_chats(request):
 
     post_data = request.data
     temp = {}
-    recipient_user_id = post_data.get('recipient_user_id', '')
-    user_id = post_data.get('user_id', '')
-    recipient_user = User.objects.get(pk=recipient_user_id)
-    participants = []
-    participants.append(recipient_user)
-    participants.append(request.user)
-    created_chat_id = ''
-    req_chat_id = post_data.get('chat_id', '')
-    notification = []
-    # try:
-    if post_data['action'] == 'add':
-        ChatFriend.objects.add_friend(request.user, recipient_user, message='Hi! I would like to be friends with you')      
-    elif post_data['action'] == 'remove':
-        p_list = []
-        # ChatFriend.objects.remove_friend(request.user, recipient_user)
-        chat = Chat.objects.get(pk=req_chat_id)
-        curr_delete_chat = chat.deleted
-        delete_chat_dict = {}
-        if delete_chat_dict:
-            delete_chat_dict = json.loads(curr_delete_chat)
-        participants = chat.participants.all()
-        for p in participants:
-            p_list.append(p.id) 
-        if recipient_user_id in p_list:
-            delete_chat_dict[str(recipient_user_id)] = True
-        chat.deleted = json.dumps(delete_chat_dict)
-        chat.messages.all().update(deleted=json.dumps(delete_chat_dict))
-        chat.save()
-        op_data = manage_chat_request_data([user_id], "remove", req_chat_id, {})
-        temp['chat_requests'] = json.dumps(op_data)
-    elif post_data['action'] == 'accept':
-        chat_friend_request = ChatRequest.objects.filter(to_user=request.user.id, from_user=recipient_user_id)
-        if chat_friend_request:
-            chat_friend_request = chat_friend_request[0]
-        chat_friend_request.accept()
+    err_msg = ""
+    accept_type = "new"
+    if post_data["is_group"]:
+        participants = post_data['participants']
         chat_obj = Chat()
+        chat_obj.is_group = post_data["is_group"]
+        chat_obj.group_profile_picture = post_data["group_profile_picture"]
+        chat_obj.group_name = post_data["group_name"]
+        chat_obj.group_description = post_data["group_description"]
+        chat_obj.admin = json.dumps([post_data["admin"]])
         chat_obj.save()
-        created_chat_id = chat_obj.id
+        participant_detail_list = []
         for participant in participants:
-            chat_obj.participants.add(participant)
-        notification = manage_notifications(request.user, recipient_user, "chat")
-    elif post_data['action'] == 'reject':
-        chat_friend_request = ChatRequest.objects.filter(to_user=request.user.id, from_user=recipient_user_id)[0]
-        chat_friend_request.reject()
-        chat_friend_request.delete()
-    elif post_data['action'] == 'cancel':  
-        chat_friend_request = ChatRequest.objects.filter(from_user=request.user.id, to_user=recipient_user_id)[0]
-        chat_friend_request.delete()
-    return Response({'ok': True, 'chat_id': created_chat_id, 'notification': notification, 'extra_data': temp})
+            user = User.objects.get(pk=participant['id'])
+            participant_detail_list.append(UserSerializer(user, many=False).data)
+            chat_obj.participants.add(user)
+        created_group = ChatSerializer(chat_obj, many=False).data
+        created_group['participants_detail'] = participant_detail_list
+        admin_list = []
+        for user_obj in json.loads(chat_obj.admin):
+            curr_user = User.objects.get(pk=user_obj)
+            if curr_user:
+                admin_list.append(UserSerializer(curr_user, many=False).data)
+        created_group["admin_users"] = admin_list
+        return Response({"ok": True, "is_group": True, "group": created_group, "accept_type": accept_type})
+    else:
+        recipient_user_id = post_data.get('recipient_user_id', '')
+        user_id = post_data.get('user_id', '')
+        unique_chat_id = str(user_id) + '_' + str(recipient_user_id)
+        rev_unique_chat_id = str(recipient_user_id) +  '_' + str(user_id)
+        recipient_user = User.objects.get(pk=recipient_user_id)
+        participants = []
+        participants.append(recipient_user)
+        participants.append(request.user)
+        req_chat_id = post_data.get('chat_id', '')
+        notification = {}
+        data = {}
+        created_conversation = {}
+        unique_chat_id_list = list(Chat.objects.all().values_list('unique_id', flat=True))
+        # try:
+        if post_data['action'] == 'add':
+            data = ChatFriend.objects.add_friend(request.user, recipient_user, message='Hi! I would like to be friends with you')
+        elif post_data['action'] == 'delete':
+            p_list = []
+            chat = Chat.objects.get(pk=req_chat_id)
+            curr_delete_chat = chat.deleted
+            delete_chat_dict = {}
+            if delete_chat_dict:
+                delete_chat_dict = json.loads(curr_delete_chat)
+            participants = chat.participants.all()
+            for p in participants:
+                p_list.append(p.id) 
+            if recipient_user_id in p_list:
+                delete_chat_dict[str(recipient_user_id)] = True
+            chat.deleted = json.dumps(delete_chat_dict)
+            chat.messages.all().update(deleted=json.dumps(delete_chat_dict))
+            chat.unique_id = unique_chat_id
+            chat.save()
+        elif post_data['action'] == 'remove':
+            try:
+                ChatFriend.objects.remove_friend(request.user, recipient_user)
+            except:
+                err_msg = 'Some error occured. Please refresh.'
+                return Response({'ok': False, 'error': err_msg})
+            # chat = Chat.objects.get(pk=req_chat_id)
+            # chat.messages.clear()
+            # chat.participants.clear()
+            # chat.delete()
+        elif post_data['action'] == 'accept':
+            notification = manage_notifications(request.user, recipient_user, "chat")
+            chat_friend_request = ChatRequest.objects.filter(to_user=request.user.id, from_user=recipient_user_id)
+            if chat_friend_request:
+                chat_friend_request = chat_friend_request[0]
+            try:
+                chat_friend_request.accept()
+            except:
+                err_msg = 'Some error occured. Please refresh.'
+                return Response({'ok': False, 'error': err_msg})
+            if unique_chat_id not in unique_chat_id_list and rev_unique_chat_id not in unique_chat_id_list:
+                chat_obj = Chat()
+                chat_obj.unique_id = unique_chat_id
+                chat_obj.save()
+                for participant in participants:
+                    chat_obj.participants.add(participant)
+                created_conversation = ChatSerializer(chat_obj, many=False).data
+                created_conversation['user'] = UserSerializer(recipient_user, many=False).data
+            else:
+                accept_type = "accept_old"
+        elif post_data['action'] == 'reject':
+            chat_friend_request = ChatRequest.objects.filter(to_user=request.user.id, from_user=recipient_user_id)[0]
+            chat_friend_request.reject()
+            chat_friend_request.delete()
+        elif post_data['action'] == 'cancel':  
+            chat_friend_request = ChatRequest.objects.filter(from_user=request.user.id, to_user=recipient_user_id)[0]
+            chat_friend_request.delete()
+        if data and not isinstance(data, ChatRequest) and data["err"]:
+            err_msg = data["err_msg"]
+            return Response({'ok': False, 'error': err_msg})
+        return Response({'ok': True, 'is_group': False, 'notification': notification, 'extra_data': temp, 'created_conversation': created_conversation, "accept_type": accept_type})
 
 
 @api_view(['GET'])
@@ -287,7 +537,6 @@ def get_manage_friends_data(request):
         friend_requests_id_list.append(user.id)
         all_fr_requests.append(user_data_dict[user.id])
 
-
     all_sent_friend_requests = Friend.objects.sent_requests(user=required_user)
     
     all_sent_fr_requests = []
@@ -314,6 +563,184 @@ def get_manage_friends_data(request):
     data_dict = {'user_id_list': user_id_list, 'friend_id_list': friend_id_list, 'sent_friend_requests_id_list': sent_friend_requests_id_list, 'friend_requests_id_list': friend_requests_id_list}
 
     return Response({'ok':True, 'users':display_users, 'friends':all_frs, 'friend_requests':all_fr_requests, 'sent_friend_requests':all_sent_fr_requests, 'data_dict': data_dict})
+
+
+@api_view(["GET"])
+@permission_classes([IsAuthenticated])
+def get_friends_modal_data(request):
+    
+    #USERS
+    all_users = User.objects.exclude(email=request.user.email)
+
+    user_data_dict = dict()
+    user_serializer = UserSerializer(all_users, many=True)
+
+    all_usrs = User.objects.all()
+    usr_serializer = UserSerializer(all_usrs, many=True)
+
+    for user_obj in usr_serializer.data:
+        user_data_dict[user_obj['id']] = dict(user_obj)
+
+    # SENT FRIEND REQUESTS
+    
+    all_sent_friend_requests = Friend.objects.sent_requests(user=request.user)
+
+    all_sent_fr_requests = []
+    sent_friend_requests_id_list = []
+
+    for sent_friend_req_obj in all_sent_friend_requests:
+        user = sent_friend_req_obj.to_user
+        sent_friend_requests_id_list.append(user.id)
+        all_sent_fr_requests.append(user_data_dict[user.id])
+
+    # FRIENDS
+
+    all_friends = Friend.objects.friends(request.user)
+
+    all_frs = []
+    friend_id_list = []
+
+    for friend_obj in all_friends:
+        req_user = friend_obj.id
+        friend_id_list.append(req_user)
+        curr_user = user_data_dict[req_user]
+        all_frs.append(curr_user)
+
+    # Clear cache
+
+        for key in list(cache._cache.keys()):
+            if 'sfr' or 'fr' in key:
+                cache.delete(key.replace(':1:', ''))
+                
+    # FRIEND REQUESTS
+    all_friend_requests = Friend.objects.unrejected_requests(user=request.user)
+
+    user_data_dict = dict()
+    all_usrs = User.objects.all()
+    usr_serializer = UserSerializer(all_usrs, many=True)
+
+    for user_obj in usr_serializer.data:
+        curr_usr_obj = dict(user_obj)
+        user_data_dict[user_obj['id']] = curr_usr_obj
+
+    all_fr_requests = []
+    friend_requests_id_list = []
+
+    for fr_obj in all_friend_requests:
+        user = fr_obj.from_user
+        friend_requests_id_list.append(user.id)
+        curr_user_data = user_data_dict[user.id]
+        curr_user_data['friend_request_created_on'] = str(fr_obj.created)
+        all_fr_requests.append(curr_user_data)
+
+    # USERS
+
+    users = []
+    for user_obj in user_serializer.data:
+        req_user = user_obj['id']
+        curr_user = user_data_dict[req_user]
+        if req_user in sent_friend_requests_id_list:
+            curr_user['sent_friend_request'] = True
+        if req_user in friend_id_list:
+            curr_user['is_friend'] = True
+        users.append(curr_user)
+
+    curr_user_data = User.objects.get(pk=request.user.id)
+
+    return Response({"ok": True, "friend_request_last_seen": str(curr_user_data.friend_request_last_seen), "user_data_dict": user_data_dict, "modal_users": users, "modal_friends": all_frs, "modal_friend_requests": all_fr_requests, "modal_sent_friend_requests": all_sent_fr_requests}, status=status.HTTP_200_OK)
+
+
+@api_view(["GET"])
+@permission_classes([IsAuthenticated])
+def get_conversation_modal_data(request):
+    
+    #USERS
+    all_users = User.objects.exclude(email=request.user.email)
+
+    user_data_dict = dict()
+    user_serializer = UserSerializer(all_users, many=True)
+
+    all_usrs = User.objects.all()
+    usr_serializer = UserSerializer(all_usrs, many=True)
+
+    for user_obj in usr_serializer.data:
+        user_data_dict[user_obj['id']] = dict(user_obj)
+
+    # SENT CONVERSATION REQUESTS
+    
+    all_sent_friend_requests = ChatFriend.objects.sent_requests(user=request.user)
+
+    all_sent_fr_requests = []
+    sent_friend_requests_id_list = []
+
+    for sent_friend_req_obj in all_sent_friend_requests:
+        user = sent_friend_req_obj.to_user
+        sent_friend_requests_id_list.append(user.id)
+        all_sent_fr_requests.append(user_data_dict[user.id])
+
+    # CONVERSATIONS
+    chat_friends = ChatFriend.objects.chat_friends(request.user)
+
+    all_chat_frs = []
+    chat_friend_id_list = []
+
+    for chat_friend_obj in chat_friends:
+        req_user = chat_friend_obj.id
+        chat_friend_id_list.append(req_user)
+        all_chat_frs.append(user_data_dict[req_user])
+    
+    # FRIENDS
+    all_friends = Friend.objects.friends(request.user)
+
+    all_frs = []
+    friend_id_list = []
+
+    for friend_obj in all_friends:
+        req_user = friend_obj.id
+        friend_id_list.append(req_user)
+        curr_user = user_data_dict[req_user]
+        if req_user in sent_friend_requests_id_list:
+            curr_user['sent_conversation_request'] = True
+        if req_user in chat_friend_id_list:
+            curr_user['has_conversation'] = True
+        all_frs.append(curr_user)
+
+    # Clear cache
+
+        for key in list(cache._cache.keys()):
+            if 'scfr' or 'cfr' in key:
+                cache.delete(key.replace(':1:', ''))
+                
+    # CONVERSATION REQUESTS
+    all_friend_requests = ChatFriend.objects.unrejected_requests(user=request.user)
+
+    user_data_dict = dict()
+    all_usrs = User.objects.all()
+    usr_serializer = UserSerializer(all_usrs, many=True)
+
+    for user_obj in usr_serializer.data:
+        curr_usr_obj = dict(user_obj)
+        curr_usr_obj['chat_id'] = ""
+        user_data_dict[user_obj['id']] = curr_usr_obj
+
+    all_fr_requests = []
+    friend_requests_id_list = []
+
+    for fr_obj in all_friend_requests:
+        user = fr_obj.from_user
+        friend_requests_id_list.append(user.id)
+        curr_user_data = user_data_dict[user.id]
+        curr_user_data['conversation_request_created_on'] = str(fr_obj.created)
+        all_fr_requests.append(curr_user_data)
+
+    conversation_data = get_all_conversations(request.user)
+    all_conversations = conversation_data['conversations']
+    all_groups = conversation_data['groups']
+    all_conv_data = all_conversations + all_groups
+
+    curr_user_data = User.objects.get(pk=request.user.id)
+
+    return Response({"ok": True, "user_data_dict": user_data_dict, "all_conv_data": all_conv_data, "conversation_request_last_seen": str(curr_user_data.conversation_request_last_seen), "all_groups":all_groups, "all_conversations": all_conversations, "users": user_serializer.data, "modal_friends": all_frs, "modal_conversations": all_chat_frs, "modal_conversation_requests": all_fr_requests, "modal_sent_conversation_requests": all_sent_fr_requests}, status=status.HTTP_200_OK)
 
 
 @api_view(["GET"])
@@ -410,38 +837,178 @@ def clear_chat(request):
 
     return Response({'ok': True})
 
-@api_view(["GET"])
-@permission_classes([IsAuthenticated])
-def get_all_chats(request):
+def get_all_conversations(user):
 
     all_chats = Chat.objects.all()
-    chat_data = []
-    i = 0
+    conversations = []
+    groups = []
+    recipient_user = {}
     for chat in all_chats:
-        temp = {}
-        users = []
-        participants = chat.participants.all()
-        for participant in participants:
-            if participant.id != request.user.id:
-                temp['curr_user'] = UserSerializer(participant).data
-                usr_obj = {}
-                usr_obj['id'] = i
-                usr_obj['photo'] = temp['curr_user']['profile_picture']
-                usr_obj['name'] = temp['curr_user']['username']
-                usr_obj['user_id'] = temp['curr_user']['id']
-                usr_obj['chat_id'] = chat.id
-                temp['chat'] = usr_obj
-                temp['chat']['isFriend'] = ChatFriend.objects.are_friends(request.user, participant) == True
-            users.append(participant)
-        participants = UserSerializer(users, many=True).data
-        temp['chat_id'] = chat.id
-        temp['participants'] = participants
-        chat_data.append(temp)
-        i += 1
+        if chat.is_group:
+            p_detail_list = []
+            removed_participants = []
+            deleted_participants = []
+            exit_participants = []
+            cleared_participants = []
+            has_exit_participants = []
+            is_deleted = False
+            is_exit = False
+            is_clear = False
+            is_removed = False
+            removed_users_dict = json.loads(chat.removed) if chat.removed else {}
+            deleted_users_dict = json.loads(chat.deleted) if chat.deleted else {}
+            exit_users_dict = json.loads(chat.exit) if chat.exit else {}
+            has_exit_users_dict = json.loads(chat.has_exit) if chat.has_exit else {}
+            clear_users_dict = json.loads(chat.cleared) if chat.cleared else {}
+            for obj in removed_users_dict:
+                if removed_users_dict[obj]:
+                    removed_participants.append(int(obj))
+            for obj in deleted_users_dict:
+                if deleted_users_dict[obj]:
+                    deleted_participants.append(int(obj))
+            for obj in has_exit_users_dict:
+                if has_exit_users_dict[obj]:
+                    has_exit_participants.append(int(obj))
+            for obj in exit_users_dict:
+                if exit_users_dict[obj]:
+                    exit_participants.append(int(obj))
+            for obj in clear_users_dict:
+                if clear_users_dict[obj]:
+                    cleared_participants.append(int(obj))
+            if user.id in removed_participants:
+                is_removed = True
+            if user.id in deleted_participants:
+                is_deleted = True
+            if user.id in has_exit_participants:
+                is_exit = True
+            if user.id in cleared_participants:
+                is_clear = True
+            participant_list = list(chat.participants.values_list('id', flat=True))
+            if (user.id in exit_participants) or (user.id in removed_participants) or (user.id in participant_list) or (user.id in json.loads(chat.admin) if chat.admin else []):
+                for p_obj in participant_list:
+                    curr_user = UserSerializer(User.objects.get(pk=p_obj)).data
+                    p_detail_list.append(curr_user)
+                conversation = ChatSerializer(chat, many=False).data
+                conversation['participants_detail'] = p_detail_list
+                admin_list = []
+                for user_obj in json.loads(chat.admin):
+                    curr_user = User.objects.get(pk=user_obj)
+                    if curr_user:
+                        admin_list.append(UserSerializer(curr_user, many=False).data)
+                conversation["admin_users"] = admin_list
+                conversation["is_clear"] = is_clear
+                conversation["is_removed"] = is_removed
+                conversation["is_deleted"] = is_deleted
+                conversation["is_exit"] = is_exit
+                groups.append(conversation)
+        else:
+            temp = {}
+            users = []
+            participants = chat.participants.all()
+            participant_list = list(chat.participants.values_list('id', flat=True))
+            if user.id in participant_list:
+                for participant in participants:
+                    if participant.id != user.id:
+                        recipient_user = UserSerializer(participant, many=False).data
+                conversation = ChatSerializer(chat, many=False).data
+                conversation['user'] = recipient_user
+                conversations.append(conversation)
     
+    return {'conversations':conversations, 'groups': groups}
 
-    return Response({'ok': True, 'chats': chat_data})
+def get_conversation_modal_data_method(request):
 
+    #USERS
+    all_users = User.objects.exclude(email=request.user.email)
+
+    user_data_dict = dict()
+    user_serializer = UserSerializer(all_users, many=True)
+
+    all_usrs = User.objects.all()
+    usr_serializer = UserSerializer(all_usrs, many=True)
+
+    conversation_data = get_all_conversations(request.user)
+    all_conversations = conversation_data['conversations']
+    all_groups = conversation_data['groups']
+    all_conv_data = all_conversations + all_groups
+    conversation_delete_dict = {}
+    remove_dict = {}
+    delete_dict = {}
+    clear_dict = {}
+
+    for conv in all_conversations:
+        recipient_user = User.objects.get(pk=conv['user']['id'])
+        remove_dict[recipient_user.id] = ChatFriend.objects.are_friends(request.user, recipient_user) == True
+    
+    conversation_delete_dict['remove'] = remove_dict
+
+    for user_obj in usr_serializer.data:
+        user_data_dict[user_obj['id']] = dict(user_obj)
+
+    # SENT CONVERSATION REQUESTS
+    
+    all_sent_friend_requests = ChatFriend.objects.sent_requests(user=request.user)
+
+    all_sent_fr_requests = []
+    sent_friend_requests_id_list = []
+
+    for sent_friend_req_obj in all_sent_friend_requests:
+        user = sent_friend_req_obj.to_user
+        sent_friend_requests_id_list.append(user.id)
+        all_sent_fr_requests.append(user_data_dict[user.id])
+
+    # CONVERSATIONS
+    chat_friends = ChatFriend.objects.chat_friends(request.user)
+
+    all_chat_frs = []
+    chat_friend_id_list = []
+
+    for chat_friend_obj in chat_friends:
+        req_user = chat_friend_obj.id
+        chat_friend_id_list.append(req_user)
+        all_chat_frs.append(user_data_dict[req_user])
+    
+    # FRIENDS
+    all_friends = Friend.objects.friends(request.user)
+
+    all_frs = []
+    friend_id_list = []
+
+    for friend_obj in all_friends:
+        req_user = friend_obj.id
+        friend_id_list.append(req_user)
+        curr_user = user_data_dict[req_user]
+        if req_user in sent_friend_requests_id_list:
+            curr_user['sent_conversation_request'] = True
+        if req_user in chat_friend_id_list:
+            curr_user['has_conversation'] = True
+        all_frs.append(curr_user)
+
+    # CONVERSATION REQUESTS
+    all_friend_requests = ChatFriend.objects.unrejected_requests(user=request.user)
+
+    user_data_dict = dict()
+    all_usrs = User.objects.all()
+    usr_serializer = UserSerializer(all_usrs, many=True)
+
+    for user_obj in usr_serializer.data:
+        curr_usr_obj = dict(user_obj)
+        curr_usr_obj['chat_id'] = ""
+        user_data_dict[user_obj['id']] = curr_usr_obj
+
+    all_fr_requests = []
+    friend_requests_id_list = []
+
+    for fr_obj in all_friend_requests:
+        user = fr_obj.from_user
+        friend_requests_id_list.append(user.id)
+        curr_user_data = user_data_dict[user.id]
+        curr_user_data['chat_request_created_on'] = str(fr_obj.created)
+        all_fr_requests.append(curr_user_data)
+
+    curr_user_data = User.objects.get(pk=request.user.id)
+
+    return {"conversation_delete_dict": conversation_delete_dict, "all_conv_data":all_conv_data, "last_seen_conversation_requests": str(curr_user_data.conversation_request_last_seen), "all_groups": all_groups, "all_conversations": all_conversations, "users": user_serializer.data, "modal_friends": all_frs, "modal_conversations": all_chat_frs, "modal_conversation_requests": all_fr_requests, "modal_sent_conversation_requests": all_sent_fr_requests}
 
 def messages_to_json(messages, chat_id):
         result = []
@@ -466,7 +1033,7 @@ def message_to_json(message, chat_id):
 def get_all_notifications(request):
     
     user = User.objects.get(pk=request.user)
-    notifications = user.notifications.all()
+    notifications = user.notifications.order_by('-created_on').all()[:10]
 
     return Response({'ok': True, 'notifications': notifications})
 
@@ -480,8 +1047,8 @@ def manage_requests_last_seen(request):
 
     curr_user = User.objects.get(pk=request.user.id)
 
-    if req_type == 'chat':
-        curr_user.chat_request_last_seen = last_seen
+    if req_type == 'conversations':
+        curr_user.conversation_request_last_seen = last_seen
     elif req_type == 'friends':
         curr_user.friend_request_last_seen = last_seen
     

@@ -1,5 +1,5 @@
 from rest_framework import serializers
-from .models import User, Notification, Room
+from .models import User, Notification, Room, Chat
 from rest_framework.response import Response
 from rest_framework_simplejwt.serializers import TokenObtainPairSerializer
 from rest_framework_simplejwt.views import TokenObtainPairView
@@ -24,6 +24,10 @@ class FriendSerializer(serializers.ModelSerializer):
         model = Friend
         fields = '__all__'
 
+class ChatSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Chat
+        fields = '__all__'
 
 class NotificationSerializer(serializers.ModelSerializer):
     class Meta:

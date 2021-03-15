@@ -11,4 +11,4 @@ function AtomSpinner(props) {
   );
 }
 
-export default withRouter(AtomSpinner);
+export default AtomSpinner;

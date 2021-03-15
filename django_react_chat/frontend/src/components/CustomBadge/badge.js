@@ -1,6 +1,7 @@
 import React from "react";
 import PropTypes from "prop-types";
 import AnimationCounter from "./animation_counter.js";
+import EFFECT from "./effect.js"
 
 const styles = {
   container: {
@@ -62,29 +63,15 @@ class CustomBadge extends React.Component {
   }
 
   render() {
-    if (this.props.message_count) {
-      delete this.props.style["position"];
-      delete this.props.containerStyle["position"];
-      if(this.props.custom){
-        this.props.containerStyle.paddingLeft = "0px";
-        this.props.style.top = "0px";
-        this.props.style.right = "0px";
-      }else{
-        this.props.containerStyle.paddingLeft = "38px";
-        this.props.style.top = "7px";
-        this.props.style.right = "0px";
-      }
-    }else {
-      this.props.style.position = "absolute";
-      this.props.containerStyle.position = "absolute";
-      this.props.style.fontSize = "0.7rem",
-      this.props.style.padding = "3px 6px",
-      this.props.count > 10?this.props.style.right = "4px":this.props.style.right = "7px"
-      this.props.style.top = "-30px"            
-    }
-    let badge_style = this.props.custom?styles.customBadge:styles.badge
+    this.props.style.position = "absolute";
+    this.props.containerStyle.position = "absolute";
+    this.props.style.fontSize = "0.7rem",
+    this.props.style.padding = "3px 6px",
+    this.props.count >= 10?this.props.style.right = "-3px":this.props.style.right = "0px"
+    this.props.style.top = "-30px"            
+    let badge_style = styles.badge
     const badgeStyle = this.merge(badge_style, this.props.style);
-    let container_styles = this.props.custom?styles.customContainer:styles.container;
+    let container_styles = styles.container;
     const containerStyle = this.merge(
       container_styles,
       this.props.containerStyle
@@ -97,7 +84,7 @@ class CustomBadge extends React.Component {
           className={this.props.className}
           count={this.props.count > 10 ? "10+" : this.props.count}
           label={this.props.label}
-          effect={this.props.effect}
+          effect={EFFECT.NONE}
           fps={this.props.fps}
           frameLength={this.props.frameLength}
         />

@@ -53,6 +53,7 @@ function SignIn(props) {
   const [orientation, setOrientation] = useState("default");
   const [email, setEmail] = useState("");
   const [errorMessage, setErrorMessage] = useState("");
+  const [resetPasswordSuccessMsg, setResetPasswordSuccessMsg] = useState("");
   const [password, setPassword] = useState("");
   const [isValidLogin, setIsValidLogin] = useState(true);
   const [redirect, setRedirect] = useState(true);
@@ -100,7 +101,7 @@ function SignIn(props) {
       blinkElement();
       setTimeout(function () {
         const el = document.getElementById("forgot_password");
-        if (el.classList.contains("blink_me")) {
+        if (el && el.classList.contains("blink_me")) {
           el.classList.remove("blink_me");
         }
       }, 5000);
@@ -190,11 +191,27 @@ function SignIn(props) {
     if (formValid(formErrors, resetPasswordFormData, "password")) {
       setIsValidResetPassword(true);
       closeResetPasswordModal();
-      console.log(`
-        --SUBMITTING--
-        Reset Password: ${resetPasswordFormData.resetPassword}
-        Password: ${resetPasswordFormData.resetPasswordConfirm}
-      `);
+      spinner();
+      let post_data = {};
+      post_data["password"] = resetPasswordFormData.resetPassword;
+      post_data["email"] = resetEmailFormData.resetEmail;
+      axios
+        .post(API_URL+"reset_password_signin/", post_data)
+        .then((res) => {
+          spinnerStop();
+          if (res.data.ok) {
+            setResetPasswordSuccessMsg("Password has been reset successfully, Login with your new password.")
+            setTimeout(function(){
+              setResetPasswordSuccessMsg("")
+            }, 10000)
+          } else {
+            console.log("error");
+          }
+        })
+        .catch((err) => {
+          spinnerStop();
+          console.log("Error");
+        });
     } else {
       setIsValidResetPassword(false);
       setFormErrors({ ...formErrors, resetPassword: "" });
@@ -332,8 +349,8 @@ function SignIn(props) {
     let post_data = {};
     if (formValid(formErrors, resetEmailFormData, "email")) {
       post_data["email"] = resetEmailFormData.resetEmail;
-      axiosInstance
-        .post("validate_email/", post_data)
+      axios
+        .post(API_URL+"validate_email/", post_data)
         .then((res) => {
           spinnerStop();
           if (res.data.ok) {
@@ -793,6 +810,20 @@ function SignIn(props) {
                   className="text-center sign_in_error_message"
                 >
                   {errorMessage}
+                </p>
+              </Col>
+            </Row>
+          ) : (
+            ""
+          )}
+          {resetPasswordSuccessMsg ? (
+            <Row style={{ margin: "0px", padding: "0px" }}>
+              <Col>
+                <p
+                  style={{ fontSize: "0.8rem" }}
+                  className="text-center reset_password_success_msg"
+                >
+                  {resetPasswordSuccessMsg}
                 </p>
               </Col>
             </Row>

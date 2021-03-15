@@ -5,6 +5,7 @@ import Chat from "../pages/Chat";
 import Friends from "../pages/Friends";
 import ChangePassword from "../pages/ChangePassword";
 import Profile from "../pages/Profile";
+import CustomMessenger from "../pages/CustomMessenger";
 
 import CustomLayout from "../layouts/Layout";
 
@@ -70,6 +71,13 @@ const routes = [
     layout: CustomLayout,
     exact: true,
     name: "friends",
+  },
+  {
+    path: "/messenger",
+    component: CustomMessenger,
+    layout: CustomLayout,
+    exact: true,
+    name: "Messenger",
   },
 ];
 

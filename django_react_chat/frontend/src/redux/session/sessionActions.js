@@ -18,7 +18,12 @@ import {
   IS_TYPING,
   CHAT_DELETE,
   LAST_CHAT_SEEN_TIME,
-  CURRENT_CHAT
+  CURRENT_CHAT,
+  CONVERSATION_MODAL_DATA,
+  IS_REFRESHED,
+  CURRENT_SELECTED_CONVERSATION,
+  CONVERSATION_DELETE,
+  MANAGE_REQUESTS_LAST_SEEN
 } from "./sessionTypes";
 
 export const sign_in = () => {
@@ -159,5 +164,43 @@ export const current_chat = (data = {}) => {
   return {
     type: CURRENT_CHAT,
     payload: data,
+  };
+};
+
+export const conversation_modal_data = (data = {}, type="") => {
+  return {
+    type: CONVERSATION_MODAL_DATA,
+    payload: data,
+    req_type: type
+  };
+};
+
+export const is_refreshed = (data = false) => {
+  return {
+    type: IS_REFRESHED,
+    payload: data,
+  };
+};
+
+export const current_selected_conversation = (data = {}) => {
+  return {
+    type: CURRENT_SELECTED_CONVERSATION,
+    payload: data,
+  };
+};
+
+export const conversation_delete = (data = {}, type = '') => {
+  return {
+    type: CONVERSATION_DELETE,
+    payload: data,
+    req_type: type
+  };
+};
+
+export const manage_requests_last_seen = (data = {}, type = '') => {
+  return {
+    type: MANAGE_REQUESTS_LAST_SEEN,
+    payload: data,
+    req_type: type
   };
 };

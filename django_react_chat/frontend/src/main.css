@@ -91,6 +91,11 @@ html,
   font-size: 1em;
 }
 
+.reset_password_success_msg {
+  color: forestgreen !important;
+  font-size: 1em;
+}
+
 .profile_edit_success_msg {
   color: forestgreen;
   font-size: 0.85em;
@@ -203,7 +208,7 @@ html,
   position: fixed;
   height: 100%;
   width: 100%;
-  z-index: 5000;
+  z-index: 100000;
   top: 0;
   left: 0;
   float: left;
@@ -305,3 +310,4 @@ html,
   text-align: center;
   padding-left: 10% !important;
 }
+

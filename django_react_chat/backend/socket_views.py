@@ -3,7 +3,7 @@ from django.db import IntegrityError
 from django.contrib.auth import authenticate, login, logout
 from rest_framework_simplejwt.views import TokenObtainPairView
 from rest_framework import permissions
-from .serializers import UserSerializer, NotificationSerializer, RoomSerializer
+from .serializers import UserSerializer, NotificationSerializer, RoomSerializer, ChatSerializer
 from django.contrib.auth.hashers import check_password, make_password
 from friendship.models import Friend, Follow, Block, FriendshipRequest
 from .models import User, ChatFriend, ChatManager, ChatRequest, Chat, Notification, Room
@@ -258,7 +258,7 @@ def get_last_10_messages(chat_id, user_id):
 def get_all_notifications(user_id):
     
     user = User.objects.get(pk=user_id)
-    notifications = user.notifications.all()
+    notifications = user.notifications.order_by('-created_on').all()[:10]
 
     notification_serializer = NotificationSerializer(notifications, many=True)
 
@@ -489,3 +489,173 @@ def get_presigned_url(file_name):
     seven_days_as_seconds = 604800
     generated_signed_url = create_presigned_url(config('AWS_STORAGE_BUCKET_NAME'), file_name)
     return generated_signed_url
+
+def get_conversation_requests(recieved_user, extra_data):
+
+    user_data_dict = dict()
+
+    all_usrs = User.objects.all()
+    usr_serializer = UserSerializer(all_usrs, many=True)
+
+    for user_obj in usr_serializer.data:
+        user_data_dict[user_obj['id']] = dict(user_obj)
+
+    group_data_dict = {}
+    recipient_list = []
+    if extra_data['is_group']:
+        group_user_dict = {}
+        for recieved_user_obj in recieved_user:
+            recipient_list.append(recieved_user_obj['id'])
+            curr_user = User.objects.get(pk=recieved_user_obj['id'])
+            conversation_data = get_all_conversations(curr_user, extra_data["action"], extra_data['is_group'], extra_data['group_data'])
+            all_conversations = conversation_data['conversations']
+            all_groups = conversation_data['groups']
+            all_conv_data = all_conversations + all_groups
+            group_data_dict[str(recieved_user_obj['id'])] = {'all_conv_data': all_conv_data, 'all_groups': all_groups, 'all_conversations': all_conversations} 
+                        
+        return {'group_data_dict': group_data_dict, 'sender': extra_data['sender'], 'group_data': extra_data['group_data'], 'is_group': extra_data['is_group'], 'action': extra_data['action'], 'type': extra_data['type'], 'recipients': recipient_list, 'user_id': extra_data['user_id']}
+    
+    else:
+
+        # SENT CONVERSATION REQUESTS
+        
+        all_sent_friend_requests = ChatFriend.objects.sent_requests(user=recieved_user)
+
+        all_sent_fr_requests = []
+        sent_friend_requests_id_list = []
+
+        conversation_data = get_all_conversations(recieved_user, extra_data["action"], extra_data['is_group'], {})
+        all_conversations = conversation_data['conversations']
+        all_groups = conversation_data['groups']
+        all_conv_data = all_conversations + all_groups
+
+        conversation_delete_dict = {}
+        remove_dict = {}
+        delete_dict = {}
+        clear_dict = {}
+
+        for conv in all_conversations:
+            recipient_user = User.objects.get(pk=conv['user']['id'])
+            remove_dict[recipient_user.id] = ChatFriend.objects.are_friends(recieved_user, recipient_user) == True
+        
+        conversation_delete_dict['remove'] = remove_dict
+
+        for sent_friend_req_obj in all_sent_friend_requests:
+            user = sent_friend_req_obj.to_user
+            sent_friend_requests_id_list.append(user.id)
+            all_sent_fr_requests.append(user_data_dict[user.id])
+
+        # CONVERSATIONS
+        chat_friends = ChatFriend.objects.chat_friends(recieved_user)
+
+        all_chat_frs = []
+        chat_friend_id_list = []
+
+        for chat_friend_obj in chat_friends:
+            req_user = chat_friend_obj.id
+            chat_friend_id_list.append(req_user)
+            curr_user = user_data_dict[req_user]
+            if extra_data["action"] == "accept":
+                curr_user["chat_id"] = extra_data["chat_id"]
+            all_chat_frs.append(curr_user)
+
+        # FRIENDS
+        all_friends = Friend.objects.friends(recieved_user)
+
+        all_frs = []
+        friend_id_list = []
+
+        for friend_obj in all_friends:
+            req_user = friend_obj.id
+            friend_id_list.append(req_user)
+            curr_user = user_data_dict[req_user]
+            if req_user in sent_friend_requests_id_list:
+                curr_user['sent_conversation_request'] = True
+            elif extra_data['action'] == 'reject':
+                curr_user['sent_conversation_request'] = False
+            if req_user in chat_friend_id_list:
+                curr_user['has_conversation'] = True
+            all_frs.append(curr_user)
+
+        # Clear cache
+
+        for key in list(cache._cache.keys()):
+            if 'scfr' or 'cfr' in key:
+                cache.delete(key.replace(':1:', ''))
+
+        all_friend_requests = ChatFriend.objects.unrejected_requests(user=recieved_user)
+
+        user_data_dict = dict()
+        all_usrs = User.objects.all()
+        usr_serializer = UserSerializer(all_usrs, many=True)
+
+        for user_obj in usr_serializer.data:
+            curr_usr_obj = dict(user_obj)
+            curr_usr_obj['chat_id'] = ""
+            user_data_dict[user_obj['id']] = curr_usr_obj
+
+        all_fr_requests = []
+        friend_requests_id_list = []
+
+        for fr_obj in all_friend_requests:
+            user = fr_obj.from_user
+            friend_requests_id_list.append(user.id)
+            curr_user_data = user_data_dict[user.id]
+            curr_user_data['chat_request_created_on'] = str(fr_obj.created)
+            all_fr_requests.append(curr_user_data)
+        
+        curr_user_data = User.objects.get(pk=recieved_user.id)
+
+        modal_data = {'user_data_dict': user_data_dict, 'all_conv_data': all_conv_data, 'last_seen_conversation_requests': str(curr_user_data.chat_request_last_seen), 'modal_groups':all_groups, 'all_conversations': all_conversations,'modal_friends': all_frs, 'modal_conversations': all_chat_frs, 'modal_conversation_requests': all_fr_requests, 'modal_sent_conversation_requests': all_sent_fr_requests}
+        return {'sender': extra_data['sender'], 'recipient_user_id': recieved_user.id, 'user_id': extra_data['user_id'], 'modal_data': modal_data, 'type': extra_data, 'action': extra_data['action'], 'chat_id': extra_data['chat_id'], 'conversation_delete_dict': json.dumps(conversation_delete_dict)}
+
+def get_all_conversations(user, action, is_group, group_data):
+
+    all_chats = Chat.objects.all()
+    removed_p_list = []
+    added_p_list = []
+    conversations = []
+    groups = []
+    
+    recipient_user = {}
+    if is_group and action == "update" and group_data['participant_change']:
+        removed_p_list = group_data['removed_participants']
+        added_p_list = group_data['added_participants']
+    
+    group_participants = group_data['participants']
+    for chat in all_chats:
+        if chat.is_group:
+            if action != "update":
+                removed_users_dict = json.loads(chat.removed) if chat.removed else {}
+                for obj in removed_users_dict:
+                    if removed_users_dict[obj]:
+                        removed_p_list.append(int(obj))
+            p_detail_list = []
+            participant_list = list(chat.participants.values_list('id', flat=True))
+            if user.id in removed_p_list or user.id in participant_list:
+                for p_obj in participant_list:
+                    curr_user = UserSerializer(User.objects.get(pk=p_obj)).data
+                    p_detail_list.append(curr_user)
+                conversation = ChatSerializer(chat, many=False).data
+                conversation['participants_detail'] = p_detail_list
+                admin_list = []
+                for user_obj in json.loads(chat.admin):
+                    curr_user = User.objects.get(pk=user_obj)
+                    if curr_user:
+                        admin_list.append(UserSerializer(curr_user, many=False).data)
+                conversation["admin_users"] = admin_list
+                groups.append(conversation)
+        else:
+            temp = {}
+            users = []
+            participants = chat.participants.all()
+            participant_list = list(chat.participants.values_list('id', flat=True))
+            if user.id in participant_list:
+                for participant in participants:
+                    if participant.id != user.id:
+                        recipient_user = UserSerializer(participant, many=False).data
+                conversation = ChatSerializer(chat, many=False).data
+                conversation['user'] = recipient_user
+                conversations.append(conversation)
+
+    return {'conversations': conversations, 'groups': groups}

@@ -19,7 +19,12 @@ import {
   LAST_SEEN,
   CHAT_DELETE,
   LAST_CHAT_SEEN_TIME,
-  CURRENT_CHAT
+  CURRENT_CHAT,
+  CONVERSATION_MODAL_DATA,
+  IS_REFRESHED,
+  CURRENT_SELECTED_CONVERSATION,
+  CONVERSATION_DELETE,
+  MANAGE_REQUESTS_LAST_SEEN
 } from "./sessionTypes";
 
 const initialState = {
@@ -41,6 +46,11 @@ const initialState = {
   is_typing: {},
   msg_count: {},
   chat_delete:{},
+  conversation_modal_data:{},
+  is_refreshed:false,
+  current_selected_conversation: {},
+  conversation_delete:{},
+  manage_requests_last_seen:{}
 };
 
 const sessionReducer = (state = initialState, action) => {
@@ -60,6 +70,7 @@ const sessionReducer = (state = initialState, action) => {
           isLoggedIn: false,
           spinner_overlay: false,
           user_data: {},
+          forgot_password_clicked:state.forgot_password_clicked,
           friend_requests: {},
           chat_status: {},
           notifications: [],
@@ -72,6 +83,11 @@ const sessionReducer = (state = initialState, action) => {
           is_typing: {},
           chat_delete:{},
           chat_messages: { messages: [], recent_msg_data: {}, type: "" },
+          conversation_modal_data:{},
+          is_refreshed:false,
+          current_selected_conversation: {},
+          conversation_delete:{},
+          manage_requests_last_seen:{}
       };
     case USER_CREATED_SUCCESS:
       return {
@@ -103,6 +119,52 @@ const sessionReducer = (state = initialState, action) => {
         ...state,
         friend_requests: action.payload,
       };
+    case CONVERSATION_MODAL_DATA:
+      let temp_conv_modal_data = {};
+      let curr_conv_modal_data = state.conversation_modal_data;
+      if(action.req_type === "last_seen"){
+        temp_conv_modal_data = {...curr_conv_modal_data, last_seen_conversation_requests: action.payload}
+      }else{
+        temp_conv_modal_data = action.payload;
+      } 
+      return {
+        ...state,
+        conversation_modal_data:temp_conv_modal_data
+      }
+    case IS_REFRESHED:
+      return {
+        ...state,
+        is_refreshed:action.payload
+      }
+    case CURRENT_SELECTED_CONVERSATION:
+      return {
+        ...state,
+        current_selected_conversation:action.payload
+      }
+    case CONVERSATION_DELETE:
+      let temp_conv_delete = {};
+      let curr_conv_delete = state.conversation_delete;
+      if(action.req_type === "remove"){
+        temp_conv_delete = {...curr_conv_delete, remove: action.payload};
+      }else if(action.req_type === "delete"){ 
+        temp_conv_delete = {...curr_conv_delete, delete: action.payload};
+      }else if(action.req_type === "clear"){ 
+        temp_conv_delete = {...curr_conv_delete, clear: action.payload};
+      }else if(action.req_type === "exit_group"){ 
+        temp_conv_delete = {...curr_conv_delete, exit_group: action.payload};
+      }else if(action.req_type === "delete_group"){ 
+        temp_conv_delete = {...curr_conv_delete, delete_group: action.payload};
+      }else if(action.req_type === "clear_group"){ 
+        temp_conv_delete = {...curr_conv_delete, clear_group: action.payload};
+      }else if(action.req_type === "remove_group"){ 
+        temp_conv_delete = {...curr_conv_delete, remove_group: action.payload};
+      }else{
+        temp_conv_delete = curr_conv_delete;
+      }
+      return {
+        ...state,
+        conversation_delete:temp_conv_delete
+      }
     case LAST_CHAT_SEEN_TIME:
       return {
         ...state,
@@ -261,6 +323,20 @@ const sessionReducer = (state = initialState, action) => {
       return {
         ...state,
         last_seen: action.payload,
+      };
+    case MANAGE_REQUESTS_LAST_SEEN:
+      let temp_last_seen_requests_data = {};
+      let rec_last_seen = action.payload;
+      let rec_type = action.req_type;
+      let curr_manage_requests_last_seen_dict = state.manage_requests_last_seen;
+      if(rec_type === "conversations"){
+        temp_last_seen_requests_data = {...curr_manage_requests_last_seen_dict, conversations: rec_last_seen}
+      }else{
+        temp_last_seen_requests_data = {...curr_manage_requests_last_seen_dict, friends: rec_last_seen}
+      }
+      return {
+        ...state,
+        manage_requests_last_seen: temp_last_seen_requests_data,
       };
     default:
       return state;

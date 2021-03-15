@@ -59,7 +59,7 @@ class User(AbstractUser):
     email = models.EmailField(blank=True, unique=True)
     notifications = models.ManyToManyField(Notification, blank=True, related_name='notifications', default=None)
     channel_rooms = models.ManyToManyField(Room, blank=True, related_name='notifications', default=None)
-    chat_request_last_seen = models.DateTimeField(null=True)
+    conversation_request_last_seen = models.DateTimeField(null=True)
     friend_request_last_seen = models.DateTimeField(null=True)
 
     EMAIL_FIELD = 'email'
@@ -86,11 +86,21 @@ class Chat(models.Model):
     participants = models.ManyToManyField(
         User, related_name='chats', blank=True)
     messages = models.ManyToManyField(Message, blank=True)
-    last_seen = models.TextField(max_length=200, default='')
+    last_seen = models.TextField(max_length=200, default='{}')
     status = models.BooleanField(default=False)
-    cleared = models.TextField(max_length=200, default='')
-    deleted = models.TextField(max_length=200, default='')
-
+    cleared = models.TextField(max_length=200, default='{}')
+    deleted = models.TextField(max_length=200, default='{}')
+    exit = models.TextField(max_length=1000, default='{}')
+    has_exit = models.TextField(max_length=1000, default='{}')
+    removed = models.TextField(max_length=1000, default='{}')
+    unique_id = models.TextField(max_length=50, default='')
+    is_group = models.BooleanField(default=False)
+    admin = models.TextField(max_length=1000, default='[]')
+    group_profile_picture = models.TextField(null=True)
+    group_name = models.TextField(null=True)
+    group_description = models.TextField(null=True)
+    added = models.BooleanField(default=True)
+    
     def __str__(self):
         return "{}".format(self.pk)
 
@@ -427,14 +437,14 @@ class ChatManager(models.Manager):
     def add_friend(self, from_user, to_user, message=None):
         """ Create a chat request """
         if from_user == to_user:
-            raise ValidationError("Users cannot be chat friends with themselves")
-
+            # raise ValidationError("Users cannot be chat friends with themselves")
+            return {"err_msg":"Users cannot have conversation with themselves ...", "err": True}
         if self.are_friends(from_user, to_user):
-            raise AlreadyFriendsError("Users are already chat friends")
-
+            # raise AlreadyFriendsError("Users are already chat friends")
+            return {"err_msg":"Users already have a conversation ...!", "err": True}
         if self.can_request_send(from_user, to_user):
-            raise AlreadyExistsError("Chat Friendship already requested")
-
+            # raise AlreadyExistsError("Chat Friendship already requested")
+            return {"err_msg":"Conversation Request already sent ...!", "err": True}
         if message is None:
             message = ""
 

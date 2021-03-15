@@ -153,6 +153,7 @@ const ConversationList = forwardRef((props, ref) => {
   useEffect(() => {
     getRecentMsgData();
     if (WebSocketInstance.getCurrentSocketInstance()) {
+      console.log(WebSocketInstance.getCurrentSocketInstance())
       WebSocketInstance.disconnect();
     }
     WebSocketInstance.connect("chat_requests", "");
@@ -246,6 +247,7 @@ const ConversationList = forwardRef((props, ref) => {
           if(location.state.chat_delete){
             //pass
           }else{
+            console.log(session_chat_messages["recent_msg_data"])
             console.log('hey')
             if (WebSocketInstance.state() === 1) {
               let temp = { ...recent_msg };
@@ -305,7 +307,8 @@ const ConversationList = forwardRef((props, ref) => {
             }
           }
         } else {
-          console.log('h11')
+          console.log('h11');
+          console.log(session_chat_messages["recent_msg_data"])
           if (Object.keys(recent_msg).length > 0) {
             let temp = { ...recent_msg };
             let count_dict = { ...recentMsgCount };
@@ -348,6 +351,7 @@ const ConversationList = forwardRef((props, ref) => {
             dispatch(msg_count(count_total_dict));
             setRecentMsgCount(count_total_dict);
             setRecentMsg(temp);
+            console.log(temp);
           }else{
           //pass
           }
@@ -640,6 +644,7 @@ const ConversationList = forwardRef((props, ref) => {
             res_chat_id = chat_id;
           }
           if(action !== "remove"){
+            console.log('243')
             initializeSocket(
               curr_user_data.id,
               recipient_user.id,
@@ -1242,7 +1247,8 @@ const ConversationList = forwardRef((props, ref) => {
                       xl={3}
                     >
                       <Row style={{ padding: '0px', margin: '0px' }}>
-                        {recentMsgCount && recentMsgCount.hasOwnProperty(item.chat.chat_id) && recentMsgCount[item.chat.chat_id] > 0?<Col style={{ padding: '3px 0px 0px 10px' }} xs={6} sm={6} md={6} lg={6} xl={6}>
+                        {recentMsgCount && recentMsgCount.hasOwnProperty(item.chat.chat_id) && recentMsgCount[item.chat.chat_id] > 0?
+                        <Col style={{ padding: '3px 0px 0px 10px' }} xs={6} sm={6} md={6} lg={6} xl={6}>
                           <CustomBadge
                             custom={true}
                             message_count={true}

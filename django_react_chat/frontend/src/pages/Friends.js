@@ -7,6 +7,7 @@ import {
   user_data,
   friend_requests,
   notifications,
+  manage_requests_last_seen
 } from "../redux";
 import { useDispatch, useSelector } from "react-redux";
 import "../index.css";
@@ -24,6 +25,7 @@ import {
   FaTimes,
   FaCheckCircle,
   FaUserTimes,
+  FaUserFriends
 } from "react-icons/fa";
 import Dialog from "react-bootstrap-dialog";
 import WebSocketInstance from "../websocket";
@@ -35,63 +37,40 @@ function Friends(props) {
   const [key, setKey] = useState("users");
   const history = useHistory();
   const dispatch = useDispatch();
-  const store_overlay = useSelector((state) => state.session.spinner_overlay);
   const curr_user_data = useSelector((state) => state.session.user_data);
-  const [users, setUsers] = useState([]);
-  const [friends, setFriends] = useState([]);
-  const [friendRequests, setFriendRequests] = useState([]);
-  const [sentFriendRequests, setSentFriendRequests] = useState([]);
-  const session_friend_requests = useSelector(
-    (state) => state.session.friend_requests
-  );
-  const [friendRequestData, setFriendRequestData] = useState({});
-  const mounted = useRef();
+  const [friendRequestModalData, setFriendRequestModalData] = useState([]);
+  const [friendReqNotificationCount, setFriendReqNotificationCount] = useState(0);
+  const [friendRequestModalErrors, setFriendModalErrors] = useState({});
+  const [friendReqNotification, setFriendReqLastSeen] = useState("");
+  const [friendsUserDataDict, setFriendsUserDataDict] = useState({});
 
   useEffect(() => {
+    getFriendRequestModalData();
     WebSocketInstance.connect("friend_requests", "");
+    // WebSocketInstance.connect("requests", "friends", "");
     WebSocketInstance.friendRequestNotificationCallbacks((data) =>
       setSocketFriendRequestData(data)
     );
   }, []);
 
-  useEffect(() => {
-    session_friend_requests
-      ? setFriendRequestData(session_friend_requests)
-      : setFriendRequestData({});
-    if (session_friend_requests && session_friend_requests.action == "accept") {
-      dispatch(notifications([session_friend_requests.notification]));
-    }
-  }, [session_friend_requests]);
 
   const setSocketFriendRequestData = (data) => {
-    spinnerStop();
-    if (Object.keys(data).indexOf(curr_user_data.id.toString()) > -1) {
-      dispatch(friend_requests(data[curr_user_data.id]));
+    if(data.user_id !== curr_user_data.id){
+      console.log(data);
+      console.log('FRIENDS SOCKET');
+      if(data.action === 'accept'){
+        dispatch(notifications(data.notification_data));
+      }
+      getFriendRequestModalData();
     }
-  };
-
-  const manageNotifications = (notification_data) => {
-    let post_data = notification_data[0];
-    post_data["type"] = "add";
-    axiosInstance
-      .post("manage_notifications/", post_data)
-      .then((res) => {
-        if (res.data.ok) {
-          console.log(res.data.notification);
-        } else {
-          console.log("Error");
-        }
-      })
-      .catch((err) => {
-        console.log(err);
-      });
-  };
+  }
 
   const initializeSocket = (uId, rId, action, notificationData) => {
     waitForSocketConnection(() => {
       WebSocketInstance.fetchFriendRequests(uId, rId, action, notificationData);
     });
   };
+
 
   const waitForSocketConnection = (callback) => {
     setTimeout(function () {
@@ -105,53 +84,76 @@ function Friends(props) {
     }, 100);
   };
 
-  const getManageFriendsData = () => {
-    axiosInstance
-      .get("get_manage_friends_data/")
-      .then((res) => {
-        if (res.data.ok) {
-          let friend_id_list = res.data.data_dict["friend_id_list"];
-          let sent_friend_requests_id_list =
-            res.data.data_dict["sent_friend_requests_id_list"];
-          let friend_requests_id_list =
-            res.data.data_dict["friend_requests_id_list"];
-          setUsers(res.data.users);
-          setFriends(res.data.friends);
-          setFriendRequests(res.data.friend_requests);
-          setSentFriendRequests(res.data.sent_friend_requests);
-        } else {
-          console.log("Error");
+  const getFriendRequestCount = (data) => {
+    let req_count = 0;
+    data?data.map(item => {
+        if(new Date(curr_user_data.friend_request_last_seen) < new Date(item.friend_request_created_on)){
+            req_count += 1;
         }
-      })
-      .catch((err) => {
-        console.log(err);
-      });
-  };
+    }):""
+    return req_count
+  }
 
-  const manageFriends = (action, recipient_user) => {
-    let post_data = {};
-    post_data["action"] = action;
-    post_data["recipient_user_id"] = recipient_user.id;
+  const getFriendRequestModalData = () => {
     axiosInstance
-      .post("manage_friends/", post_data)
-      .then((res) => {
-        if (res.data.ok) {
-          let notification_data = res.data.notification;
-          initializeSocket(
-            curr_user_data.id,
-            recipient_user.id,
-            action,
-            notification_data
-          );
-          spinner();
-        } else {
-          console.log("Error");
+        .get("get_friends_modal_data/")
+        .then((res) => {
+            if (res.data.ok) {
+              let user_data_dict = res.data.user_data_dict;
+              let modal_data = {
+                  modal_users: res.data.modal_users,
+                  modal_friends: res.data.modal_friends, 
+                  modal_friend_requests: res.data.modal_friend_requests, 
+                  modal_sent_friend_requests: res.data.modal_sent_friend_requests, 
+                  friend_request_last_seen: res.data.friend_request_last_seen, 
+              };
+              let req_count = getFriendRequestCount(modal_data.modal_friend_requests);
+              setFriendReqNotificationCount(req_count);
+              setFriendRequestModalData(modal_data);
+              setFriendsUserDataDict(user_data_dict);
+              console.log(modal_data);
+            } else {
+                //pass
+            }
+        })
+        .catch((err) => {
+            // spinnerStop("");
+            console.log(err);
+        });
+
+  }
+
+
+  const setErrorsFriendsModal = (recipient_user, res, action, type) => {
+    let err_dict = {...friendRequestModalErrors};
+    let temp = {};
+    if(action === "add"){
+        temp[parseInt(recipient_user.id)] = res.data.error;
+        err_dict['modal_users'] = temp;
+    }else if(action === "accept"){
+        if(type === 'custom'){
+            temp[parseInt(recipient_user.id)] = 'Some error occured. Please refresh.';
+        }else{
+            temp[parseInt(recipient_user.id)] = res.data.error;
         }
-      })
-      .catch((err) => {
-        console.log(err);
-      });
-  };
+        err_dict['modal_friend_req'] = temp;
+    }else if(action === "reject"){
+        temp[parseInt(recipient_user.id)] = res.data.error;
+        err_dict['modal_friend_req'] = temp;
+    }else if(action === "cancel"){
+        temp[parseInt(recipient_user.id)] = res.data.error;
+        err_dict['modal_sent_friend_req'] = temp;
+    }else if(action === "remove"){
+        temp[parseInt(recipient_user.id)] = res.data.error;
+        err_dict['modal_friends'] = temp;
+    }else{
+        //pass
+    }
+    setFriendModalErrors(err_dict);
+    // setTimeout(function(){
+    //     setConversationModalErrors("");
+    // }, 5000)
+  }
 
   const manageCancelFriendRequestRef = (action, recipient_user) => {
     CustomDialog.show({
@@ -198,6 +200,128 @@ function Friends(props) {
     });
   };
 
+  const setTabKey = (k) => {
+    setKey(k);
+    if(k === "friend_requests"){
+        updateFriendReqLastSeen();
+    }
+}
+
+const updateFriendReqLastSeen = () => {
+  let post_data = {};
+  post_data["request_type"] = "friends";
+  post_data["last_seen"] = new Date();
+  setFriendReqLastSeen(post_data["last_seen"]);
+  setFriendReqNotificationCount(0);
+  axiosInstance
+    .post("manage_requests_last_seen/", post_data)
+    .then((res) => {
+      if (res.data.ok) {
+        // dispatch(manage_requests_last_seen(new Date(), "friends"));
+      } else {
+        console.log("Error");
+      }
+  }).catch((err) => {
+      console.log(err);
+  });
+}
+
+  const manageFriends = (action, recipient_user) => {
+    spinner(true);
+    let post_data = {};
+    post_data["action"] = action;
+    post_data["recipient_user_id"] = recipient_user.id;
+    axiosInstance
+      .post("manage_friends/", post_data)
+      .then((res) => {
+        spinnerStop();
+        if (res.data.ok) {
+          let notification_data = res.data.notification;
+          let sender_notification = {};
+          let recipient_notification = {};
+          if(notification_data.hasOwnProperty(curr_user_data.id)){
+            sender_notification = [notification_data[curr_user_data.id]]
+          }
+          if(notification_data.hasOwnProperty(recipient_user.id)){
+              recipient_notification = [notification_data[recipient_user.id]]
+          }
+          if(action === "accept"){
+            dispatch(notifications(sender_notification));
+          }
+          setFriendRequestModalDataMethod(action, recipient_user)
+          initializeSocket(
+            curr_user_data.id,
+            recipient_user.id,
+            action,
+            recipient_notification
+          );
+          spinner();
+        } else {
+          console.log("Error");
+          setErrorsFriendsModal(recipient_user, res, action, "");
+        }
+      })
+      .catch((err) => {
+        spinnerStop();
+        console.log(err);
+      });
+  };
+
+  const setFriendRequestModalDataMethod = (action, recipient_user) => {
+    let updated_modal_friends = [];
+    let updated_modal_friend_requests = [];
+    let updated_modal_users = [];
+    let sent_friend_requests = [...friendRequestModalData.modal_sent_friend_requests];
+    if(action === "add"){
+        updated_modal_users = friendRequestModalData.modal_users.map(item => {
+            if(item.id === parseInt(recipient_user.id)){
+                item.sent_friend_request = true;
+                sent_friend_requests.push(item);
+            }
+            return item
+        })
+        setFriendRequestModalData({...friendRequestModalData, modal_users: updated_modal_users, modal_sent_friend_requests: sent_friend_requests})
+    }else if(action === "accept"){
+        updated_modal_friend_requests = friendRequestModalData.modal_friend_requests.filter(item => {
+            return item.id !== parseInt(recipient_user.id)
+        })
+        updated_modal_users = friendRequestModalData.modal_users.map(item => {
+            if(item.id === parseInt(recipient_user.id)){
+                item.is_friend = true;
+            }
+            return item
+        });
+        setFriendRequestModalData({...friendRequestModalData, modal_users: updated_modal_users, modal_friend_requests: updated_modal_friend_requests})
+    }else if(action === "remove"){
+        updated_modal_friends = friendRequestModalData.modal_friends.filter(item => {               
+            return item.id !== parseInt(recipient_user.id)
+        })
+        updated_modal_users = friendRequestModalData.modal_users.map(item => {
+            if(item.id === parseInt(recipient_user.id)){
+                item.is_friend = false;
+            }
+            return item
+        })
+        setFriendRequestModalData({...friendRequestModalData, modal_friends: updated_modal_friends, modal_users: updated_modal_users})
+    }else if(action === "reject"){
+        updated_modal_friend_requests = friendRequestModalData.modal_friend_requests.filter(item => {
+            return item.id !== parseInt(recipient_user.id)
+        })
+        setFriendRequestModalData({...friendRequestModalData, modal_friend_requests: updated_modal_friend_requests})
+    }else if(action === "cancel"){
+        updated_modal_users = friendRequestModalData.modal_users.map(item => {
+            if(item.id === parseInt(recipient_user.id)){
+                item.sent_friend_request = false;
+            }
+            return item
+        })
+        sent_friend_requests = friendRequestModalData.modal_sent_friend_requests.filter(item => {
+            return item.id !== parseInt(recipient_user.id)
+        })
+        setFriendRequestModalData({...friendRequestModalData, modal_users: updated_modal_users, modal_sent_friend_requests: sent_friend_requests})
+    }
+  }
+
   const spinner = (display) => {
     display
       ? (document.getElementById("overlay").style.display = "block")
@@ -233,9 +357,9 @@ function Friends(props) {
             className="nav-justified"
             id="manage_friends_tab"
             activeKey={key}
-            onSelect={(k) => setKey(k)}
+            onSelect={(k) => setTabKey(k)}
           >
-            <Tab eventKey="users" title="Users">
+            <Tab eventKey="users" title={<span  style={{ fontSize: '0.9rem' }}>Users</span>}>
               <div
                 style={{
                   margin: "0px",
@@ -244,10 +368,10 @@ function Friends(props) {
                   overflowY: "scroll",
                 }}
               >
-                {friendRequestData &&
-                friendRequestData.hasOwnProperty("users") &&
-                friendRequestData.users.length > 0 ? (
-                  friendRequestData.users.map((user, index) => {
+                {friendRequestModalData &&
+                friendRequestModalData.hasOwnProperty("modal_users") &&
+                friendRequestModalData.modal_users.length > 0 ? (
+                  friendRequestModalData.modal_users.map((user, index) => {
                     return (
                       <Row
                         key={index}
@@ -278,13 +402,25 @@ function Friends(props) {
                             alt="profile_img"
                           />
                         </Col>
-                        <Col xs={4} sm={3} md={3} lg={3} xl={3}>
+                        <Col xs={2} sm={2} md={2} lg={2} xl={2}>
                           <p style={{ paddingTop: "5%" }}>{user.username}</p>
                         </Col>
-                        <Col xs={4} sm={4} md={4} lg={4} xl={4}>
-                          {user.sent_friend_request ? (
+                        <Col xs={2} sm={2} md={2} lg={2} xl={2}>
+                        {user.is_friend?
+                                (<OverlayTrigger
+                                key="is_friend"
+                                placement="top"
+                                overlay={
+                                    <Tooltip id="is_friend_tooltip">
+                                    <span>You are friends.</span>
+                                    </Tooltip>
+                                }
+                                >
+                                <FaUserFriends className="is_friend" />
+                                </OverlayTrigger>):
+                                (user.sent_friend_request ? (
                             <OverlayTrigger
-                              key="bottom"
+                              key="sent_friend_request"
                               placement="top"
                               overlay={
                                 <Tooltip id="sent_friend_request_tooltip">
@@ -296,10 +432,10 @@ function Friends(props) {
                             </OverlayTrigger>
                           ) : (
                             <OverlayTrigger
-                              key="bottom"
+                              key="send_friend_request"
                               placement="top"
                               overlay={
-                                <Tooltip id="add_friend_tooltip">
+                                <Tooltip id="send_friend_tooltip">
                                   <span>Send Friend Request</span>
                                 </Tooltip>
                               }
@@ -309,7 +445,10 @@ function Friends(props) {
                                 onClick={() => manageFriends("add", user)}
                               />
                             </OverlayTrigger>
-                          )}
+                          ))}
+                        </Col>
+                        <Col style={{ padding: '0px' }} xs={3} sm={3} md={3} lg={3} xl={3}>
+                          <div className="text-center friend_modal_errors">{friendRequestModalErrors.modal_users?friendRequestModalErrors.modal_users[user.id]: ''}</div>
                         </Col>
                       </Row>
                     );
@@ -321,14 +460,14 @@ function Friends(props) {
                         className="text-center"
                         style={{ fontSize: "1rem", fontWeight: "bold" }}
                       >
-                        No users found.
+                        No Users found.
                       </p>
                     </Col>
                   </Row>
                 )}
               </div>
             </Tab>
-            <Tab eventKey="friends" title="Friends">
+            <Tab eventKey="friends" title={<span  style={{ fontSize: '0.9rem' }}>Friends</span>}>
               <div
                 style={{
                   margin: "0px",
@@ -337,10 +476,10 @@ function Friends(props) {
                   overflowY: "scroll",
                 }}
               >
-                {friendRequestData &&
-                friendRequestData.hasOwnProperty("friends") &&
-                friendRequestData.friends.length > 0 ? (
-                  friendRequestData.friends.map((friend, index) => {
+                {friendRequestModalData &&
+                friendRequestModalData.hasOwnProperty("modal_friends") &&
+                friendRequestModalData.modal_friends.length > 0 ? (
+                  friendRequestModalData.modal_friends.map((friend, index) => {
                     return (
                       <Row
                         key={index}
@@ -371,12 +510,12 @@ function Friends(props) {
                             alt="profile_img"
                           />
                         </Col>
-                        <Col xs={4} sm={3} md={3} lg={2} xl={2}>
+                        <Col xs={2} sm={2} md={2} lg={2} xl={2}>
                           <p style={{ paddingTop: "5%" }}>{friend.username}</p>
                         </Col>
-                        <Col xs={4} sm={4} md={4} lg={4} xl={4}>
+                        <Col xs={2} sm={2} md={2} lg={2} xl={2}>
                           <OverlayTrigger
-                            key="bottom"
+                            key="remove_friend"
                             placement="top"
                             overlay={
                               <Tooltip id="remove_friend_tooltip">
@@ -391,6 +530,9 @@ function Friends(props) {
                               }
                             />
                           </OverlayTrigger>
+                        </Col>
+                        <Col style={{ padding: '0px' }} xs={3} sm={3} md={3} lg={3} xl={3}>
+                          <div className="text-center friend_modal_errors">{friendRequestModalErrors.modal_friends?friendRequestModalErrors.modal_friends[friend.id]: ''}</div>
                         </Col>
                       </Row>
                     );
@@ -409,7 +551,16 @@ function Friends(props) {
                 )}
               </div>
             </Tab>
-            <Tab eventKey="friend_requests" title="Friend Requests">
+            <Tab eventKey="friend_requests" title={
+              <Row style={{ padding: '0px', margin: '0px'}}>
+              <Col xl={12} lg={12} md={12} sm={12} xs={12}>
+              <span style={{ fontSize: '0.9rem' }}>Friend Requests</span>
+              {friendReqNotificationCount > 0?
+              <div style={{  float: 'right',  backgroundColor: 'red', height: '6px', width: '6px', borderRadius: '100%'}}>
+              </div>:""}
+              </Col>
+              </Row>
+            }>
               <div
                 style={{
                   margin: "0px",
@@ -418,10 +569,10 @@ function Friends(props) {
                   overflowY: "scroll",
                 }}
               >
-                {friendRequestData &&
-                friendRequestData.hasOwnProperty("friend_requests") &&
-                friendRequestData.friend_requests.length > 0 ? (
-                  friendRequestData.friend_requests.map((friendReq, index) => {
+                {friendRequestModalData &&
+                friendRequestModalData.hasOwnProperty("modal_friend_requests") &&
+                friendRequestModalData.modal_friend_requests.length > 0 ? (
+                  friendRequestModalData.modal_friend_requests.map((friendReq, index) => {
                     return (
                       <Row
                         key={index}
@@ -452,14 +603,14 @@ function Friends(props) {
                             alt="profile_img"
                           />
                         </Col>
-                        <Col xs={4} sm={3} md={3} lg={2} xl={2}>
+                        <Col xs={2} sm={2} md={2} lg={2} xl={2}>
                           <p style={{ paddingTop: "5%" }}>
                             {friendReq.username}
                           </p>
                         </Col>
-                        <Col xs={4} sm={4} md={4} lg={4} xl={4}>
+                        <Col xs={2} sm={2} md={2} lg={2} xl={2}>
                           <OverlayTrigger
-                            key="bottom"
+                            key="accept_fr"
                             placement="top"
                             overlay={
                               <Tooltip id="accept_fr_tooltip">
@@ -473,7 +624,7 @@ function Friends(props) {
                             />
                           </OverlayTrigger>
                           <OverlayTrigger
-                            key="bottom"
+                            key="reject_fr"
                             placement="top"
                             overlay={
                               <Tooltip id="reject_fr_tooltip">
@@ -486,6 +637,9 @@ function Friends(props) {
                               onClick={() => manageFriends("reject", friendReq)}
                             />
                           </OverlayTrigger>
+                        </Col>
+                        <Col style={{ padding: '0px' }} xs={3} sm={3} md={3} lg={3} xl={3}>
+                          <div className="text-center friend_modal_errors">{friendRequestModalErrors.modal_friend_requests?friendRequestModalErrors.modal_friend_requests[friendReq.id]: ''}</div>
                         </Col>
                       </Row>
                     );
@@ -504,7 +658,7 @@ function Friends(props) {
                 )}
               </div>
             </Tab>
-            <Tab eventKey="sent_friend_requests" title="Sent Friend Requests">
+            <Tab eventKey="sent_friend_requests" title={<span  style={{ fontSize: '0.9rem' }}>Sent Friend Requests</span>}>
               <div
                 style={{
                   margin: "0px",
@@ -513,10 +667,10 @@ function Friends(props) {
                   overflowY: "scroll",
                 }}
               >
-                {friendRequestData &&
-                friendRequestData.hasOwnProperty("sent_friend_requests") &&
-                friendRequestData.sent_friend_requests.length > 0 ? (
-                  friendRequestData.sent_friend_requests.map(
+                {friendRequestModalData &&
+                friendRequestModalData.hasOwnProperty("modal_sent_friend_requests") &&
+                friendRequestModalData.modal_sent_friend_requests.length > 0 ? (
+                  friendRequestModalData.modal_sent_friend_requests.map(
                     (friendReq, index) => {
                       return (
                         <Row
@@ -548,14 +702,14 @@ function Friends(props) {
                               alt="profile_img"
                             />
                           </Col>
-                          <Col xs={4} sm={3} md={3} lg={2} xl={2}>
+                          <Col xs={2} sm={2} md={2} lg={2} xl={2}>
                             <p style={{ paddingTop: "5%" }}>
                               {friendReq.username}
                             </p>
                           </Col>
-                          <Col xs={4} sm={4} md={4} lg={4} xl={4}>
+                          <Col xs={2} sm={2} md={2} lg={2} xl={2}>
                             <OverlayTrigger
-                              key="bottom"
+                              key="cancel_fr"
                               placement="top"
                               overlay={
                                 <Tooltip id="cancel_fr_tooltip">
@@ -574,6 +728,9 @@ function Friends(props) {
                               />
                             </OverlayTrigger>
                           </Col>
+                          <Col style={{ padding: '0px' }} xs={3} sm={3} md={3} lg={3} xl={3}>
+                          <div className="text-center friend_modal_errors">{friendRequestModalErrors.modal_friend_requests?friendRequestModalErrors.modal_friend_requests[friendReq.id]: ''}</div>
+                        </Col>
                         </Row>
                       );
                     }
