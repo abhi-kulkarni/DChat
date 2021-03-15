@@ -32,7 +32,7 @@ class Notification(models.Model):
     message = models.TextField(max_length=100*100, blank=False, default='')
     friend = models.IntegerField(blank=False)
     created_on = models.DateTimeField(default=timezone.now)
-    notification_type = models.CharField(blank=False, max_length=20, default='')
+    notification_type = models.CharField(blank=False, max_length=50, default='')
     read = models.BooleanField(default=False)
 
 

@@ -271,24 +271,42 @@ def manage_notifications(user, recipient_user, notification_type):
     notification_dict = {}
     i = 1
     message = ''
-    if notification_type == 'chat':
+    if notification_type == 'conversations':
         message += 'You can now chat with '
-    else:
+    elif notification_type == 'friend_requests':
+        message += 'You have a new friend request from '
+    elif notification_type == 'conversation_requests':
+        message += 'You have a new conversation request from '
+    elif notification_type == 'friends':
         message += 'You are now friends with '
-    for user_obj in users:
+
+    if notification_type == 'friend_requests' or notification_type == 'conversation_requests':
         notification = Notification.objects.create(
-                friend = user_obj.id,
-                message = message + users[i].username,
+                friend = recipient_user.id,
+                message = message + user.username,
                 participants = [user.id, recipient_user.id],
                 notification_type = notification_type
             )
-        current_user = User.objects.get(pk=user_obj.id)
+        current_user = User.objects.get(pk=recipient_user.id)
         current_user.notifications.add(notification)
         current_user.save()
-
         notification_data_serializer = NotificationSerializer(notification)
-        notification_dict[user_obj.id] = dict(notification_data_serializer.data)
-        i -= 1
+        notification_dict[recipient_user.id] = dict(notification_data_serializer.data)
+    else:
+        for user_obj in users:
+            notification = Notification.objects.create(
+                    friend = user_obj.id,
+                    message = message + users[i].username,
+                    participants = [user.id, recipient_user.id],
+                    notification_type = notification_type
+                )
+            current_user = User.objects.get(pk=user_obj.id)
+            current_user.notifications.add(notification)
+            current_user.save()
+
+            notification_data_serializer = NotificationSerializer(notification)
+            notification_dict[user_obj.id] = dict(notification_data_serializer.data)
+            i -= 1
 
     return notification_dict
 

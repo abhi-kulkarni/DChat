@@ -160,17 +160,27 @@ class Consumer(WebsocketConsumer):
         temp['command'] = 'friend_requests'
         temp['friends_modal_data'] = {
         'user_id': data['user_id'], 
-        'group_data': data.get('group_data', {}), 
+        'request_source': data.get('request_source', ''),
         'action': data.get('action', ''), 
         'notification_data': data.get('notification_data', '')
         }
         return self.send_response(temp) 
+
+    def fetch_socket_data(self, data):
+        temp = {}
+        temp['command'] = 'socket_data'
+        temp['socket_data'] = {
+            'user_id': data.get('user_id', ''),
+            'msg': 'HELLO'
+        }
+        return self.send_response(temp)  
 
     def fetch_conversation_requests1(self, data):
         temp = {}
         temp['command'] = 'conversation_requests'
         temp['conversation_modal_data'] = {
         'user_id': data['user_id'], 
+        'request_source': data.get('request_source', ''),
         'group_data': data.get('group_data', {}), 
         'action': data.get('action', ''), 
         'is_group': data.get('is_group', ''),
@@ -260,6 +270,7 @@ class Consumer(WebsocketConsumer):
         'new_friend_request': new_friend_request,
         'fetch_chat_requests': fetch_chat_requests,
         'fetch_conversation_requests':fetch_conversation_requests1,
+        'fetch_socket_data': fetch_socket_data,
         'conversation_status': conversation_status,
         'last_seen': last_seen,
         'is_typing': is_typing,
@@ -336,6 +347,7 @@ class Consumer(WebsocketConsumer):
                 'sender': data.get('sender', {}),
                 'conversation_modal_data': data.get('conversation_modal_data', {}),
                 'friends_modal_data': data.get('friends_modal_data', {}),
+                'socket_data':data.get('socket_data', {})
             }
         )
 

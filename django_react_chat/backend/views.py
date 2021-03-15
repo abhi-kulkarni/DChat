@@ -48,11 +48,9 @@ def is_authenticated(request):
 
     if request.user:
         serializer = UserSerializer(request.user)
-        friend_requests = manage_friend_request_data([request.user.id], '', None)[request.user.id]
-        chat_requests = manage_chat_request_data([request.user.id], '', '', None)[request.user.id]
         notifications = get_all_notifications(request.user.id)
         conversation_modal_data = get_conversation_modal_data_method(request)
-        return Response({'ok': True, 'conversation_modal_data': conversation_modal_data, 'user': serializer.data, 'is_logged_in': True, 'friend_requests': friend_requests, 'chat_requests': chat_requests, 'notifications': notifications, 'conversation_delete_dict': conversation_modal_data['conversation_delete_dict']})
+        return Response({'ok': True, 'user': serializer.data, 'is_logged_in': True, 'notifications': notifications})
     else:
         return Response({'ok': False})
 
@@ -366,6 +364,7 @@ def manage_friends(request):
     # try:
     if post_data['action'] == 'add':
         data = Friend.objects.add_friend(request.user, recipient_user, message='Hi! I would like to be friends with you')      
+        notification = manage_notifications(request.user, recipient_user, "friend_requests")
     elif post_data['action'] == 'remove':
         try:
             Friend.objects.remove_friend(request.user, recipient_user)
@@ -409,7 +408,7 @@ def manage_chats(request):
         chat_obj.group_profile_picture = post_data["group_profile_picture"]
         chat_obj.group_name = post_data["group_name"]
         chat_obj.group_description = post_data["group_description"]
-        chat_obj.admin = json.dumps([post_data["admin"]])
+        chat_obj.admin = json.dumps(post_data["admin"])
         chat_obj.save()
         participant_detail_list = []
         for participant in participants:
@@ -441,6 +440,7 @@ def manage_chats(request):
         unique_chat_id_list = list(Chat.objects.all().values_list('unique_id', flat=True))
         # try:
         if post_data['action'] == 'add':
+            notification = manage_notifications(request.user, recipient_user, "conversation_requests")
             data = ChatFriend.objects.add_friend(request.user, recipient_user, message='Hi! I would like to be friends with you')
         elif post_data['action'] == 'delete':
             p_list = []
@@ -469,7 +469,7 @@ def manage_chats(request):
             # chat.participants.clear()
             # chat.delete()
         elif post_data['action'] == 'accept':
-            notification = manage_notifications(request.user, recipient_user, "chat")
+            notification = manage_notifications(request.user, recipient_user, "conversations")
             chat_friend_request = ChatRequest.objects.filter(to_user=request.user.id, from_user=recipient_user_id)
             if chat_friend_request:
                 chat_friend_request = chat_friend_request[0]
