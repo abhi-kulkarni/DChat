@@ -7,14 +7,15 @@ import React, {
 } from "react";
 import { withRouter } from "react-router-dom";
 import axiosInstance from "../components/axiosInstance";
-import { useHistory } from "react-router-dom";
-import { notifications, manage_request_count, user_created_success, chat_status, spinner_overlay, conversation_delete, user_data, conversation_modal_data, current_selected_conversation } from "../redux";
+import { useHistory, useLocation } from "react-router-dom";
+import { notifications, manage_request_count, is_typing, conversation_messages, user_created_success, chat_status, spinner_overlay, conversation_delete, user_data, conversation_modal_data, current_selected_conversation } from "../redux";
 import { useDispatch, useSelector } from "react-redux";
 import "../index.css";
 import AtomSpinner from "../components/Atomspinner";
 import Row from "react-bootstrap/Row";
 import Col from "react-bootstrap/Col";
 import Toolbar from "../components/Chat/Toolbar";
+import Message from "../components/Chat/Message";
 import Form from "react-bootstrap/Form";
 import Button from "react-bootstrap/Button";
 import Modal from "react-bootstrap/Modal";
@@ -51,7 +52,9 @@ import {
     FaUserTimes,
     FaUserCheck,
     FaCog,
-    FaEdit
+    FaEdit,
+    FaArrowDown,
+    FaDivide
 } from "react-icons/fa";
 import WebSocketInstance from "../websocket";
 import OverlayTrigger from "react-bootstrap/OverlayTrigger";
@@ -67,43 +70,50 @@ import Moment from "react-moment";
 import Tabs from "react-bootstrap/Tabs";
 import Tab from "react-bootstrap/Tab";
 import GroupForm from "../components/GroupForm"
+import moment from 'moment';
 
 const CustomMessenger = forwardRef((props, ref) => {
 
     const override = css`
-      display: flex;
-      justify-content: center;
-      align-items: center;
-      height: 55vh;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        height: 55vh;
     `;
 
+    const typingLoaderCss = css`
+        justify-content: center;
+        align-items: center;
+        padding-top: 1px;
+        float: left;
+        margin-top:-7px;
+  `;
+
     const uploadImgLoadingCss = css`
-      display: flex;
-      justify-content: center;
-      align-items: center;
-      height: 100%;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        height: 100%;
     `;
 
     const conversationLoadingCss = css`
-      display: flex;
-      justify-content: center;
-      align-items: center;
-      height: 100%;
-      padding-top: 20%;
-    `;
-
-    const typingcss = css`
-      padding-top: 2px;
-      float: right;
-    `;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        height: 100%;
+        padding-top: 20%;
+    `;  
 
     const history = useHistory();
     const dispatch = useDispatch();
+    const location = useLocation();
     let CustomDialog = useRef(null);
     const groupFormRef = useRef(null);
     const [loaderActive, setLoaderActive] = useState(false);
+    const session_is_typing = useSelector((state) => state.session.is_typing);
     const [conversationReqLastSeen, setConversationReqLastSeen] = useState("");
     const session_conversation_modal_data = useSelector(state => state.session.conversation_modal_data);
+    const session_messages = useSelector(state => state.session.messages);
     const [showManageConversationsModal, setShowManageConversationsModal] = useState(false);
     const [showAddGroupModal, setShowAddGroupModal] = useState(false);
     const [selectedConversationMenu, setSelectedConversationMenu] = useState({});
@@ -112,12 +122,14 @@ const CustomMessenger = forwardRef((props, ref) => {
     const [removedChatData, setRemovedChatData] = useState("");
     const [isConversationFriend, setIsConversationFriend] = useState({});
     const session_chat_status = useSelector(state => state.session.chat_status);
+    const session_current_selected_conversation_id = useSelector(state => state.session.current_selected_conversation_id);
     const [currConversationUserData, setCurrConversationUserData] = useState({});
     let messagesEnd = useRef(null);
     let messagesStart = useRef(null);
     let emojiInputRef = useRef(null);
     const [editGroupModal, setEditGroupModal] = useState(false);
     const [showEmojiPicker, setShowEmojiPicker] = useState(false);
+    const [isTypingMsg, setIsTypingMsg] = useState({});
     const [chosenEmoji, setChosenEmoji] = useState(null);
     const [selectedConversation, setSelectedConversation] = useState({});
     const [orientation, setOrientation] = useState("default");
@@ -162,6 +174,11 @@ const CustomMessenger = forwardRef((props, ref) => {
     const [conversationUserDataDict, setConversationUserDataDict] = useState({});
     const [stateConversationStatus, setStateConversationStatus] = useState({});
     const [ imageMsgVisible, setImageMsgVisible ] = React.useState(false);
+    const [messages, setMessages] = useState([])
+    const [currentMsg, setCurrentMsg] = useState({})
+    const [newMessage, setNewMessage] = useState({});
+    const [scrollBtnVisible, setScrollBtnVisble] = useState(false);
+    const [offset, setOffset] = useState(0);
 
     useEffect(() => {
         getConversationModalData();
@@ -191,9 +208,81 @@ const CustomMessenger = forwardRef((props, ref) => {
     useEffect(() => {
         if(currConversation.id === groupEditedSocketChange.id){
             setCurrConversation(groupEditedSocketChange);
-            // dispatch(current_selected_conversation(groupEditedSocketChange))
         }
     }, [groupEditedSocketChange])
+
+    useEffect(() => {
+        updateRecentMessage(newMessage);
+    },[newMessage])
+
+    const handleMessageListOnScroll = () => {
+        let ele = document.getElementById('message_list');
+        if(ele.scrollTop === (ele.scrollHeight - ele.offsetHeight)){
+            setScrollBtnVisble(false);
+        }
+    }
+
+    const renderMessages = () => {
+
+        let curr_username = curr_user_data ? curr_user_data.username : "";
+        let messageCount = messages.length;
+        let tempMessages = [];
+        let msgs = messages ? messages : [];
+        let i = 0;
+  
+        while (i < messageCount) {
+          let previous = msgs[i - 1];
+          let current = msgs[i];
+          let next = msgs[i + 1];
+          let isMine = current.author === curr_username;
+          let currentMoment = moment(current.timestamp);
+          let prevBySameAuthor = false;
+          let nextBySameAuthor = false;
+          let startsSequence = true;
+          let endsSequence = true;
+          let showTimestamp = true;
+  
+          if (previous) {
+            let previousMoment = moment(previous.timestamp);
+            let previousDuration = moment.duration(
+              currentMoment.diff(previousMoment)
+            );
+            prevBySameAuthor = previous.author === current.author;
+  
+            if (prevBySameAuthor && previousDuration.as("hours") < 1) {
+              startsSequence = false;
+            }
+  
+            if (previousDuration.as("hours") < 1) {
+              showTimestamp = false;
+            }
+          }
+  
+          if (next) {
+            let nextMoment = moment(next.timestamp);
+            let nextDuration = moment.duration(nextMoment.diff(currentMoment));
+            nextBySameAuthor = next.author === current.author;
+  
+            if (nextBySameAuthor && nextDuration.as("hours") < 1) {
+              endsSequence = false;
+            }
+          }
+  
+          tempMessages.push(
+            <Message
+              key={i}
+              isMine={isMine}
+              startsSequence={startsSequence}
+              endsSequence={endsSequence}
+              showTimestamp={showTimestamp}
+              data={current}
+            />
+          );
+          i += 1;
+        }
+  
+        return tempMessages;
+    };
 
     const resizeWindow = () => {
         setWindowWidth(window.innerWidth);
@@ -278,6 +367,12 @@ const CustomMessenger = forwardRef((props, ref) => {
         WebSocketInstance.conversationRequestNotificationCallbacks(
         (data) => setSocketConversationRequestData1(data),
         (data) => setConversationStatusData(data))
+
+        WebSocketInstance.conversationMessageCallbacks(
+            (data) => setMessagesMethod(data),
+            (data) => addMessageMethod(data),
+            (data) => setIsTyping(data)
+        );
     }
 
     const initializeConversationStatus = (uId, status, type) => {
@@ -285,6 +380,45 @@ const CustomMessenger = forwardRef((props, ref) => {
           WebSocketInstance.setConversationStatus(uId, status, type);
         });
     };
+
+    const setIsTyping = (data) => {
+        let temp = { ...session_is_typing[data.chat_id] };
+        temp[data.user_id] = data.status;
+        setIsTypingMsg(temp);
+        // scrollToBottom();
+        data.user_id !== curr_user_data.id ? dispatch(is_typing(data)) : "";
+    };
+
+    const setMessagesMethod = (data) => {
+        console.log('FETCHED');
+        if(data.user_id === curr_user_data.id){
+            setMessages(data.messages);
+            dispatch(conversation_messages(data.messages.reverse(), "fetch", data.chatId));
+        }
+    }
+
+    const addMessageMethod = (data) => {
+        console.log('NEW');
+        let curr_chat_id = window.location.pathname.split('/')[3];
+        if(curr_chat_id === data.message.chatId){
+            let chat_id = data.message.chatId;
+            let curr_msgs = session_messages && session_messages.hasOwnProperty(chat_id)?session_messages[chat_id]:[];
+            curr_msgs.push(data.message);
+            setMessages(curr_msgs);
+            setNewMessage(data.message);
+            dispatch(conversation_messages(data.message, "new", data.chatId));
+            if(data.message.author_id !== curr_user_data.id){
+                let ele = document.getElementById('message_list');
+                if((ele.scrollTop + 43) !== (ele.scrollHeight - ele.offsetHeight)){
+                    setScrollBtnVisble(true);
+                }else{
+                    scrollToBottom();
+                }
+            }else{
+                scrollToBottom();
+            }
+        }
+    }
 
     const initializeSocket = (uId, rId, action, chatId, notificationData, type, isGroup, groupData) => {
         waitForSocketConnection(() => {
@@ -297,7 +431,8 @@ const CustomMessenger = forwardRef((props, ref) => {
             type,
             isGroup,
             groupData
-        ),WebSocketInstance.setConversationStatus(uId, status, type);
+        ),
+        WebSocketInstance.setConversationStatus(uId, status, type);
         });
     };
 
@@ -313,6 +448,20 @@ const CustomMessenger = forwardRef((props, ref) => {
         }, 100);
     };
 
+
+    const updateRecentMessage = (data) => {
+        let recent_msg = getRecentMsg(data);
+        let curr_conversation = allConversations?[...allConversations]:[];
+        let updated_conversations = [];
+        updated_conversations = curr_conversation.map(item => {
+            if(item.id === data.chatId){
+                item.recent_message.content = recent_msg
+            }
+            return item;
+        })
+        setAllConversations(updated_conversations);
+        setSearchConversations(updated_conversations);
+    }
 
     const setConversationStatusData = (data) => {
         data.user_id !== curr_user_data.id ? dispatch(chat_status(data)) : "";
@@ -496,13 +645,13 @@ const CustomMessenger = forwardRef((props, ref) => {
                     temp[item.user.id] = item.id; 
                 }):"";
                 let temp_friends = {};
-                modal_data.modal_friends.map(item => {
+                modal_data.modal_friends?modal_data.modal_friends.map(item => {
                     if(item.has_conversation){
                         temp_friends[item.id] = true;
                     }else{
                         temp_friends[item.id] = false;
                     }
-                })
+                }):""
                 setIsConversationFriend(temp_friends);
                 setConversationUserDict(temp);
                 setConversationUserDataDict(user_data_dict);
@@ -773,7 +922,7 @@ const CustomMessenger = forwardRef((props, ref) => {
         post_data["is_group"] = false;
         let recipient;
         if(groupData){
-            let participants_temp = [...recipient_user, {'name': curr_user_data.username, 'id': curr_user_data.id}]
+            let participants_temp = [...recipient_user]
             post_data["is_group"] = true;
             post_data["admin"] = groupData.admin;
             post_data["group_profile_picture"] = groupData.group_image;
@@ -1346,6 +1495,26 @@ const CustomMessenger = forwardRef((props, ref) => {
         setShowManageConversationsModal(true);
     };
 
+    const getRecentMsg = (data) => {
+        let recent_msg = 'Click to start a conversation';
+        if(Object.keys(data).length > 0){
+            if(data.message_type == 'text'){
+                if(data.author_id == curr_user_data.id){
+                    recent_msg = "You: " + data.content
+                }else{
+                    recent_msg = data.content;
+                }
+            }else{
+                if(data.author_id == curr_user_data.id){
+                    recent_msg = "You: Image"
+                }else{
+                    recent_msg = "Image"
+                }
+            }
+        }
+        return recent_msg;   
+    }
+
     const openAddGroupModal = () => {
         let temp = allConversations;
         let temp_data = {};
@@ -1360,9 +1529,11 @@ const CustomMessenger = forwardRef((props, ref) => {
             if(!item.is_group){
                 user_options.push({'name': item.user.username, 'id': item.user.id })
             }
-        })
-        let admin = [curr_user_data];
+        });
+        user_options.push({'name': curr_user_data.username, 'id': curr_user_data.id })
+        let admin = [curr_user_data.id];
         temp_data['admin'] = admin;
+        temp_data['admin_users'] = [curr_user_data];
         temp_data['user_options'] = user_options;
         temp_data['user_options_data'] = user_options_data;
         temp_data['curr_user'] = curr_user_data;
@@ -1408,8 +1579,7 @@ const CustomMessenger = forwardRef((props, ref) => {
         setCustomClass("custom_msg_lst_content");
         let uploaded_img = e.target.files[0];
         if(uploaded_img){
-            let params = location.pathname.split("/");
-            let chatId = params.length > 3 ? params[params.length - 2] : null;
+            let chatId = window.location.pathname.split('/')[3];
             let form_data = new FormData();
             form_data.append("image", uploaded_img);
             form_data.append("name", uploaded_img['name']);
@@ -1434,43 +1604,69 @@ const CustomMessenger = forwardRef((props, ref) => {
         //pass
     };
 
-    const handleInfo = (status) => {
-        // var ele = document.getElementById("info_user_data");
-        // if(status){
-        //     ele.classList.add("info_user_data_hover");
-        // }else{
-        //     if(!isInfoDataOpened){
-        //         ele.classList.remove("info_user_data_hover");
-        //         ele.classList.add("info_user_data_no_hover");
-        //     }
-        // }
-    }
 
-    const handleInfoData = (status) => {
-        // var ele = document.getElementById("info_user_data");
-        // if(status){
-        //     setIsInfoDataOpened(true);
-        //     ele.classList.add("info_user_data_hover");
-        // }else{
-        //     setIsInfoDataOpened(false);
-        //     ele.classList.remove("info_user_data_hover");
-        //     ele.classList.add("info_user_data_no_hover");
-        // }
-    }
-
-    const handleKeyDown = (e) => {
-        let temp = {};
-        if (e.key === "Enter") {
-            e.target.value = "";
-            setInputMsg("");
-            setUploadImgSrc("");
-            setUploadingImg(false);
+    const sendNewMessage = (message) => {
+        let data = {};
+        let chatId = currConversation.id;
+        if (message.type === "text") {
+          if (message.content.length > 0) {
+            data = {
+              from: curr_user_data.id,
+              content: { msg: message.content, image_url: "" },
+              chatId: chatId,
+              type: message.type,
+            };
+          }
+        } else {
+          data = {
+            from: curr_user_data.id,
+            content: { msg: message.content, image_url: message.img_url, type: message.img_type, file_name: message.file_name },
+            chatId: chatId,
+            type: message.type,
+          };
         }
+        setCurrentMsg(message.content);
+        WebSocketInstance.newChatMessage(data);
     };
+
+    const scrollToBottom = (custom) => {
+        if(custom){
+            setScrollBtnVisble(false);
+        }
+        let ele = document.getElementById("messagesBottom");
+        if (ele) {
+          ele.scrollIntoView({ behavior: "smooth" });
+        }
+      };
 
     const handleChange = (e) => {
         e.preventDefault();
         setInputMsg(e.target.value);
+        if (e.target.value.length > 0) {
+            setIsTypingData(true);
+        }else {
+            setIsTypingData(false);
+        }
+    };
+
+
+    const handleKeyDown = (e) => {
+        if (e.key === "Enter") {
+            let temp = {};
+            temp["content"] = e.target.value;
+            if (uploadImgSrc) {
+                temp["img_url"] = uploadImgSrc;
+                temp["type"] = "image";
+            } else if(e.target.value.length > 0) {
+                temp["type"] = "text";
+            }
+            e.target.value = "";
+            setInputMsg("");
+            setUploadImgSrc("");
+            setUploadingImg(false);
+            setIsTypingData(false);
+            sendNewMessage(temp);
+        }
     };
 
     const handleMessageInput = () => {
@@ -1480,18 +1676,27 @@ const CustomMessenger = forwardRef((props, ref) => {
         if (uploadImgSrc) {
           temp["img_url"] = uploadImgSrc;
           temp["type"] = "image";
-          sendNewMessage(temp);
         } else {
           temp["type"] = "text";
-          sendNewMessage(temp);
         }
+        sendNewMessage(temp);
         // handleMsgSeen();
         setUploadImgSrc("");
         setUploadingImg(false);
-        // setIsTypingData(false);
+        setIsTypingData(false);
         document.getElementById("composeMsg").value = "";
         setInputMsg("");
     };
+
+    const setIsTypingData = (status) => {
+        let chatId = window.location.pathname.split('/')[3];
+        WebSocketInstance.setIsTypingStatus(
+          curr_user_data.id,
+          status,
+          chatId,
+          ""
+        );
+      };
 
     const cancelImgMsg = () => {
         setUploadingImg(false)
@@ -1533,8 +1738,15 @@ const CustomMessenger = forwardRef((props, ref) => {
         temp[conversation.id] = true;
         temp['conversation'] = conversation;
         setSelectedConversation(temp);
-        // dispatch(current_selected_conversation(conversation));
+        waitForSocketConnection(() => {
+            WebSocketInstance.fetchMessages(curr_user_data.id, conversation.id)
+        })
         setCurrConversation(conversation);
+        if(conversation.is_group){
+            window.history.replaceState(null, "Groups", '/messenger/groups/'+conversation.id)
+        }else{
+            window.history.replaceState(null, "Conversations", '/messenger/conversations/'+conversation.id)
+        }
     }
 
     return (
@@ -1686,9 +1898,50 @@ const CustomMessenger = forwardRef((props, ref) => {
                                     </Row>
                                     <Row className="conversation_snippet_row" style={{ padding: '0px', margin: '0px' }}>
                                         <Col style={{ padding: '0px' }} xs={12} sm={12} md={12} lg={12} xl={12}>
-                                            <div className="conversation_snippet">
-                                                Recent msgs / typing 32r4ewrewrfwerewwwwwwwwwwwwwwww
-                                            </div>
+                                        {!item.is_group?
+                                        isTypingMsg && isTypingMsg.hasOwnProperty(item.user.id) && isTypingMsg[item.user.id]?
+                                            <Row style={{ padding: '0px', margin: '0px' }}>
+                                                <Col style={{ padding: '0px' }} xs={12} sm={3} md={3} lg={2} xl={2}>
+                                                    <div
+                                                    className="typing_msg"
+                                                    >
+                                                    typing
+                                                    </div>
+                                                </Col>
+                                                <Col
+                                                    className="typing_loader"
+                                                    style={{ padding: '2px 0px 0px 6px' }}
+                                                    xs={12}
+                                                    sm={9}
+                                                    md={9}
+                                                    lg={10}
+                                                    xl={10}
+                                                >
+                                                    <PulseLoader
+                                                    css={typingLoaderCss}
+                                                    size={2}
+                                                    color={"#0A73F0"}
+                                                    loading={isTypingMsg &&
+                                                        isTypingMsg.hasOwnProperty(item.user.id)
+                                                          ? isTypingMsg[item.user.id]
+                                                          : false}
+                                                    />
+                                                </Col>
+                                            </Row>:
+                                            <Row style={{ padding: '0px', margin: '0px' }}>
+                                                <Col style={{ padding: '0px', margin: '0px' }} xs={12} sm={12} md={12} lg={12} xl={12}>
+                                                    <div className="conversation_snippet">
+                                                        {Object.keys(item.recent_message).length > 0?item.recent_message.content:"Begin Conversation"}
+                                                    </div>
+                                                </Col>
+                                            </Row>:
+                                            <Row style={{ padding: '0px', margin: '0px' }}>
+                                                <Col style={{ padding: '0px', margin: '0px' }} xs={12} sm={12} md={12} lg={12} xl={12}>
+                                                    <div className="conversation_snippet">
+                                                        {Object.keys(item.recent_message).length > 0?item.recent_message.content:"Begin Conversation"}
+                                                    </div>
+                                                </Col>
+                                            </Row>}
                                         </Col>
                                     </Row>
                                 </Col>
@@ -1963,14 +2216,15 @@ const CustomMessenger = forwardRef((props, ref) => {
                         />
                     </Col>
                 </Row>
-                <Row className={customClass}  style={{ padding: '0px', margin: '0px' }}>
+                <Row onScroll={() => handleMessageListOnScroll()} id="message_list" className={customClass}  style={{ padding: '0px 0px 6px 0px', margin: '0px' }}>
                     <Col xs={12} sm={12} md={12} lg={12} xl={12}>
-                        {Array.from(Array(5).keys()).map((item, index) => {
+                        {Array.from(Array(0).keys()).map((item, index) => {
                             return (<p key={index}>MSGS  
                             {windowWidth} x {windowHeight}
                             </p>)
                         })}
-                        <Button onClick={() => { setImageMsgVisible(true) }}>
+                        {renderMessages()}
+                        {/* <Button onClick={() => { setImageMsgVisible(true) }}>
                             View Image
                         </Button>
                         <Viewer
@@ -1982,9 +2236,22 @@ const CustomMessenger = forwardRef((props, ref) => {
                             images={[{src: 'https://picsum.photos/2000/3000?grayscale', alt: '', 
                             downloadUrl:"https://picsum.photos/2000/3000?grayscale" }]}
                         />
-                        <p className="group_participant_status_msg">{conversationStatusMsg && conversationStatusMsg.hasOwnProperty(currConversation.id)?conversationStatusMsg[currConversation.id]:""}</p>
+                        <p className="group_participant_status_msg">{conversationStatusMsg && conversationStatusMsg.hasOwnProperty(currConversation.id)?conversationStatusMsg[currConversation.id]:""}</p> */}
+                    </Col>
+                    <Col xs={12} sm={12} md={12} lg={12} xl={12}>
+                        <div id="messagesBottom"
+                            ref={(el) => {
+                            messagesEnd = el;
+                            }}>
+                        </div>
                     </Col>
                 </Row>
+                {scrollBtnVisible?
+                <Button style={{ position:'absolute', zIndex: '10'}} size="sm" variant="danger" onClick={() => scrollToBottom(true)} className="scroll_btn">
+                    <div>
+                        <FaArrowDown style={{ marginRight: '8px' }} />You have a new message
+                    </div>
+                </Button>:""}
                 {uploadingImg ? 
                 <Row style={{padding: '0px', margin: '0px', backgroundColor: '#f4f5f7', borderRadius: '10px'}}>
                     <Col className="img_div_msg_list" xl={3} lg={3} md={5} sm={6} xs={10}>

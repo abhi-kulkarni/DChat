@@ -233,25 +233,28 @@ def get_current_chat(chat_id):
 
 def get_last_10_messages(chat_id, user_id):
 
-    recipient_user_id = ''
+    # recipient_user_id = ''
     chat = Chat.objects.get(pk=chat_id)
-    participants = chat.participants.all()
-    for p_obj in participants:
-        if p_obj.id!=user_id:
-            recipient_user_id = p_obj.id
+    # participants = chat.participants.all()
+    # for p_obj in participants:
+    #     if p_obj.id!=user_id:
+    #         recipient_user_id = p_obj.id
 
-    chat_cleared = json.loads(chat.cleared).get(str(recipient_user_id), False) if chat.cleared else False
-    chat_deleted = json.loads(chat.deleted).get(str(recipient_user_id), False) if chat.deleted else False
+    # chat_cleared = json.loads(chat.cleared).get(str(recipient_user_id), False) if chat.cleared else False
+    # chat_deleted = json.loads(chat.deleted).get(str(recipient_user_id), False) if chat.deleted else False
 
-    msgs = []
-    if not chat_deleted:
-        chat_msgs = chat.messages.order_by('-timestamp').all()[:10]
-        for chat_msg in chat_msgs:
-            cleared_msg = json.loads(chat_msg.cleared).get(str(recipient_user_id), False) 
-            deleted_msg = json.loads(chat_msg.deleted).get(str(recipient_user_id), False)
-            if not cleared_msg and not deleted_msg:
-                msgs.append(chat_msg)
-            
+    # msgs = []
+    # if not chat_deleted:
+    #     chat_msgs = chat.messages.order_by('-timestamp').all()[:10]
+    #     for chat_msg in chat_msgs:
+    #         cleared_msg = json.loads(chat_msg.cleared).get(str(recipient_user_id), False) 
+    #         deleted_msg = json.loads(chat_msg.deleted).get(str(recipient_user_id), False)
+    #         if not cleared_msg and not deleted_msg:
+    #             msgs.append(chat_msg)
+    
+
+    msgs = chat.messages.order_by('-timestamp').all()[:10]
+
     return {'chat_msgs': msgs, 'recent_msg_data': {}}
 
 

@@ -13,6 +13,12 @@ code {
 }
 
 @media only screen and (min-width: 300px) {
+
+  .scroll_btn{
+    bottom: 95px;
+    left: 62px;
+  }
+
   .conversation_lst_content{
     top:20px;
     height: calc(100vh - 330px);
@@ -30,6 +36,13 @@ code {
   .custom_msg_lst_content{
     top:30px;
     height: calc(100vh - 470px);
+    overflow-y: scroll;
+    padding:0px 0px 15px 0px;
+  }
+
+  .custom_scroll_msg_lst_content{
+    top:30px;
+    height: calc(100vh - 358px);
     overflow-y: scroll;
     padding:0px 0px 15px 0px;
   }
@@ -137,10 +150,20 @@ code {
     top: 12px!important;
   }
 
+  .typing_loader{
+    padding: 2px 0px 0px 0px !important;
+  }
+
 }
 
 /* Small devices (portrait tablets and large phones, 600px and up) */
 @media only screen and (min-width: 600px) {
+
+  .scroll_btn{
+    bottom: 95px;
+    left: 138px;
+  }
+
   .conversation_lst_content{
     top:20px;
     height: calc(100vh - 330px);
@@ -158,6 +181,13 @@ code {
   .custom_msg_lst_content{
     top:30px;
     height: calc(100vh - 470px);
+    overflow-y: scroll;
+    padding:0px 0px 15px 0px;
+  }
+
+  .custom_scroll_msg_lst_content{
+    top:30px;
+    height: calc(100vh - 358px);
     overflow-y: scroll;
     padding:0px 0px 15px 0px;
   }
@@ -268,10 +298,20 @@ code {
     top: 12px!important;
   }
 
+  .typing_loader{
+    padding: 2px 0px 0px 0px !important;
+  }
+
 }
 
 /* Medium devices (landscape tablets, 768px and up) */
 @media only screen and (min-width: 768px) {
+
+  .scroll_btn{
+    bottom:52px;
+    left: 238px;
+  }
+
   .conversation_lst_content{
     top:20px;
     height: calc(100vh - 330px);
@@ -289,6 +329,13 @@ code {
   .custom_msg_lst_content{
     top:30px;
     height: calc(100vh - 470px);
+    overflow-y: scroll;
+    padding:0px 0px 15px 0px;
+  }
+
+  .custom_scroll_msg_lst_content{
+    top:30px;
+    height: calc(100vh - 298px);
     overflow-y: scroll;
     padding:0px 0px 15px 0px;
   }
@@ -379,6 +426,12 @@ code {
 
 /* Large devices (laptops/desktops, 992px and up) */
 @media only screen and (min-width: 992px) {
+
+  .scroll_btn{
+    bottom:52px;
+    left: 315px;
+  }
+  
   .conversation_lst_content{
     top:20px;
     height: calc(100vh - 330px);
@@ -396,6 +449,13 @@ code {
   .custom_msg_lst_content{
     top:30px;
     height: calc(100vh - 420px);
+    overflow-y: scroll;
+    padding:0px 0px 15px 0px;
+  }
+
+  .custom_scroll_msg_lst_content{
+    top:30px;
+    height: calc(100vh - 298px);
     overflow-y: scroll;
     padding:0px 0px 15px 0px;
   }
@@ -498,6 +558,12 @@ code {
 
 /* Extra large devices (large laptops and desktops, 1200px and up) */
 @media only screen and (min-width: 1200px) {
+
+  .scroll_btn{
+    bottom:52px;
+    left: 385px;
+  }
+
   .conversation_lst_content{
     top:20px;
     height: calc(100vh - 330px);
@@ -515,6 +581,13 @@ code {
   .custom_msg_lst_content{
     top:30px;
     height: calc(100vh - 420px);
+    overflow-y: scroll;
+    padding:0px 0px 15px 0px;
+  }
+
+  .custom_scroll_msg_lst_content{
+    top:30px;
+    height: calc(100vh - 298px);
     overflow-y: scroll;
     padding:0px 0px 15px 0px;
   }
@@ -608,6 +681,7 @@ code {
   left: 82px!important;
   top: 12px!important;
 }
+
  
 }
 
@@ -1368,4 +1442,14 @@ aside.emoji-picker-react{
   cursor: pointer;
   font-size: 0.7rem;
   padding: 8px 0px 8px 10px;
+}
+
+.typing_msg{
+    white-space:nowrap;
+    overflow:hidden;
+    text-overflow:ellipsis;
+    width:100% !important;
+    font-size: 0.65rem;
+    color: #0A73F0;
+    font-style: italic;
 }

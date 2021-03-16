@@ -53,8 +53,8 @@ class MyTokenObtainPairSerializer(TokenObtainPairSerializer):
             data['refresh'] = str(refresh)
             data['access'] = str(refresh.access_token)
             data['user'] = UserSerializer(self.user).data
-            data['user']['friend_requests'] = manage_friend_request_data([self.user.id], '', None)[self.user.id]
-            data['user']['chat_requests'] = manage_chat_request_data([self.user.id], '', '', None)[self.user.id]
+            # data['user']['friend_requests'] = manage_friend_request_data([self.user.id], '', None)[self.user.id]
+            # data['user']['chat_requests'] = manage_chat_request_data([self.user.id], '', '', None)[self.user.id]
             data['user']['notifications'] = get_all_notifications(self.user.id)
             data['ok'] = True
         else:

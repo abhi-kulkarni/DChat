@@ -23,5 +23,7 @@ export {
   is_refreshed,
   current_selected_conversation,
   conversation_delete,
-  manage_request_count
+  manage_request_count,
+  conversation_messages,
+  current_selected_conversation_id
 } from "./session/sessionActions";

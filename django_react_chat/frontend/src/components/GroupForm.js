@@ -66,11 +66,16 @@ const GroupForm = forwardRef((props, ref) => {
         }
     }));
 
+    // ADMIN AND ADMIN LIST TO BE CHECKED 
     const openAddGroupModal = (data) => {
         setEditMode(false);
         setGroupUserOptions(data.user_options);
-        setAdmin(data.admin);
+        setAdmin(data.admin_users);
+        let curr_group_members = [{'name': data.curr_user.username, 'id': data.curr_user.id}];
+        setGroupFormData({...groupFormData, group_members: curr_group_members})
         setPreviousGroupData(data);
+        setPreviousAdminList(data.admin);
+        setUpdatedAdminList(data.admin);
         setShowAddGroupModal(true);
         setConversationUserDataDict(data.conversation_user_data_dict);
     };
@@ -275,6 +280,8 @@ const GroupForm = forwardRef((props, ref) => {
                 setGroupFormData({ ...groupFormData, group_name: value });
                 if (value.length > 20) {
                     setGroupFormDataErrors({ ...groupFormDataErrors, group_name: "Group name should not be more than 20 characters." });
+                }else if(value.length <= 0){
+                    setGroupFormDataErrors({ ...groupFormDataErrors, group_name: "Group should have a name !" });
                 }else{
                     setGroupFormDataErrors({ ...groupFormDataErrors, group_name: "" });
                 } 

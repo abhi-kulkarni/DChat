@@ -24,7 +24,9 @@ import {
   IS_REFRESHED,
   CURRENT_SELECTED_CONVERSATION,
   CONVERSATION_DELETE,
-  MANAGE_REQUESTS_COUNT
+  MANAGE_REQUESTS_COUNT,
+  MESSAGES,
+  CURRENT_SELECTED_CONVERSATION_ID
 } from "./sessionTypes";
 
 const initialState = {
@@ -49,8 +51,10 @@ const initialState = {
   conversation_modal_data:{},
   is_refreshed:false,
   current_selected_conversation: {},
+  current_selected_conversation_id:'',
   conversation_delete:{},
-  manage_request_count:{}
+  manage_request_count:{},
+  messages:{}
 };
 
 const sessionReducer = (state = initialState, action) => {
@@ -86,8 +90,10 @@ const sessionReducer = (state = initialState, action) => {
           conversation_modal_data:{},
           is_refreshed:false,
           current_selected_conversation: {},
+          current_selected_conversation_id:'',
           conversation_delete:{},
-          manage_request_count:{}
+          manage_request_count:{},
+          messages:{}
       };
     case USER_CREATED_SUCCESS:
       return {
@@ -140,6 +146,11 @@ const sessionReducer = (state = initialState, action) => {
       return {
         ...state,
         current_selected_conversation:action.payload
+      }
+    case CURRENT_SELECTED_CONVERSATION_ID:
+      return {
+        ...state,
+        current_selected_conversation_id:action.payload
       }
     case CONVERSATION_DELETE:
       let temp_conv_delete = {};
@@ -240,6 +251,40 @@ const sessionReducer = (state = initialState, action) => {
       return {
         ...state,
         notifications: temp_notifications
+      };
+    case MESSAGES:
+      let req_type = action.payload.req_type;
+      let current_msgs = state.messages;
+      let req_msgs = action.payload.messages;
+      let req_chat_id = action.payload.chatId;
+      let updated_msgs = {};
+      if(req_type === 'new'){
+        Object.keys(current_msgs).map(item => {
+          if(item === req_chat_id){
+            let current_msgs = current_msgs[item];
+            current_msgs.push(req_msgs)
+            updated_msgs[item] = current_msgs;
+          }else{
+            updated_msgs[item] = current_msgs[item];
+          }
+        })  
+      }else{
+        if(current_msgs.hasOwnProperty(req_chat_id)){
+          Object.keys(current_msgs).map(item => {
+            if(item === req_chat_id){
+              updated_msgs[item] = req_msgs;
+            }else{
+              updated_msgs[item] = current_msgs[item];
+            }
+          })
+        }else{
+          current_msgs[req_chat_id] = req_msgs;
+          updated_msgs = {...current_msgs};
+        }
+      }
+      return {
+        ...state,
+        messages: updated_msgs
       };
     case CHAT_MESSAGES:
       let temp_chat_msgs = {};

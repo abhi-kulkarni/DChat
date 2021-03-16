@@ -807,7 +807,7 @@ def get_chat(request):
     
     curr_user = user.data if user else {}
     participants = UserSerializer(users, many=True).data
-    msgs = messages_to_json(c_msgs, pk)
+    msgs = messages_to_json(c_msgs, pk, user_id)
     chat_data[pk] = msgs
     return Response({'ok': True, 'participants': participants, 'curr_user': curr_user, 'chat_data': chat_data})
 
@@ -844,6 +844,10 @@ def get_all_conversations(user):
     groups = []
     recipient_user = {}
     for chat in all_chats:
+        recent_message = {}
+        recent_msg = chat.messages.order_by('-timestamp').all()[:1]
+        if recent_msg:
+            recent_message = message_to_json(recent_msg[0], chat.id, user.id)
         if chat.is_group:
             p_detail_list = []
             removed_participants = []
@@ -900,6 +904,7 @@ def get_all_conversations(user):
                 conversation["is_removed"] = is_removed
                 conversation["is_deleted"] = is_deleted
                 conversation["is_exit"] = is_exit
+                conversation["recent_message"] = recent_message
                 groups.append(conversation)
         else:
             temp = {}
@@ -912,6 +917,7 @@ def get_all_conversations(user):
                         recipient_user = UserSerializer(participant, many=False).data
                 conversation = ChatSerializer(chat, many=False).data
                 conversation['user'] = recipient_user
+                conversation["recent_message"] = recent_message
                 conversations.append(conversation)
     
     return {'conversations':conversations, 'groups': groups}
@@ -1010,19 +1016,30 @@ def get_conversation_modal_data_method(request):
 
     return {"conversation_delete_dict": conversation_delete_dict, "all_conv_data":all_conv_data, "last_seen_conversation_requests": str(curr_user_data.conversation_request_last_seen), "all_groups": all_groups, "all_conversations": all_conversations, "users": user_serializer.data, "modal_friends": all_frs, "modal_conversations": all_chat_frs, "modal_conversation_requests": all_fr_requests, "modal_sent_conversation_requests": all_sent_fr_requests}
 
-def messages_to_json(messages, chat_id):
+def messages_to_json(messages, chat_id, user_id):
         result = []
         if messages:
             for message in messages:
-                result.append(message_to_json(message, chat_id))
+                result.append(message_to_json(message, chat_id, user_id))
         return result
 
-def message_to_json(message, chat_id):
+def message_to_json(message, chat_id, user_id):
+    content = ''
+    if message.message_type == 'text':
+        if message.user.id == user_id:
+            content = "You: " + message.content
+        else:
+            content = message.content
+    elif message.message_type == 'image':
+        if message.user.id == user_id:
+            content = "You: Image"
+        else:
+            content = "Image"
     return {
         'id': message.id,
         'author_id': message.user.id,
         'author': message.user.username,
-        'content': message.content,
+        'content': content,
         'timestamp': str(message.timestamp),
         'chatId': chat_id,
         'message_type': message.message_type

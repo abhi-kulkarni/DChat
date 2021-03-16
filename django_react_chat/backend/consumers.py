@@ -20,8 +20,9 @@ class Consumer(WebsocketConsumer):
         recent_msg_data = get_recent_msg_data(data['userId'], "fetch")
         content = {
             'command': 'messages',
-            'messages': {'messages': self.messages_to_json(message_data['chat_msgs'], data['chatId'], "fetch"),
-                        'recent_msg_data': recent_msg_data},
+            'messages': {'messages': self.messages_to_json(message_data['chat_msgs'], 
+            data['chatId'], "fetch"),
+            'recent_msg_data': recent_msg_data},
             'chat_id': data['chatId']
         }
         self.send_message(content)
@@ -74,6 +75,41 @@ class Consumer(WebsocketConsumer):
         }
 
         return self.send_chat_message(content)
+    
+
+    def fetch_messages_1(self, data):
+        message_data = get_last_10_messages(data['chatId'], data['userId'])
+        content = {}
+        content['command'] = 'messages'
+        content['messages'] = {}
+        content['messages']['user_id'] = data['userId']
+        content['messages']['chatId'] = data['chatId']
+        content['messages']['response_type'] = 'conversation_messages'
+        content['messages']['messages'] = self.messages_to_json(message_data['chat_msgs'], data['chatId'], 'fetch')
+        self.send_response(content)
+
+
+    def new_message_1(self, data):
+        temp = {}
+        temp['command'] = 'new_message'
+        temp['message'] = {}
+        current_chat = get_current_chat(data['chatId'])
+        user = get_user(data['from'])
+        content = ''
+        if data['type'] == 'text':
+            content = data['message']['msg']
+        else:
+            content = json.dumps(data['message'])
+        message = Message.objects.create(
+            user=user,
+            content=content, message_type=data['type'], 
+            cleared={}, 
+            deleted={})
+        current_chat.messages.add(message)
+        current_chat.save()
+        temp['message']['response_type'] = 'conversation_messages'
+        temp['message']['message'] = self.message_to_json(message, data['chatId'], "new", {})
+        self.send_response(temp)
     
     # Any Signal Triggers
     @receiver(new_message_signal, sender=Message)
@@ -214,8 +250,7 @@ class Consumer(WebsocketConsumer):
         temp = {}
         temp['is_typing'] = {'user_id': data.get('user_id', ''), 'status': data['status'], 'type': data.get('type', ''), 'chat_id': data['chat_id']}
         temp['command'] = 'is_typing' 
-
-        return self.custom_response(temp, 'is_typing')
+        return self.send_response(temp)
 
     def last_seen(self, data):
         
@@ -264,8 +299,8 @@ class Consumer(WebsocketConsumer):
             i += 1
 
     commands = {
-        'fetch_messages': fetch_messages,
-        'new_message': new_message,
+        'fetch_messages': fetch_messages_1,
+        'new_message': new_message_1,
         'fetch_friend_requests': fetch_friend_requests1,
         'new_friend_request': new_friend_request,
         'fetch_chat_requests': fetch_chat_requests,
@@ -337,6 +372,7 @@ class Consumer(WebsocketConsumer):
                 'chat_requests': data.get('chat_requests', ''),
                 'chat_id': data.get('chat_id', ''),
                 'messages': data.get('messages', []),
+                'message': data.get('message', []),
                 'notification_data': data.get('notification_data', {}),
                 'conversation_status': data.get('conversation_status', {}),
                 'last_seen': data.get('last_seen', {}),

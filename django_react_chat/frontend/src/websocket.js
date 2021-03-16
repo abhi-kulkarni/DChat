@@ -1,4 +1,5 @@
 import { SOCKET_URL } from "./settings";
+import ReconnectingWebSocket from './reconnecting_websocket'
 
 class WebSocketService {
   static instance = null;
@@ -32,7 +33,7 @@ class WebSocketService {
     }
     
     if (path) {
-      this.socketRef = new WebSocket(path);
+      this.socketRef = new ReconnectingWebSocket(path);
       this.socketRef.onopen = () => {
         console.log("WebSocket open");
       };
@@ -197,7 +198,7 @@ class WebSocketService {
     });
   }
 
-  addCallbacks(messagesCallback, newMessageCallback, isTypingCallBack) {
+  conversationMessageCallbacks(messagesCallback, newMessageCallback, isTypingCallBack) {
     this.callbacks["messages"] = messagesCallback;
     this.callbacks["new_message"] = newMessageCallback;
     this.callbacks["is_typing"] = isTypingCallBack;

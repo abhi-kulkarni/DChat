@@ -23,7 +23,9 @@ import {
   IS_REFRESHED,
   CURRENT_SELECTED_CONVERSATION,
   CONVERSATION_DELETE,
-  MANAGE_REQUESTS_COUNT
+  MANAGE_REQUESTS_COUNT,
+  MESSAGES,
+  CURRENT_SELECTED_CONVERSATION_ID
 } from "./sessionTypes";
 
 export const sign_in = () => {
@@ -189,6 +191,13 @@ export const current_selected_conversation = (data = {}) => {
   };
 };
 
+export const current_selected_conversation_id = (data = '') => {
+  return {
+    type: CURRENT_SELECTED_CONVERSATION_ID,
+    payload: data,
+  };
+};
+
 export const conversation_delete = (data = {}, type = '') => {
   return {
     type: CONVERSATION_DELETE,
@@ -202,5 +211,12 @@ export const manage_request_count = (data = {}, type = '') => {
     type: MANAGE_REQUESTS_COUNT,
     payload: data,
     req_type: type
+  };
+};
+
+export const conversation_messages = (message_data = [], type = "", chat_id) => {
+  return {
+    type: MESSAGES,
+    payload: { messages: message_data, req_type: type, chatId: chat_id },
   };
 };

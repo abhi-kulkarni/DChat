@@ -79,6 +79,20 @@ const routes = [
     exact: true,
     name: "Messenger",
   },
+  {
+    path: "/messenger/conversations/:id",
+    component: CustomMessenger,
+    layout: CustomLayout,
+    exact: true,
+    name: "Messenger",
+  },
+  {
+    path: "/messenger/groups/:id",
+    component: CustomMessenger,
+    layout: CustomLayout,
+    exact: true,
+    name: "Messenger",
+  },
 ];
 
 export default routes;
