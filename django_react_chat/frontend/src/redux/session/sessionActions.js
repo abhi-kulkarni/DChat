@@ -25,7 +25,9 @@ import {
   CONVERSATION_DELETE,
   MANAGE_REQUESTS_COUNT,
   MESSAGES,
-  CURRENT_SELECTED_CONVERSATION_ID
+  CURRENT_SELECTED_CONVERSATION_ID,
+  LOADING_COUNT,
+  RECENT_MSG_COUNT
 } from "./sessionTypes";
 
 export const sign_in = () => {
@@ -128,10 +130,11 @@ export const ws_list = (ws_list = []) => {
   };
 };
 
-export const last_seen_time = (last_seen = {}) => {
+export const last_seen_time = (last_seen = {}, type = "") => {
   return {
     type: LAST_SEEN,
     payload: last_seen,
+    req_type: type
   };
 };
 
@@ -218,5 +221,19 @@ export const conversation_messages = (message_data = [], type = "", chat_id) => 
   return {
     type: MESSAGES,
     payload: { messages: message_data, req_type: type, chatId: chat_id },
+  };
+};
+
+export const loading_count = (count = 0) => {
+  return {
+    type: LOADING_COUNT,
+    payload: count
+  };
+};
+
+export const recent_msg_count = (count = {}) => {
+  return {
+    type: RECENT_MSG_COUNT,
+    payload: count
   };
 };

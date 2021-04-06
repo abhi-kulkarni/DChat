@@ -1,7 +1,7 @@
 from django.urls import path
 from django.conf.urls import url
-from .views import *
 from rest_framework_simplejwt import views as jwt_views
+from .views import *
 
 urlpatterns = [
     path('signout/', signout),
@@ -15,6 +15,7 @@ urlpatterns = [
     path('get_curr_group/<pk>/', get_curr_group),
     path('add_group/', add_group),
     path('update_group/', update_group),
+    path('exit_group/', exit_group),
     path('delete_group/<pk>/', delete_group),
     path('change_password/', change_password),
     path('reset_password_signin/', reset_password_signin),
@@ -31,6 +32,7 @@ urlpatterns = [
     path('get_conversation_modal_data/', get_conversation_modal_data),
     path('get_friends_modal_data/', get_friends_modal_data),
     path('set_last_seen/', set_last_seen),
+    path('group_changes/', group_changes),
     path('upload_chat_image/', upload_chat_image),
     path('clear_chat/', clear_chat),
     path('manage_requests_last_seen/', manage_requests_last_seen),

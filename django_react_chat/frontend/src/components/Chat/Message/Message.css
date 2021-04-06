@@ -1,6 +1,146 @@
+@media only screen and (min-width: 300px) {
+  .loading_bubble{
+    width: 66px;
+  }
+
+  .img_msg_container{
+    width: 178px !important;
+    padding-bottom: 5px;
+  }
+
+  .img_div{
+    padding: 0px!important;
+    height: 160px!important;
+    width: 165px !important;
+  }
+
+  .square{
+    height: 160px !important;
+    width: 165px !important;
+  }
+
+}
+
+@media only screen and (min-width: 498px) {
+
+  .loading_bubble{
+    width: 66px;
+  }
+
+  .img_msg_container{
+    width: 250px !important;
+    padding-bottom: 5px;
+  }
+
+  .img_div{
+    padding: 0px!important;
+    height: 200px;
+    width: 240px;
+  }
+
+  .square{
+    height: 200px !important;
+    width: 240px !important;
+  }
+
+}
+
+@media only screen and (min-width: 600px) {
+  .loading_bubble{
+    width: 66px;
+  }
+
+  .img_msg_container{
+    width: 250px !important;
+    padding-bottom: 5px;
+  }
+
+  .img_div{
+    padding: 0px!important;
+    height: 200px;
+    width: 240px;
+  }
+
+  .square{
+    height: 200px !important;
+    width: 240px !important;
+  }
+
+}
+
+@media only screen and (min-width: 768px) {
+  .loading_bubble{
+    width: 66px;
+  }
+
+  .img_msg_container{
+    width: 310px !important;
+    padding-bottom: 5px;
+  }
+
+  .img_div{
+    padding: 0px!important;
+    height: 160px;
+    width: 300px;
+  }
+
+  .square{
+    height: 160px !important;
+    width: 300px !important;
+  }
+
+}
+
+@media only screen and (min-width: 992px) {
+  .loading_bubble{
+    width: 64px;
+  }
+
+  .img_msg_container{
+    width: 310px !important;
+    padding-bottom: 5px;
+  }
+
+  .img_div{
+    padding: 0px!important;
+    height: 160px;
+    width: 300px;
+  }
+
+  .square{
+    height: 160px !important;
+    width: 300px !important;
+  }
+
+}
+
+@media only screen and (min-width: 1200px) {
+  .loading_bubble{
+    width: 64px;
+  }
+
+  .img_msg_container{
+    width: 310px !important;
+    padding-bottom: 5px;
+  }
+
+  .img_div{
+    padding: 0px!important;
+    height: 180px !important;
+    width: 300px !important;
+  }
+
+  .square{
+    height: 180px !important;
+    width: 300px !important;
+  }
+
+}
+
 .message {
   display: flex;
   flex-direction: column;
+  padding-bottom: 5px;
 }
 
 .message .timestamp {
@@ -10,7 +150,14 @@
   font-weight: 600;
   font-size: 12px;
   margin: 10px 0px;
-  text-transform: uppercase;
+  text-transform: capitalize;
+}
+
+.message-author{
+  text-transform: capitalize;
+  color: blue;
+  margin: 5px;
+  font-size: 0.8rem;
 }
 
 .message .bubble-container {
@@ -72,14 +219,14 @@
 
 .square {
   padding: 0px!important;
-  max-height: 150px!important;
-  max-width: 150px!important;
+  max-height: 300px!important;
+  max-width: 300px!important;
 }
 
 .img_div{
   padding: 0px!important;
-  height: 150px;
-  width: 150px;
+  height: 200px;
+  width: 300px;
 }
 
 .content_div{
@@ -93,4 +240,8 @@
   height: 35px !important;
   padding: 5px 3px !important;
   overflow-y: scroll;
+}
+
+.typing_loader{
+  padding: 2px 0px 0px 0px !important;
 }

@@ -25,5 +25,7 @@ export {
   conversation_delete,
   manage_request_count,
   conversation_messages,
-  current_selected_conversation_id
+  current_selected_conversation_id,
+  loading_count,
+  recent_msg_count
 } from "./session/sessionActions";

@@ -43,6 +43,7 @@ const GroupForm = forwardRef((props, ref) => {
     const [isDefaultGroupImg, setIsDefaultGroupImg] = useState(true);
     const [groupUserOptions, setGroupUserOptions] = useState([]);
     const [showAddGroupModal, setShowAddGroupModal] = useState(false);
+    const curr_user_data = useSelector(state => state.session.user_data);
     const [groupErrMsg, setGroupErrMsg] = useState("");
     const [editMode, setEditMode] = useState(false);
     const [isAdmin, setIsAdmin] = useState(false);
@@ -84,6 +85,7 @@ const GroupForm = forwardRef((props, ref) => {
         setEditMode(true);
         setIsAdmin(data.is_admin);
         setAdmin(data.admin_users);
+        console.log(data);
         setGroupUserOptions(data.user_options);
         setConversationUserDataDict(data.conversation_user_data_dict);
         let temp = data.group_members;
@@ -106,6 +108,8 @@ const GroupForm = forwardRef((props, ref) => {
         setPreviousAdminList([]);
         setUpdatedAdminList([]);
         setAdmin([]);
+        setAddedParticipantsList([]);
+        setRemovedParticipantsList([]);
         setIsAdmin(false);
     };
 
@@ -173,7 +177,7 @@ const GroupForm = forwardRef((props, ref) => {
         setGroupFormData({...groupFormData, group_members: selectedList});
         validate("group_members", selectedList);
         let temp = addedParticipantsList?[...addedParticipantsList]:[];
-        let removed_p_list = [...addedParticipantsList];
+        let removed_p_list = [...removedParticipantsList];
         removed_p_list = removed_p_list.filter(item => {
             return item != selectedItem.id;
         })
@@ -295,11 +299,16 @@ const GroupForm = forwardRef((props, ref) => {
                 } 
                 break;
             case "group_members":
+                let selected_participants = value.map(item => {
+                    return item.id;
+                })
                 setGroupFormData({ ...groupFormData, group_members: value });
                 if (value.length > 20) {
                     setGroupFormDataErrors({ ...groupFormDataErrors, group_members: "You cannot add more than 20 members" });
                 }else if(value.length < 1){
                     setGroupFormDataErrors({ ...groupFormDataErrors, group_members: "There should be atleast one member !" });
+                }else if(selected_participants.indexOf(curr_user_data.id) < 0){
+                    setGroupFormDataErrors({ ...groupFormDataErrors, group_members: "You cannot remove yourself. You will need to exit the group to do so." });
                 }else{
                     setGroupFormDataErrors({ ...groupFormDataErrors, group_members: "" });
                 } 
@@ -322,7 +331,7 @@ const GroupForm = forwardRef((props, ref) => {
           <Popover.Content className="admin_popover_content">
           {previousGroupData && previousGroupData.hasOwnProperty('user_options_data')?
           previousGroupData.user_options_data.map((item, index) => {
-            return (<Row style={{ margin: '2px 0px', padding: '0px' }}>
+            return (<Row key={index} style={{ margin: '2px 0px', padding: '0px' }}>
                 <Col xs={4} sm={4} md={4} lg={4} xl={4} style={{ margin: '0px', padding: '0px 0px 0px 10px' }}>
                 <img
                     key={index+"admin_photo_manage"}

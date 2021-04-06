@@ -19,6 +19,14 @@ code {
     left: 62px;
   }
 
+  .socket_retry_msg{
+    position: absolute;
+    top: 50%;
+    left: 20%;
+    color:black;
+    font-size: 0.8rem;
+  }
+
   .conversation_lst_content{
     top:20px;
     height: calc(100vh - 330px);
@@ -98,16 +106,20 @@ code {
   .new_msg_notification{
     display: block !important;
     top: 0px !important;
-    right: -5px !important;
+    right: -8px !important;
   }
 
   .new_msg_group_notification{
     display: block !important;
     top: 0px !important;
-    right: -5px !important;
+    right: -8px !important;
   }
 
   .custom_badge_chat_notifications_new{
+    display: none !important;
+  }
+
+  .last_seen_custom_badge_chat_notifications_new{
     display: none !important;
   }
 
@@ -164,6 +176,14 @@ code {
     left: 138px;
   }
 
+  .socket_retry_msg{
+    position: absolute;
+    top: 50%;
+    left: 26%;
+    color:black;
+    font-size: 0.8rem;
+  }
+
   .conversation_lst_content{
     top:20px;
     height: calc(100vh - 330px);
@@ -210,6 +230,10 @@ code {
     display: none !important;
   }
 
+  .last_seen_custom_badge_chat_notifications_new{
+    display: none !important;
+  }
+
   .custom_badge_chat_notification_group{
     display: none !important;
   }
@@ -217,13 +241,13 @@ code {
   .new_msg_notification{
     display: block !important;
     margin-left: 10px !important;
-    left: 48px !important;
+    left: 60px !important;
   }
 
   .new_msg_group_notification{
     display: block !important;
     top: 0px !important;
-    right: -5px !important;
+    left: 70px !important;
   }
 
   .conversation_last_seen_time{
@@ -265,11 +289,11 @@ code {
   }
 
   .user_friends{
-    margin-left: 15px !important;
+    margin-left: 12px !important;
   }
 
   .user_not_friends{
-    margin-left: 15px !important;
+    margin-left: 12px !important;
   }
 
   .info_user_data_hover{
@@ -312,6 +336,14 @@ code {
     left: 238px;
   }
 
+  .socket_retry_msg{
+    position: absolute;
+    top: 50%;
+    left: 34%;
+    color:black;
+    font-size: 0.8rem;
+  }
+
   .conversation_lst_content{
     top:20px;
     height: calc(100vh - 330px);
@@ -348,6 +380,10 @@ code {
     display: none !important;
   }
 
+  .last_seen_custom_badge_chat_notifications_new{
+    display: none !important;
+  }
+
   .custom_badge_chat_notification_group{
     display: none !important;
   }
@@ -355,13 +391,13 @@ code {
   .new_msg_notification{
     display: block !important;
     margin-left: 10px !important;
-    left: 46px !important;
+    left: 70px !important;
   }
 
   .new_msg_group_notification{
     display: block !important;
     top: 0px !important;
-    right: -5px !important;
+    left: 81px !important;
   }
 
   .chat_status{
@@ -389,11 +425,11 @@ code {
   }
 
   .user_friends{
-    margin-left: 15px !important;
+    margin-left: 12px !important;
   }
 
   .user_not_friends{
-    margin-left: 15px !important;
+    margin-left: 12px !important;
   }
 
   .info_user_data_hover{
@@ -430,6 +466,14 @@ code {
   .scroll_btn{
     bottom:52px;
     left: 315px;
+  }
+
+  .socket_retry_msg{
+    position: absolute;
+    top: 50%;
+    left: 39%;
+    color:black;
+    font-size: 0.8rem;
   }
   
   .conversation_lst_content{
@@ -479,6 +523,10 @@ code {
     display: none !important;
   }
 
+  .last_seen_custom_badge_chat_notifications_new{
+    display: none !important;
+  }
+
   .custom_badge_chat_notification_group{
     display: none !important;
   }
@@ -486,13 +534,13 @@ code {
   .new_msg_notification{
     display: block !important;
     margin-left: 10px !important;
-    left: 46px !important;
+    left: 60px !important;
   }
 
   .new_msg_group_notification{
     display: block !important;
     top: 0px !important;
-    right: -5px !important;
+    left: 70px !important;
   }
 
   .chat_status{
@@ -521,11 +569,11 @@ code {
   }
 
   .user_friends{
-    margin-left: 15px !important;
+    margin-left: 12px !important;
   }
 
   .user_not_friends{
-    margin-left: 15px !important;
+    margin-left: 12px !important;
   }
 
   .info_user_data_hover{
@@ -562,6 +610,14 @@ code {
   .scroll_btn{
     bottom:52px;
     left: 385px;
+  }
+
+  .socket_retry_msg{
+    position: absolute;
+    top: 46%;
+    left: 39%;
+    color:black;
+    font-size: 0.8rem;
   }
 
   .conversation_lst_content{
@@ -615,6 +671,10 @@ code {
     display: inline-block !important;
   }
 
+  .last_seen_custom_badge_chat_notifications_new{
+    display: inline-block !important;
+  }
+
   .conversation_details{
     padding-left: 0px !important;
   }
@@ -649,11 +709,11 @@ code {
   }
 
   .user_friends{
-    margin-left: 15px !important;
+    margin-left: 12px !important;
   }
 
   .user_not_friends{
-    margin-left: 15px !important;
+    margin-left: 12px !important;
   }
 
   .info_user_data_hover{
@@ -760,6 +820,22 @@ code {
   padding:0px;
 }
 
+.last_seen_custom_badge_chat_notifications_new{
+  position: none!important;
+  min-width: 10px !important;
+  padding: 3px 7px !important;
+  font-size: 0.7rem !important;
+  font-weight: 700 !important;
+  line-height: 0.8rem !important;
+  color: #fff !important;
+  text-align: center !important;
+  white-space: nowrap !important;
+  background-color: rgba(212, 19, 13, 1) !important;
+  border-radius: 10px !important;
+  right: -66px !important;
+  top:-28px!important;
+}
+
 .custom_badge_chat_notifications_new{
   position: none!important;
   min-width: 10px !important;
@@ -773,8 +849,8 @@ code {
   vertical-align: baseline !important;
   background-color: rgba(212, 19, 13, 1) !important;
   border-radius: 10px !important;
-  right: -20px !important;
-  top:-8px!important;
+  right: -66px !important;
+  top:-14px!important;
 }
 
 .custom_badge_chat_notification_group{
@@ -790,8 +866,8 @@ code {
   vertical-align: baseline !important;
   background-color: rgba(212, 19, 13, 1) !important;
   border-radius: 10px !important;
-  right: -20px !important;
-  top:16px!important;
+  right: -66px !important;
+  top:10px!important;
 }
 
 .conversation_menu_container_new{
@@ -892,6 +968,13 @@ code {
 
 .info {
   color: #58a847;
+  cursor: pointer;
+  font-size: 1rem;
+}
+
+.is_admin{
+  color: orange;
+  margin-left: 12px;
   cursor: pointer;
   font-size: 1rem;
 }
@@ -1078,6 +1161,13 @@ aside.emoji-picker-react{
 }
 
 .has_conversation {
+  color: #0578fa;
+  cursor: pointer;
+  font-size: 1rem;
+  margin-top: 5%;
+}
+
+.is_deleted_conversation{
   color: #0578fa;
   cursor: pointer;
   font-size: 1rem;
@@ -1373,6 +1463,19 @@ aside.emoji-picker-react{
   font-size: 1rem;
 }
 
+.socket_retry_container{
+  position: absolute;
+  top: 40%;
+  left: 50%;
+  z-index: 10;
+}
+
+.socket_retry{
+  color: #0879FA;
+  cursor: pointer;
+  font-size: 1rem;
+}
+
 .make_group_admin{
   color: #0879FA;
   cursor: pointer;
@@ -1404,6 +1507,7 @@ aside.emoji-picker-react{
   font-size: 0.8rem;
   font-style: italic;
   font-weight: bold;
+  margin-bottom: 5px;
   color: #0578fa;
   text-align: center;
   text-transform: capitalize;

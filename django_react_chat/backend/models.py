@@ -43,8 +43,8 @@ class Room(models.Model):
 
 class User(AbstractUser):
 
-    created_on = models.DateTimeField(null=datetime.datetime.now())
-    updated_on = models.DateTimeField(null=datetime.datetime.now())
+    created_on = models.DateTimeField(default=timezone.now)
+    updated_on = models.DateTimeField(default=timezone.now)
     last_passwords = models.TextField(null=True)
     expiry_token = models.CharField(max_length=50, null=True, default=None)
     expiry_date = models.DateTimeField(null=True)
@@ -75,12 +75,17 @@ class Message(models.Model):
     message_type = models.CharField(default="text", max_length=200)
     cleared = models.TextField(max_length=200, default='')
     deleted = models.TextField(max_length=200, default='')
-    
+    has_exit = models.TextField(max_length=200, default='')
+    removed = models.TextField(max_length=200, default='')
+    reciever = models.BooleanField(default=False)
+    participants = models.TextField(max_length=1000, default='[]')
+
     def __str__(self):
         return self.user.username
 
 
 class Chat(models.Model):
+    from django_mysql.models import JSONField, Model
 
     id = models.UUIDField(primary_key=True, unique=True, default=uuid.uuid4)
     participants = models.ManyToManyField(
@@ -93,6 +98,12 @@ class Chat(models.Model):
     exit = models.TextField(max_length=1000, default='{}')
     has_exit = models.TextField(max_length=1000, default='{}')
     removed = models.TextField(max_length=1000, default='{}')
+    removed_time = models.TextField(max_length=1000, default='{}')
+    added_time = models.TextField(max_length=1000, default='{}')
+    has_exit_time = models.TextField(max_length=1000, default='{}')
+    deleted_time = models.TextField(max_length=1000, default='{}')
+    cleared_time = models.TextField(max_length=1000, default='{}')
+    created_on = models.DateTimeField(default=timezone.now)
     unique_id = models.TextField(max_length=50, default='')
     is_group = models.BooleanField(default=False)
     admin = models.TextField(max_length=1000, default='[]')

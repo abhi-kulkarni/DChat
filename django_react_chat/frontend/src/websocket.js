@@ -33,7 +33,7 @@ class WebSocketService {
     }
     
     if (path) {
-      this.socketRef = new ReconnectingWebSocket(path);
+      this.socketRef = new WebSocket(path);
       this.socketRef.onopen = () => {
         console.log("WebSocket open");
       };
@@ -57,7 +57,6 @@ class WebSocketService {
   socketNewMessage(data) {
     const parsedData = JSON.parse(data);
     const command = parsedData.command;
-
     if (Object.keys(this.callbacks).length === 0) {
       return;
     }
@@ -93,21 +92,26 @@ class WebSocketService {
     }
   }
 
-  fetchMessages(uId, chatId) {
+  fetchMessages(uId, chatId, retryBool) {
     this.sendMessage({
       command: "fetch_messages",
       userId: uId,
       chatId: chatId,
+      retry: retryBool
     });
   }
 
   newChatMessage(message) {
+    console.log(message);
     this.sendMessage({
       command: "new_message",
       from: message.from,
+      to: message.to,
       message: message.content,
       chatId: message.chatId,
       type: message.type,
+      is_group: message.is_group,
+      extra_data: message.extra_data
     });
   }
 
@@ -181,12 +185,13 @@ class WebSocketService {
     });
   }
 
-  setIsTypingStatus(userId, status, chatId, type) {
+  setIsTypingStatus(userId, status, chatId, type, input_msg) {
     this.sendMessage({
       user_id: userId,
       status: status,
       type: type,
       chat_id: chatId,
+      input_msg: input_msg,
       command: "is_typing",
     });
   }
@@ -198,10 +203,11 @@ class WebSocketService {
     });
   }
 
-  conversationMessageCallbacks(messagesCallback, newMessageCallback, isTypingCallBack) {
+  conversationMessageCallbacks(messagesCallback, newMessageCallback, isTypingCallBack, lastSeenMsgCallback) {
     this.callbacks["messages"] = messagesCallback;
     this.callbacks["new_message"] = newMessageCallback;
     this.callbacks["is_typing"] = isTypingCallBack;
+    this.callbacks["last_seen"] = lastSeenMsgCallback;
   }
 
   friendRequestNotificationCallbacks(

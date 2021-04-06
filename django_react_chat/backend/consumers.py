@@ -21,7 +21,7 @@ class Consumer(WebsocketConsumer):
         content = {
             'command': 'messages',
             'messages': {'messages': self.messages_to_json(message_data['chat_msgs'], 
-            data['chatId'], "fetch"),
+            data['chatId'], "fetch", message_data['chat'].is_group),
             'recent_msg_data': recent_msg_data},
             'chat_id': data['chatId']
         }
@@ -68,7 +68,7 @@ class Consumer(WebsocketConsumer):
         # self.new_message_signal.send(sender=Message, instance=message, created=True, recent_msg_data=recent_msg_data, chatId=data['chatId'], userId=data['from'], custom=True, f=self.fetch_chat_requests)
         content = {
             'command': 'new_message',
-            'message': {'messages': self.message_to_json(message, data['chatId'], "new", extra_data), 
+            'message': {'messages': self.message_to_json(message, data['chatId'], data['userId'], "new", extra_data, current_chat.is_group), 
                         'recent_msg_data': recent_msg_data, 'user_id': data['from'] },
             'chat_id': data['chatId'],
             'delete_flag':delete_flag
@@ -78,38 +78,54 @@ class Consumer(WebsocketConsumer):
     
 
     def fetch_messages_1(self, data):
-        message_data = get_last_10_messages(data['chatId'], data['userId'])
         content = {}
         content['command'] = 'messages'
         content['messages'] = {}
-        content['messages']['user_id'] = data['userId']
-        content['messages']['chatId'] = data['chatId']
-        content['messages']['response_type'] = 'conversation_messages'
-        content['messages']['messages'] = self.messages_to_json(message_data['chat_msgs'], data['chatId'], 'fetch')
+        if 'userId' in data and 'chatId' in data and data['userId'] and data['chatId']:
+            message_data = get_last_10_messages(data['chatId'], data['userId'])
+            content['messages']['user_id'] = data['userId']
+            content['messages']['chatId'] = data['chatId']
+            content['messages']['response_type'] = 'conversation_messages_fetch'
+            content['messages']['retry'] = data.get('retry', False)
+            content['messages']['ok'] = True
+            content['messages']['messages'] = self.messages_to_json(message_data['chat_msgs'], data['chatId'], data['userId'], 'fetch', message_data['chat'].is_group)
+        else:
+            content['messages']['ok'] = False
         self.send_response(content)
 
 
     def new_message_1(self, data):
-        temp = {}
-        temp['command'] = 'new_message'
-        temp['message'] = {}
-        current_chat = get_current_chat(data['chatId'])
-        user = get_user(data['from'])
-        content = ''
-        if data['type'] == 'text':
-            content = data['message']['msg']
+        content = {}
+        content['command'] = 'new_message'
+        content['message'] = {}
+        if 'to' in data and 'from' in data and 'chatId' in data and data['to'] and data['from'] and data['chatId']:
+            extra_data = data.get('extra_data', {})
+            updated_data = update_chat(data)
+            removed_dict = updated_data.get('removed_dict', {})
+            exit_dict = updated_data.get('exit_dict', {})
+            message = updated_data.get('message', {})
+            message_list = updated_data.get('message_list', [])
+            flags = updated_data.get('flags', {})
+            current_chat = updated_data.get('current_chat', {})
+            content['message']['ok'] = True
+            content['message']['flags'] = flags
+            content['message']['chatId'] = data['chatId']
+            content['message']['is_group'] = data['is_group']
+            content['message']['user_id'] = data['from']
+            content['message']['removed_dict'] = removed_dict
+            content['message']['exit_dict'] = exit_dict
+            content['message']['current_chat'] = current_chat
+            content['message']['extra_data'] = extra_data
+            content['message']['retry'] = data.get('retry', False)
+            if data['type'] == 'group_changes':
+                content['message']['response_type'] = 'conversation_messages_group_changes'
+                content['message']['message'] = message_list
+            else:
+                content['message']['response_type'] = 'conversation_messages_new'
+                content['message']['message'] = self.message_to_json(message, data['chatId'], data['from'], "new", {}, current_chat['is_group'])
         else:
-            content = json.dumps(data['message'])
-        message = Message.objects.create(
-            user=user,
-            content=content, message_type=data['type'], 
-            cleared={}, 
-            deleted={})
-        current_chat.messages.add(message)
-        current_chat.save()
-        temp['message']['response_type'] = 'conversation_messages'
-        temp['message']['message'] = self.message_to_json(message, data['chatId'], "new", {})
-        self.send_response(temp)
+            content['message']['ok'] = False
+        self.send_response(content)
     
     # Any Signal Triggers
     @receiver(new_message_signal, sender=Message)
@@ -129,25 +145,38 @@ class Consumer(WebsocketConsumer):
         else:
             print('DEFAULT SAVE MESSAGE')
         
-    def messages_to_json(self, messages, chat_id, m_type):
+    def messages_to_json(self, messages, chat_id, user_id, m_type, is_group):
         result = []
         extra_data = {}
         if messages:
             for message in messages:
-                result.append(self.message_to_json(message, chat_id, m_type, extra_data))
+                result.append(self.message_to_json(message, chat_id, user_id, m_type, extra_data, is_group))
         return result
 
-    def message_to_json(self, message, chat_id, m_type, extra_data):
+    def message_to_json(self, message, chat_id, user_id, m_type, extra_data, is_group):
+        content = message.content
+        if message.message_type == 'group_changes':
+            if message.user.id == user_id:
+                content = message.content
+            else:
+                if "You have" in message.content:
+                    content = message.content.replace("You have ", message.user.username+ " has ")
+                else:
+                    if m_type == 'fetch':
+                        content = message.content.replace("You", message.user.username)
+        
         return {
             'id': message.id,
             'author_id': message.user.id,
             'author': message.user.username,
-            'content': message.content,
+            'content': content,
             'timestamp': str(message.timestamp),
             'chatId': chat_id,
+            'reciever': message.reciever,
             'type': m_type,
             'extra_data': extra_data,
-            'message_type': message.message_type
+            'message_type': message.message_type,
+            'is_group': is_group
         }
     
     def fetch_friend_requests(self, data):
@@ -200,20 +229,13 @@ class Consumer(WebsocketConsumer):
         'action': data.get('action', ''), 
         'notification_data': data.get('notification_data', '')
         }
-        return self.send_response(temp) 
-
-    def fetch_socket_data(self, data):
-        temp = {}
-        temp['command'] = 'socket_data'
-        temp['socket_data'] = {
-            'user_id': data.get('user_id', ''),
-            'msg': 'HELLO'
-        }
-        return self.send_response(temp)  
+        return self.send_response(temp)
 
     def fetch_conversation_requests1(self, data):
         temp = {}
         temp['command'] = 'conversation_requests'
+        if data['action'] == 'exit':
+            exit_user_method(data['group_data'])
         temp['conversation_modal_data'] = {
         'user_id': data['user_id'], 
         'request_source': data.get('request_source', ''),
@@ -221,6 +243,15 @@ class Consumer(WebsocketConsumer):
         'action': data.get('action', ''), 
         'is_group': data.get('is_group', ''),
         'notification_data': data.get('notification_data', '')
+        }
+        return self.send_response(temp)  
+    
+    def fetch_socket_data(self, data):
+        temp = {}
+        temp['command'] = 'socket_data'
+        temp['socket_data'] = {
+            'user_id': data.get('user_id', ''),
+            'msg': 'HELLO'
         }
         return self.send_response(temp)  
 
@@ -248,7 +279,7 @@ class Consumer(WebsocketConsumer):
     def is_typing(self, data):
 
         temp = {}
-        temp['is_typing'] = {'user_id': data.get('user_id', ''), 'status': data['status'], 'type': data.get('type', ''), 'chat_id': data['chat_id']}
+        temp['is_typing'] = {'input_msg': data.get('input_msg', ''), 'user_id': data.get('user_id', ''), 'status': data['status'], 'type': data.get('type', ''), 'chat_id': data['chat_id']}
         temp['command'] = 'is_typing' 
         return self.send_response(temp)
 
@@ -281,6 +312,16 @@ class Consumer(WebsocketConsumer):
         return self.custom_response(temp, 'last_seen')   
     
 
+    def last_seen_1(self, data):
+
+        temp = {}
+        req_data = data['data']
+        set_last_seen(req_data)
+        temp['command'] = 'last_seen'
+        temp['last_seen'] = req_data
+
+        return self.send_response(temp)
+ 
     def custom_response(self, data, r_type):
 
         room_1 = 'chat_'+data[r_type]['chat_id']
@@ -307,7 +348,7 @@ class Consumer(WebsocketConsumer):
         'fetch_conversation_requests':fetch_conversation_requests1,
         'fetch_socket_data': fetch_socket_data,
         'conversation_status': conversation_status,
-        'last_seen': last_seen,
+        'last_seen': last_seen_1,
         'is_typing': is_typing,
     }
 
@@ -337,7 +378,6 @@ class Consumer(WebsocketConsumer):
         self.commands[data['command']](self, data)
 
     def send_chat_message(self, message): 
-        print('-----------------------')
         room_1 = 'chat_'+message['chat_id']
         room_2 = 'chat_chat_requests'
         rooms = [room_1, room_2]
@@ -372,7 +412,7 @@ class Consumer(WebsocketConsumer):
                 'chat_requests': data.get('chat_requests', ''),
                 'chat_id': data.get('chat_id', ''),
                 'messages': data.get('messages', []),
-                'message': data.get('message', []),
+                'message': data.get('message', {}),
                 'notification_data': data.get('notification_data', {}),
                 'conversation_status': data.get('conversation_status', {}),
                 'last_seen': data.get('last_seen', {}),

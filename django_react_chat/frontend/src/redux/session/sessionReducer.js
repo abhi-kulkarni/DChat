@@ -26,7 +26,9 @@ import {
   CONVERSATION_DELETE,
   MANAGE_REQUESTS_COUNT,
   MESSAGES,
-  CURRENT_SELECTED_CONVERSATION_ID
+  CURRENT_SELECTED_CONVERSATION_ID,
+  LOADING_COUNT,
+  RECENT_MSG_COUNT
 } from "./sessionTypes";
 
 const initialState = {
@@ -54,7 +56,11 @@ const initialState = {
   current_selected_conversation_id:'',
   conversation_delete:{},
   manage_request_count:{},
-  messages:{}
+  messages:{},
+  loading_count:0,
+  curr_typing_data:{},
+  current_last_seen: {},
+  recent_msg_count:{}
 };
 
 const sessionReducer = (state = initialState, action) => {
@@ -93,12 +99,21 @@ const sessionReducer = (state = initialState, action) => {
           current_selected_conversation_id:'',
           conversation_delete:{},
           manage_request_count:{},
-          messages:{}
+          messages:{},
+          loading_count:0,
+          curr_typing_data:{},
+          current_last_seen:{},
+          recent_msg_count:{}
       };
     case USER_CREATED_SUCCESS:
       return {
         ...state,
         user_created_success: true,
+      };
+    case LOADING_COUNT:
+      return {
+        ...state,
+        loading_count: action.payload,
       };
     case FORGOT_PASSWORD_CLICKED:
       return {
@@ -181,6 +196,25 @@ const sessionReducer = (state = initialState, action) => {
         ...state,
         last_chat_seen_time: action.payload,
       };
+    case RECENT_MSG_COUNT:
+      let reset = action.payload.reset;
+      let curr_recent_msg_count_dict = {...state.recent_msg_count};
+      let t_req_chat_id = action.payload.chat_id;
+      if(t_req_chat_id){
+        if(reset){
+          curr_recent_msg_count_dict[t_req_chat_id] = 0;
+        }else{
+          if(curr_recent_msg_count_dict.hasOwnProperty(t_req_chat_id)){
+            curr_recent_msg_count_dict[t_req_chat_id] += 1;
+          }else{
+            curr_recent_msg_count_dict[t_req_chat_id] = 1;
+          }
+        }
+      }
+      return {
+        ...state,
+        recent_msg_count: curr_recent_msg_count_dict
+      };
     case CHAT_DELETE:
       let curr_chat_delete_dict = state.chat_delete;
       return {
@@ -254,20 +288,28 @@ const sessionReducer = (state = initialState, action) => {
       };
     case MESSAGES:
       let req_type = action.payload.req_type;
-      let current_msgs = state.messages;
+      let current_msgs = {...state.messages.msgs};
       let req_msgs = action.payload.messages;
       let req_chat_id = action.payload.chatId;
       let updated_msgs = {};
       if(req_type === 'new'){
-        Object.keys(current_msgs).map(item => {
-          if(item === req_chat_id){
-            let current_msgs = current_msgs[item];
-            current_msgs.push(req_msgs)
-            updated_msgs[item] = current_msgs;
-          }else{
-            updated_msgs[item] = current_msgs[item];
-          }
-        })  
+        if(current_msgs.hasOwnProperty(req_chat_id)){
+          let current_msgs_data = current_msgs[req_chat_id];
+          current_msgs_data.push(req_msgs);
+          updated_msgs[req_chat_id] = current_msgs_data;
+        }else{
+          updated_msgs[req_chat_id] = [req_msgs];
+        }
+      }else if(req_type === 'group_changes'){
+        if(current_msgs.hasOwnProperty(req_chat_id)){
+          let current_msgs_data = current_msgs[req_chat_id];
+          let updated_msg_data = [...current_msgs_data, ...req_msgs];
+          updated_msgs[req_chat_id] = updated_msg_data;
+        }else{
+          updated_msgs[req_chat_id] = [req_msgs];
+        }
+      }else if(req_type === 'loading'){
+        //pass        
       }else{
         if(current_msgs.hasOwnProperty(req_chat_id)){
           Object.keys(current_msgs).map(item => {
@@ -282,9 +324,13 @@ const sessionReducer = (state = initialState, action) => {
           updated_msgs = {...current_msgs};
         }
       }
+      let msg_dict = {};
+      msg_dict['msgs'] = updated_msgs;
+      msg_dict['chat_id'] = req_chat_id;
+      msg_dict['type'] = req_type
       return {
         ...state,
-        messages: updated_msgs
+        messages: msg_dict
       };
     case CHAT_MESSAGES:
       let temp_chat_msgs = {};
@@ -341,7 +387,7 @@ const sessionReducer = (state = initialState, action) => {
       };
     case IS_TYPING:
       let c_id = action.payload.chat_id;
-      let is_typing_dict = state.is_typing;
+      let is_typing_dict = {...state.is_typing};
       if (!is_typing_dict.hasOwnProperty(c_id)) {
         is_typing_dict[c_id] = {};
       }
@@ -349,6 +395,7 @@ const sessionReducer = (state = initialState, action) => {
       return {
         ...state,
         is_typing: is_typing_dict,
+        curr_typing_data: action.payload
       };
     case HAS_READ:
       let chat_id = action.payload.chat_id;
@@ -374,9 +421,24 @@ const sessionReducer = (state = initialState, action) => {
         msg_count: action.payload,
       };
     case LAST_SEEN:
+      let last_seen_type = action.req_type;
+      let t_c_id = action.payload.chat_id;
+      let c_last_seen_data = {};
+      let c_last_seen_dict = {};
+      if(last_seen_type === 'all'){
+        c_last_seen_dict = action.payload;
+      }else{
+        c_last_seen_data = action.payload
+        c_last_seen_dict = {...state.last_seen};
+        if (!c_last_seen_dict.hasOwnProperty(t_c_id)) {
+          c_last_seen_dict[t_c_id] = {};
+        }
+        c_last_seen_dict[t_c_id][action.payload.user_id] = action.payload.last_seen;
+      }
       return {
         ...state,
-        last_seen: action.payload,
+        last_seen: c_last_seen_dict,
+        current_last_seen: c_last_seen_data
       };
     case MANAGE_REQUESTS_COUNT:
       let temp_requests_count_data = {};

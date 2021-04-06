@@ -22,6 +22,8 @@ from decouple import config
 from boto.s3.connection import S3Connection
 from boto.s3.key import Key
 import base64
+from django.utils import timezone
+import datetime
 
 class ObtainTokenPairWithEmailView(TokenObtainPairView):
     permission_classes = (permissions.AllowAny,)
@@ -147,7 +149,6 @@ def update_group(request):
 
     error_msg = 'Some error occured.'
     post_data = request.data
-    curr_group = Chat.objects.get(pk=post_data['id'])
     added_participants = []
     is_deleted = False
     is_exit = False
@@ -157,6 +158,8 @@ def update_group(request):
     deleted_participants = []
     exit_participants = []
     cleared_participants = []
+    has_exit_participants = []
+    curr_group = Chat.objects.get(pk=post_data['id'])
     if post_data['type'] == 'update':
         is_admin = post_data['is_admin']
         participant_change = post_data['participant_change']
@@ -164,25 +167,33 @@ def update_group(request):
         group_image_change = post_data['group_image_change']
         group_description_change = post_data['group_description_change']
         group_admin_change = post_data['group_admin_change']
+        removed_dict = {}
         if participant_change:
             removed_participants = post_data['removed_participants']
             added_participants = post_data['added_participants']
             if removed_participants:
+                removed_time_dict = {}
                 for obj in removed_participants:
                     curr_removed_dict = curr_group.removed
-                    removed_dict = {}
                     if curr_removed_dict:
                         removed_dict = json.loads(curr_removed_dict) if curr_removed_dict else {}
                     removed_dict[str(obj)] = True
-                    curr_group.removed = json.dumps(removed_dict)
+                    removed_time_dict[str(obj)] = str(datetime.datetime.now())
+                curr_group.removed = json.dumps(removed_dict)
+                curr_group.removed_time = json.dumps(removed_time_dict)
+                last_msg_time = list(curr_group.messages.all()[:10])[-1].timestamp
+                
+                curr_group.messages.filter(timestamp__lte=last_msg_time).update(removed=json.dumps(removed_dict))
             if added_participants:
+                added_time_dict = {}
                 for obj in added_participants:
                     curr_removed_dict = curr_group.removed
-                    removed_dict = {}
                     if curr_removed_dict:
                         removed_dict = json.loads(curr_removed_dict) if curr_removed_dict else {}
                     removed_dict[str(obj)] = False
-                    curr_group.removed = json.dumps(removed_dict)
+                    added_time_dict[str(obj)] = str(datetime.datetime.now())
+                curr_group.removed = json.dumps(removed_dict)
+                curr_group.added_time = json.dumps(added_time_dict)
         curr_group.group_name = post_data['group_name']
         curr_group.group_description = post_data['group_description']
         curr_group.group_profile_picture = post_data['group_profile_picture']
@@ -192,22 +203,27 @@ def update_group(request):
         curr_group.participants.clear()
         curr_has_exit_group_dict = json.loads(curr_group.has_exit)
         curr_remove_group_dict = json.loads(curr_group.removed)
-        
+        curr_delete_group_dict = json.loads(curr_group.deleted)
         for participant_obj in participants:
             user = User.objects.get(pk=participant_obj['id'])
             curr_group.participants.add(user)
             p_list.append(UserSerializer(user).data)
             curr_has_exit_group_dict[str(participant_obj['id'])] = False
             curr_remove_group_dict[str(participant_obj['id'])] = False
-
+            curr_delete_group_dict[str(participant_obj['id'])] = False
         curr_group.removed = json.dumps(curr_remove_group_dict)
-        curr_group.has_exit = json.dumps(curr_has_exit_group_dict)
+        curr_group.has_exit = json.dumps(curr_has_exit_group_dict)        
+        curr_group.deleted = json.dumps(curr_delete_group_dict)
         curr_group.save()
+        has_exit_users_dict = json.loads(curr_group.has_exit) if curr_group.has_exit else {}
+        for obj in has_exit_users_dict:
+            if has_exit_users_dict[obj]:
+                has_exit_participants.append(int(obj))
         if user.id in removed_participants:
             is_removed = True
         if user.id in deleted_participants:
             is_deleted = True
-        if user.id in exit_participants:
+        if user.id in has_exit_participants:
             is_exit = True
         if user.id in cleared_participants:
             is_clear = True
@@ -233,40 +249,13 @@ def update_group(request):
         curr_group_serializer["is_exit"] = is_exit
         return Response({'ok': True, 'group': curr_group_serializer}, status=status.HTTP_200_OK)
     elif post_data['type'] == 'exit':
+        post_data = request.data
+        req_chat_id = post_data['id']
         curr_user_id = post_data['curr_user_id']
-        curr_exit_dict = curr_group.exit
-        curr_has_exit_dict = curr_group.has_exit
-        curr_group_admins = json.loads(curr_group.admin) if curr_group.admin else []
-        updated_admins = []
-        exit_dict = {}
-        has_exit_dict = {}
-
-        for admin in curr_group_admins:
-            if admin != curr_user_id:
-                updated_admins.append(admin)
-
-        if curr_exit_dict:
-            exit_dict = json.loads(curr_exit_dict) if curr_exit_dict else {}
-            exit_dict[str(curr_user_id)] = True
-
-        if curr_has_exit_dict:
-            has_exit_dict = json.loads(curr_has_exit_dict) if curr_has_exit_dict else {}
-            has_exit_dict[str(curr_user_id)] = True
-        
         for participant in curr_group.participants.all():
             if participant.id == curr_user_id:
                 curr_group.participants.remove(participant)
-
         participants = list(curr_group.participants.all())
-
-        if len(updated_admins) == 0:
-            updated_admins.append(participants[0].id)
-        
-        curr_group.exit = json.dumps(exit_dict)
-        curr_group.has_exit = json.dumps(has_exit_dict)
-        curr_group.admin = json.dumps(updated_admins)
-        curr_group.save()
-
         p_list = []
         for participant_obj in participants:
             p_list.append(UserSerializer(participant_obj).data)
@@ -284,6 +273,37 @@ def update_group(request):
         
         return Response({'ok': True, 'group': curr_group_serializer}, status=status.HTTP_200_OK)
 
+@api_view(["POST"])
+@permission_classes([IsAuthenticated])
+def exit_group(request):
+
+    post_data = request.data
+    req_chat_id = post_data['id']
+    curr_group = Chat.objects.get(pk=req_chat_id)
+    curr_user_id = post_data['curr_user_id']
+    
+    for participant in curr_group.participants.all():
+        if participant.id == curr_user_id:
+            curr_group.participants.remove(participant)
+
+    participants = list(curr_group.participants.all())
+    
+    p_list = []
+    for participant_obj in participants:
+        p_list.append(UserSerializer(participant_obj).data)
+
+    curr_group_serializer = ChatSerializer(curr_group).data
+    curr_group_serializer['participants_detail'] = p_list
+    curr_group_serializer['is_exit'] = True
+
+    admin_list = []
+    for user_obj in json.loads(curr_group.admin):
+        curr_user = User.objects.get(pk=user_obj)
+        if curr_user:
+            admin_list.append(UserSerializer(curr_user, many=False).data)
+    curr_group_serializer["admin_users"] = admin_list
+    
+    return Response({'ok': True, 'group': curr_group_serializer}, status=status.HTTP_200_OK)
 
 @api_view(["GET"])
 @permission_classes([IsAuthenticated])
@@ -400,63 +420,187 @@ def manage_chats(request):
     post_data = request.data
     temp = {}
     err_msg = ""
-    accept_type = "new"
+    accept_type = ""
+    user_id = post_data.get('user_id', '')
+    req_chat_id = post_data.get('chat_id', '')
+    curr_user = request.user
     if post_data["is_group"]:
+        created_group = {}
         participants = post_data['participants']
-        chat_obj = Chat()
-        chat_obj.is_group = post_data["is_group"]
-        chat_obj.group_profile_picture = post_data["group_profile_picture"]
-        chat_obj.group_name = post_data["group_name"]
-        chat_obj.group_description = post_data["group_description"]
-        chat_obj.admin = json.dumps(post_data["admin"])
-        chat_obj.save()
-        participant_detail_list = []
-        for participant in participants:
-            user = User.objects.get(pk=participant['id'])
-            participant_detail_list.append(UserSerializer(user, many=False).data)
-            chat_obj.participants.add(user)
-        created_group = ChatSerializer(chat_obj, many=False).data
-        created_group['participants_detail'] = participant_detail_list
-        admin_list = []
-        for user_obj in json.loads(chat_obj.admin):
-            curr_user = User.objects.get(pk=user_obj)
-            if curr_user:
-                admin_list.append(UserSerializer(curr_user, many=False).data)
-        created_group["admin_users"] = admin_list
+        if post_data['action'] == 'accept':
+            chat_obj = Chat()
+            chat_obj.is_group = post_data["is_group"]
+            chat_obj.group_profile_picture = post_data["group_profile_picture"]
+            chat_obj.group_name = post_data["group_name"]
+            chat_obj.group_description = post_data["group_description"]
+            chat_obj.admin = json.dumps(post_data["admin"])
+            chat_obj.created_on = datetime.datetime.now()
+            chat_obj.save()
+            p_list = []
+            participant_detail_list = []
+            added_time_dict = {}
+            content = "You have created this group."
+            for participant in participants:
+                user = User.objects.get(pk=participant['id'])
+                participant_detail_list.append(UserSerializer(user, many=False).data)
+                chat_obj.participants.add(user)
+                p_list.append(participant['id'])
+                added_time_dict[str(participant['id'])] = str(datetime.datetime.now())
+            chat_obj.added_time = json.dumps(added_time_dict)
+            chat_obj.save()
+            message = Message.objects.create(
+                user=curr_user,
+                content=content, message_type="group_changes", 
+                cleared={}, 
+                deleted={}, participants=json.dumps(p_list))
+            chat_obj.messages.add(message)
+            created_group = ChatSerializer(chat_obj, many=False).data
+            created_group['participants_detail'] = participant_detail_list
+            admin_list = []
+            for user_obj in json.loads(chat_obj.admin):
+                curr_user = User.objects.get(pk=user_obj)
+                if curr_user:
+                    admin_list.append(UserSerializer(curr_user, many=False).data)
+            created_group["admin_users"] = admin_list
+            accept_type = "new"
+        elif post_data['action'] == 'clear':
+            p_list = []
+            chat = Chat.objects.get(pk=req_chat_id)
+            curr_clear_chat_dict = chat.cleared
+            curr_clear_time_dict = chat.cleared_time if chat.cleared_time else {}
+            clear_time_dict = {}
+            clear_chat_dict = {}
+            if clear_chat_dict:
+                clear_chat_dict = json.loads(curr_clear_chat_dict)
+            clear_chat_dict[str(user_id)] = True
+            chat.cleared = json.dumps(clear_chat_dict)
+            if curr_clear_time_dict:
+                clear_time_dict = json.loads(curr_clear_time_dict)
+            clear_time_dict[str(user_id)] = str(datetime.datetime.now())
+            chat.cleared_time = json.dumps(clear_time_dict)
+            chat.messages.all().update(cleared=json.dumps(clear_chat_dict))
+            chat.save()
+        elif post_data['action'] == 'delete':
+            p_list = []
+            chat = Chat.objects.get(pk=req_chat_id)
+            curr_delete_chat = chat.deleted
+            curr_delete_time_dict = chat.deleted_time if chat.deleted_time else {}
+            delete_time_dict = {}
+            all_chat_msgs = chat.messages.all()
+            curr_msg_participants = []
+            updated_msg_participants = []
+            if all_chat_msgs:
+                curr_msg_participants = json.loads(all_chat_msgs[0].participants)
+            delete_chat_dict = {}
+            for obj in curr_msg_participants:
+                if obj != user_id:
+                    updated_msg_participants.append(obj)
+            if delete_chat_dict:
+                delete_chat_dict = json.loads(curr_delete_chat)
+            delete_chat_dict[str(user_id)] = True
+            chat.deleted = json.dumps(delete_chat_dict)
+            if curr_delete_time_dict:
+                delete_time_dict = json.loads(curr_delete_time_dict)
+            delete_time_dict[str(user_id)] = str(datetime.datetime.now())
+            chat.deleted_time = json.dumps(delete_time_dict)
+            chat.messages.all().update(deleted=json.dumps(delete_chat_dict), participants=json.dumps(updated_msg_participants))
+            chat.save()
         return Response({"ok": True, "is_group": True, "group": created_group, "accept_type": accept_type})
     else:
         recipient_user_id = post_data.get('recipient_user_id', '')
-        user_id = post_data.get('user_id', '')
         unique_chat_id = str(user_id) + '_' + str(recipient_user_id)
         rev_unique_chat_id = str(recipient_user_id) +  '_' + str(user_id)
         recipient_user = User.objects.get(pk=recipient_user_id)
         participants = []
         participants.append(recipient_user)
         participants.append(request.user)
-        req_chat_id = post_data.get('chat_id', '')
         notification = {}
         data = {}
-        created_conversation = {}
+        response_conversation = {}
         unique_chat_id_list = list(Chat.objects.all().values_list('unique_id', flat=True))
         # try:
+        if post_data['action'] == 'add_after_delete':
+            current_chat = Chat.objects.get(pk=req_chat_id)
+            participants = current_chat.participants.all()
+            curr_deleted_chat = current_chat.deleted
+            curr_clear_chat = current_chat.cleared
+            clear_chat_dict = {}
+            delete_chat_dict = {}
+            curr_added_time_dict = {}
+            added_time_dict = {}
+            p_list = []
+            for p in participants:
+                p_list.append(p.id)     
+            if curr_clear_chat:
+                clear_chat_dict = json.loads(curr_clear_chat)
+            if curr_deleted_chat:
+                delete_chat_dict = json.loads(curr_deleted_chat)
+            if user_id in p_list:
+                clear_chat_dict[str(user_id)] = False
+                delete_chat_dict[str(user_id)] = False
+            current_chat.cleared = json.dumps(clear_chat_dict)
+            current_chat.deleted = json.dumps(delete_chat_dict)
+            if curr_added_time_dict:
+                added_time_dict = json.loads(curr_added_time_dict)
+            added_time_dict[str(curr_user_id)] = str(datetime.datetime.now())
+            current_chat.added_time = added_time_dict
+
+            # current_chat.messages.all().update(deleted=json.dumps(delete_chat_dict), cleared=json.dumps(clear_chat_dict))
+            current_chat.save()
+            response_conversation = ChatSerializer(current_chat, many=False).data
+            response_conversation['user'] = UserSerializer(recipient_user, many=False).data
         if post_data['action'] == 'add':
             notification = manage_notifications(request.user, recipient_user, "conversation_requests")
             data = ChatFriend.objects.add_friend(request.user, recipient_user, message='Hi! I would like to be friends with you')
+        elif post_data['action'] == 'clear':
+            p_list = []
+            chat = Chat.objects.get(pk=req_chat_id)
+            curr_clear_chat_dict = chat.cleared
+            curr_clear_time_dict = chat.cleared_time if chat.cleared_time else {}
+            clear_chat_dict = {}
+            clear_time_dict = {}
+            if clear_chat_dict:
+                clear_chat_dict = json.loads(curr_clear_chat_dict)
+            participants = chat.participants.all()
+            for p in participants:
+                p_list.append(p.id) 
+            if user_id in p_list:
+                clear_chat_dict[str(user_id)] = True
+            if curr_clear_time_dict:
+                clear_time_dict = json.loads(curr_clear_time_dict)
+            clear_time_dict[str(user_id)] = str(datetime.datetime.now())
+            chat.cleared_time = json.dumps(clear_time_dict)
+            chat.cleared = json.dumps(clear_chat_dict)
+            chat.messages.all().update(cleared=json.dumps(clear_chat_dict))
+            chat.save()
         elif post_data['action'] == 'delete':
             p_list = []
             chat = Chat.objects.get(pk=req_chat_id)
             curr_delete_chat = chat.deleted
+            curr_delete_time_dict = chat.deleted_time if chat.deleted_time else {}
+            delete_time_dict = {}
             delete_chat_dict = {}
+            all_chat_msgs = chat.messages.all()
+            curr_msg_participants = []
+            updated_msg_participants = []
+            if all_chat_msgs:
+                curr_msg_participants = json.loads(all_chat_msgs[0].participants)
+            for obj in curr_msg_participants:
+                if obj != user_id:
+                    updated_msg_participants.append(obj)
             if delete_chat_dict:
                 delete_chat_dict = json.loads(curr_delete_chat)
             participants = chat.participants.all()
             for p in participants:
                 p_list.append(p.id) 
-            if recipient_user_id in p_list:
-                delete_chat_dict[str(recipient_user_id)] = True
+            if user_id in p_list:
+                delete_chat_dict[str(user_id)] = True
             chat.deleted = json.dumps(delete_chat_dict)
-            chat.messages.all().update(deleted=json.dumps(delete_chat_dict))
-            chat.unique_id = unique_chat_id
+            if curr_delete_time_dict:
+                delete_time_dict = json.loads(curr_delete_time_dict)
+            delete_time_dict[str(user_id)] = str(datetime.datetime.now())
+            chat.deleted_time = json.dumps(delete_time_dict)
+            chat.messages.all().update(deleted=json.dumps(delete_chat_dict), participants=json.dumps(updated_msg_participants))
             chat.save()
         elif post_data['action'] == 'remove':
             try:
@@ -464,10 +608,6 @@ def manage_chats(request):
             except:
                 err_msg = 'Some error occured. Please refresh.'
                 return Response({'ok': False, 'error': err_msg})
-            # chat = Chat.objects.get(pk=req_chat_id)
-            # chat.messages.clear()
-            # chat.participants.clear()
-            # chat.delete()
         elif post_data['action'] == 'accept':
             notification = manage_notifications(request.user, recipient_user, "conversations")
             chat_friend_request = ChatRequest.objects.filter(to_user=request.user.id, from_user=recipient_user_id)
@@ -481,11 +621,17 @@ def manage_chats(request):
             if unique_chat_id not in unique_chat_id_list and rev_unique_chat_id not in unique_chat_id_list:
                 chat_obj = Chat()
                 chat_obj.unique_id = unique_chat_id
+                curr_added_time_dict = {}
+                added_time_dict = {}
+                if curr_added_time_dict:
+                    added_time_dict = json.loads(curr_added_time_dict)
+                added_time_dict[str(curr_user_id)] = str(datetime.datetime.now())
+                chat_obj.added_time = added_time_dict
                 chat_obj.save()
                 for participant in participants:
                     chat_obj.participants.add(participant)
-                created_conversation = ChatSerializer(chat_obj, many=False).data
-                created_conversation['user'] = UserSerializer(recipient_user, many=False).data
+                response_conversation = ChatSerializer(chat_obj, many=False).data
+                response_conversation['user'] = UserSerializer(recipient_user, many=False).data
             else:
                 accept_type = "accept_old"
         elif post_data['action'] == 'reject':
@@ -498,7 +644,7 @@ def manage_chats(request):
         if data and not isinstance(data, ChatRequest) and data["err"]:
             err_msg = data["err_msg"]
             return Response({'ok': False, 'error': err_msg})
-        return Response({'ok': True, 'is_group': False, 'notification': notification, 'extra_data': temp, 'created_conversation': created_conversation, "accept_type": accept_type})
+        return Response({'ok': True, 'is_group': False, 'notification': notification, 'extra_data': temp, 'response_conversation': response_conversation, "accept_type": accept_type})
 
 
 @api_view(['GET'])
@@ -649,6 +795,33 @@ def get_friends_modal_data(request):
 
     return Response({"ok": True, "friend_request_last_seen": str(curr_user_data.friend_request_last_seen), "user_data_dict": user_data_dict, "modal_users": users, "modal_friends": all_frs, "modal_friend_requests": all_fr_requests, "modal_sent_friend_requests": all_sent_fr_requests}, status=status.HTTP_200_OK)
 
+@api_view(['POST'])
+@permission_classes([IsAuthenticated])
+def group_changes(request):
+
+    message_data = {}
+    post_data = request.data
+    chat_id = post_data['id']
+    message_list = post_data['messages']
+    reciever = post_data['reciever']
+    curr_chat = Chat.objects.get(pk=chat_id)
+    message_data_list = []
+    for obj in message_list:
+        message = Message.objects.create(
+        user=request.user,
+        content=obj, message_type="group_changes", reciever=reciever,
+        cleared={}, 
+        deleted={})
+        curr_chat.messages.add(message)
+        message_data = message_to_json(message, chat_id, request.user.id, curr_chat.is_group)
+        message_data_list.append(message_data)
+    curr_chat.save()
+
+    curr_chat_serializer = ChatSerializer(curr_chat).data
+
+  
+    return Response({'ok': True, 'message_data_list': message_data_list, 'conversation': curr_chat_serializer})
+
 
 @api_view(["GET"])
 @permission_classes([IsAuthenticated])
@@ -656,7 +829,7 @@ def get_conversation_modal_data(request):
     
     #USERS
     all_users = User.objects.exclude(email=request.user.email)
-
+    
     user_data_dict = dict()
     user_serializer = UserSerializer(all_users, many=True)
 
@@ -688,22 +861,6 @@ def get_conversation_modal_data(request):
         req_user = chat_friend_obj.id
         chat_friend_id_list.append(req_user)
         all_chat_frs.append(user_data_dict[req_user])
-    
-    # FRIENDS
-    all_friends = Friend.objects.friends(request.user)
-
-    all_frs = []
-    friend_id_list = []
-
-    for friend_obj in all_friends:
-        req_user = friend_obj.id
-        friend_id_list.append(req_user)
-        curr_user = user_data_dict[req_user]
-        if req_user in sent_friend_requests_id_list:
-            curr_user['sent_conversation_request'] = True
-        if req_user in chat_friend_id_list:
-            curr_user['has_conversation'] = True
-        all_frs.append(curr_user)
 
     # Clear cache
 
@@ -736,7 +893,38 @@ def get_conversation_modal_data(request):
     conversation_data = get_all_conversations(request.user)
     all_conversations = conversation_data['conversations']
     all_groups = conversation_data['groups']
+    p_chat_dict = conversation_data['p_chat_dict']
     all_conv_data = all_conversations + all_groups
+
+    # FRIENDS
+    all_friends = Friend.objects.friends(request.user)
+
+    all_frs = []
+    friend_id_list = []
+    curr_user_id = request.user.id
+
+    for friend_obj in all_friends:
+        req_user = friend_obj.id
+        curr_user = user_data_dict[req_user]
+        unique_id = str(req_user)+'_'+str(curr_user_id)
+        rev_unique_id = str(curr_user_id)+'_'+str(req_user)
+        if unique_id in p_chat_dict:
+            curr_user['chat_id'] = p_chat_dict[unique_id]
+        elif rev_unique_id in p_chat_dict:
+            curr_user['chat_id'] = p_chat_dict[rev_unique_id]
+        else:
+            curr_user['chat_id'] = ''
+        if curr_user['chat_id']:
+            reqd_chat = Chat.objects.get(pk=curr_user['chat_id'])
+            deleted_dict = json.loads(reqd_chat.deleted) if reqd_chat.deleted else {}
+            if str(request.user.id) in deleted_dict and deleted_dict[str(request.user.id)]:
+                curr_user['is_deleted'] = True
+        friend_id_list.append(req_user)
+        if req_user in sent_friend_requests_id_list:
+            curr_user['sent_conversation_request'] = True
+        if req_user in chat_friend_id_list:
+            curr_user['has_conversation'] = True
+        all_frs.append(curr_user)
 
     curr_user_data = User.objects.get(pk=request.user.id)
 
@@ -807,7 +995,7 @@ def get_chat(request):
     
     curr_user = user.data if user else {}
     participants = UserSerializer(users, many=True).data
-    msgs = messages_to_json(c_msgs, pk, user_id)
+    msgs = messages_to_json(c_msgs, pk, user_id, chat.is_group)
     chat_data[pk] = msgs
     return Response({'ok': True, 'participants': participants, 'curr_user': curr_user, 'chat_data': chat_data})
 
@@ -840,55 +1028,74 @@ def clear_chat(request):
 def get_all_conversations(user):
 
     all_chats = Chat.objects.all()
+    
     conversations = []
     groups = []
+    p_chat_dict = {}
     recipient_user = {}
     for chat in all_chats:
+
+        recent_msg = {}
         recent_message = {}
-        recent_msg = chat.messages.order_by('-timestamp').all()[:1]
+
+        chat_removed = json.loads(chat.removed).get(str(user.id), False) if chat.removed else False
+        chat_has_exit = json.loads(chat.has_exit).get(str(user.id), False) if chat.has_exit else False
+        
+        if chat_removed:
+            recent_msg = get_recent_msg_recursion(chat, user, 'removed')
+        elif chat_has_exit:
+            recent_msg = get_recent_msg_recursion(chat, user, 'has_exit')
+        else:
+            recent_msg = get_recent_msg_recursion(chat, user, '')
+        
+        removed_participants = []
+        deleted_participants = []
+        exit_participants = []
+        cleared_participants = []
+        has_exit_participants = []
+        is_deleted = False
+        is_exit = False
+        is_clear = False
+        is_removed = False
+        removed_users_dict = json.loads(chat.removed) if chat.removed else {}
+        deleted_users_dict = json.loads(chat.deleted) if chat.deleted else {}
+        exit_users_dict = json.loads(chat.exit) if chat.exit else {}
+        has_exit_users_dict = json.loads(chat.has_exit) if chat.has_exit else {}
+        clear_users_dict = json.loads(chat.cleared) if chat.cleared else {}
+
+        for obj in removed_users_dict:
+            if removed_users_dict[obj]:
+                removed_participants.append(int(obj))
+        for obj in deleted_users_dict:
+            if deleted_users_dict[obj]:
+                deleted_participants.append(int(obj))
+        for obj in has_exit_users_dict:
+            if has_exit_users_dict[obj]:
+                has_exit_participants.append(int(obj))
+        for obj in exit_users_dict:
+            if exit_users_dict[obj]:
+                exit_participants.append(int(obj))
+        for obj in clear_users_dict:
+            if clear_users_dict[obj]:
+                cleared_participants.append(int(obj))
+        if user.id in removed_participants:
+            is_removed = True
+        if user.id in deleted_participants:
+            is_deleted = True
+        if user.id in has_exit_participants:
+            is_exit = True
+        if user.id in cleared_participants:
+            is_clear = True
         if recent_msg:
-            recent_message = message_to_json(recent_msg[0], chat.id, user.id)
+            curr_msg_clear_dict = json.loads(recent_msg[0].cleared) if recent_msg[0].cleared else {}
+            if str(user.id) in curr_msg_clear_dict and curr_msg_clear_dict[str(user.id)]:
+                recent_message = ''
+            else:
+                recent_message = message_to_json(recent_msg[0], str(chat.id), user.id, chat.is_group)
         if chat.is_group:
             p_detail_list = []
-            removed_participants = []
-            deleted_participants = []
-            exit_participants = []
-            cleared_participants = []
-            has_exit_participants = []
-            is_deleted = False
-            is_exit = False
-            is_clear = False
-            is_removed = False
-            removed_users_dict = json.loads(chat.removed) if chat.removed else {}
-            deleted_users_dict = json.loads(chat.deleted) if chat.deleted else {}
-            exit_users_dict = json.loads(chat.exit) if chat.exit else {}
-            has_exit_users_dict = json.loads(chat.has_exit) if chat.has_exit else {}
-            clear_users_dict = json.loads(chat.cleared) if chat.cleared else {}
-            for obj in removed_users_dict:
-                if removed_users_dict[obj]:
-                    removed_participants.append(int(obj))
-            for obj in deleted_users_dict:
-                if deleted_users_dict[obj]:
-                    deleted_participants.append(int(obj))
-            for obj in has_exit_users_dict:
-                if has_exit_users_dict[obj]:
-                    has_exit_participants.append(int(obj))
-            for obj in exit_users_dict:
-                if exit_users_dict[obj]:
-                    exit_participants.append(int(obj))
-            for obj in clear_users_dict:
-                if clear_users_dict[obj]:
-                    cleared_participants.append(int(obj))
-            if user.id in removed_participants:
-                is_removed = True
-            if user.id in deleted_participants:
-                is_deleted = True
-            if user.id in has_exit_participants:
-                is_exit = True
-            if user.id in cleared_participants:
-                is_clear = True
             participant_list = list(chat.participants.values_list('id', flat=True))
-            if (user.id in exit_participants) or (user.id in removed_participants) or (user.id in participant_list) or (user.id in json.loads(chat.admin) if chat.admin else []):
+            if ((user.id in exit_participants) or (user.id in removed_participants) or (user.id in participant_list) or (user.id in json.loads(chat.admin) if chat.admin else [])) and (user.id not in deleted_participants):
                 for p_obj in participant_list:
                     curr_user = UserSerializer(User.objects.get(pk=p_obj)).data
                     p_detail_list.append(curr_user)
@@ -909,18 +1116,74 @@ def get_all_conversations(user):
         else:
             temp = {}
             users = []
+            p_chat_dict[chat.unique_id] = chat.id
+            last_seen = get_last_seen(chat.last_seen, user.id)
             participants = chat.participants.all()
             participant_list = list(chat.participants.values_list('id', flat=True))
-            if user.id in participant_list:
+            if user.id in participant_list and (user.id not in deleted_participants):
                 for participant in participants:
                     if participant.id != user.id:
                         recipient_user = UserSerializer(participant, many=False).data
                 conversation = ChatSerializer(chat, many=False).data
                 conversation['user'] = recipient_user
                 conversation["recent_message"] = recent_message
+                conversation["last_seen"] = last_seen
                 conversations.append(conversation)
     
-    return {'conversations':conversations, 'groups': groups}
+    return {'conversations':conversations, 'groups': groups, 'p_chat_dict': p_chat_dict}
+
+def get_recent_msg_recursion(current_chat, user, d_type):
+
+    recent_msg = []
+
+    curr_removed_time = json.loads(current_chat.removed_time) if current_chat.removed_time else {}
+    reqd_removed_time = curr_removed_time.get(str(user.id), '')
+
+    curr_has_exit_time = json.loads(current_chat.has_exit_time) if current_chat.has_exit_time else {}
+    reqd_has_exit_time = curr_has_exit_time.get(str(user.id), '')
+
+    if d_type == 'removed':
+        if reqd_removed_time:
+            curr_removed_time_obj = datetime.datetime.strptime(reqd_removed_time, '%Y-%m-%d %H:%M:%S.%f')
+            chat_msgs = current_chat.messages.order_by('-timestamp').filter(timestamp__lte=curr_removed_time_obj)
+        else:
+            chat_msgs = current_chat.messages.order_by('-timestamp').all()[:1]
+    elif d_type == 'has_exit':
+        if reqd_has_exit_time:
+            curr_has_exit_time_obj = datetime.datetime.strptime(reqd_has_exit_time, '%Y-%m-%d %H:%M:%S.%f')
+            chat_msgs = current_chat.messages.order_by('-timestamp').filter(timestamp__lte=curr_has_exit_time_obj)
+        else:
+            chat_msgs = current_chat.messages.order_by('-timestamp').all()[:1]
+    else:
+        chat_msgs = current_chat.messages.order_by('-timestamp').all()[:1]
+
+    for obj in chat_msgs:
+        is_removed = False
+        is_exit = False
+        if current_chat.is_group:
+            msg_participants_list = json.loads(obj.participants) if obj.participants else []
+        else:
+            msg_participants_list = [user.id]
+        removed_dict = json.loads(obj.removed) if obj.removed else {}
+        has_exit_dict = json.loads(obj.has_exit) if obj.has_exit else {}
+        if str(user.id) in removed_dict and removed_dict[str(user.id)]:
+            is_removed = True
+        if str(user.id) in has_exit_dict and has_exit_dict[str(user.id)]:
+            has_exit = True
+        if user.id in msg_participants_list and not is_removed and not is_exit:
+            recent_msg.append(obj)
+            break
+
+    return recent_msg
+
+def get_last_seen(last_seen_dict, user_id):
+
+    last_seen_data = json.loads(last_seen_dict) if last_seen_dict else {}
+    last_seen = ''
+    for obj in last_seen_data:
+        if obj != str(user_id):
+            last_seen = last_seen_data[obj]
+    return last_seen
 
 def get_conversation_modal_data_method(request):
 
@@ -1016,25 +1279,46 @@ def get_conversation_modal_data_method(request):
 
     return {"conversation_delete_dict": conversation_delete_dict, "all_conv_data":all_conv_data, "last_seen_conversation_requests": str(curr_user_data.conversation_request_last_seen), "all_groups": all_groups, "all_conversations": all_conversations, "users": user_serializer.data, "modal_friends": all_frs, "modal_conversations": all_chat_frs, "modal_conversation_requests": all_fr_requests, "modal_sent_conversation_requests": all_sent_fr_requests}
 
-def messages_to_json(messages, chat_id, user_id):
+def messages_to_json(messages, chat_id, user_id, is_group):
         result = []
         if messages:
             for message in messages:
-                result.append(message_to_json(message, chat_id, user_id))
+                result.append(message_to_json(message, chat_id, user_id, is_group))
         return result
 
-def message_to_json(message, chat_id, user_id):
+def message_to_json(message, chat_id, user_id, is_group):
     content = ''
     if message.message_type == 'text':
-        if message.user.id == user_id:
-            content = "You: " + message.content
+        if is_group:
+            if message.user.id == user_id:
+                content = "You: " + message.content
+            else:
+                content = message.user.username + ": " + message.content
         else:
+            if message.user.id == user_id:
+                content = "You: " + message.content
+            else:
+                content = message.content
+    elif message.message_type == 'group_changes':
+        if message.user.id == user_id:
             content = message.content
-    elif message.message_type == 'image':
-        if message.user.id == user_id:
-            content = "You: Image"
         else:
-            content = "Image"
+            if "You have" in message.content:
+                content = message.content.replace("You have ", message.user.username+ " has ")
+            else:
+                content = message.content.replace("You", message.user.username)
+    elif message.message_type == 'image':
+        if is_group:
+            if message.user.id == user_id:
+                content = "You: Image"
+            else:
+                content = message.user.username + ": Image"
+        else:
+            if message.user.id == user_id:
+                content = "You: Image"
+            else:
+                content = "Image"
+        
     return {
         'id': message.id,
         'author_id': message.user.id,
@@ -1042,7 +1326,9 @@ def message_to_json(message, chat_id, user_id):
         'content': content,
         'timestamp': str(message.timestamp),
         'chatId': chat_id,
-        'message_type': message.message_type
+        'reciever': message.reciever,
+        'message_type': message.message_type,
+        'is_group': is_group
     }
 
 @api_view(["GET"])

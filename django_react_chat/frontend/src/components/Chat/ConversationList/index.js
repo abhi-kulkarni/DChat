@@ -130,7 +130,9 @@ const ConversationList = forwardRef((props, ref) => {
       })
       manageChats("remove", reqd_chat, reqd_chat.chat_id)
     },
+
     clearChatFromMessageList(chatId) {
+      
       let data = {"messages": [], "recent_msg_data": {}};
       let temp = {};
       let obj = {...recent_msg}
@@ -144,6 +146,7 @@ const ConversationList = forwardRef((props, ref) => {
       setRecentMsg(temp);
       dispatch(chat_messages(data, "clear_chat"))
     }
+
   }));
 
   useEffect(() => {
