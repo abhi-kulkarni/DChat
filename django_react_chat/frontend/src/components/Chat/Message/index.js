@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useState } from "react";
 import moment from "moment";
 import "./Message.css";
 import Row from "react-bootstrap/Row";
@@ -14,7 +14,7 @@ export default function Message(props) {
 
   const { data, isMine, startsSequence, endsSequence, showTimestamp } = props;
   const curr_user_data = useSelector(state => state.session.user_data);
-  const [ visible, setVisible ] = React.useState(false);
+  const [ Imgvisible, setImgVisible ] = useState(false);
 
   const typingLoaderCss = css`
         justify-content: center;
@@ -24,6 +24,10 @@ export default function Message(props) {
         margin-top:-7px;
   `;
   const friendlyTimestamp = moment(data.timestamp).format("LLLL");
+
+  const manageImage = (status) => {
+    setImgVisible(status)
+  }
 
   return (
     <div
@@ -86,15 +90,15 @@ export default function Message(props) {
               title={friendlyTimestamp}
               style={{ padding: "0px", margin: "0px"}}
             >
-              <Col onClick={() => { setVisible(true) }} className="img_div" xl={12} lg={12} md={12} sm={12} xs={12}>
+              <Col className="img_div" xl={12} lg={12} md={12} sm={12} xs={12}>
               <div>
-                <img className="img-fluid square" src={data.content && JSON.parse(data.content).hasOwnProperty('image_url')?JSON.parse(data.content)["image_url"]:""} />
+                <img onClick={() => manageImage(true)} className="img-fluid square" src={data.content && JSON.parse(data.content).hasOwnProperty('image_url')?JSON.parse(data.content)["image_url"]:""} />
                 <Viewer
                   downloadable={true}
                   downloadInNewWindow={true}
                   attribute={false}
-                  visible={visible}
-                  onClose={() => { setVisible(false) } }
+                  visible={Imgvisible}
+                  onClose={() => manageImage(false) }
                   images={[{src: data.content && JSON.parse(data.content).hasOwnProperty('image_url') && JSON.parse(data.content) && JSON.parse(data.content)["image_url"]?JSON.parse(data.content)["image_url"]:"", alt: '', 
                   downloadUrl: data.content && JSON.parse(data.content).hasOwnProperty('image_url') && JSON.parse(data.content) && JSON.parse(data.content)["image_url"]?JSON.parse(data.content)["image_url"]:"" }]}
                 /></div>
