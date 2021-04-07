@@ -509,6 +509,7 @@ def manage_chats(request):
     else:
         recipient_user_id = post_data.get('recipient_user_id', '')
         unique_chat_id = str(user_id) + '_' + str(recipient_user_id)
+        curr_user_id = str(user_id)
         rev_unique_chat_id = str(recipient_user_id) +  '_' + str(user_id)
         recipient_user = User.objects.get(pk=recipient_user_id)
         participants = []
