@@ -64,7 +64,7 @@ export default function Message(props) {
           </div>
         </div>):
         <div>
-          <Row style={{ padding: '0px', margin: '1% 0%'}}>
+          <Row style={{ padding: '0px', margin: '1% 0% 0% 0.5%'}}>
             <Col xs={12} sm={12} md={12} lg={12} xl={12} style={{ padding: '0px', margin: '0px'}}>
               <div className="message-author" style={{ float: isMine?'right': 'left'}}>
               {isMine?"You":data.author}

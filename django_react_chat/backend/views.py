@@ -627,7 +627,7 @@ def manage_chats(request):
                 if curr_added_time_dict:
                     added_time_dict = json.loads(curr_added_time_dict)
                 added_time_dict[str(curr_user_id)] = str(datetime.datetime.now())
-                chat_obj.added_time = added_time_dict
+                chat_obj.added_time = json.dumps(added_time_dict)
                 chat_obj.save()
                 for participant in participants:
                     chat_obj.participants.add(participant)
