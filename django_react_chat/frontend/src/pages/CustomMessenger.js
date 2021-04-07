@@ -635,7 +635,6 @@ const CustomMessenger = forwardRef((props, ref) => {
     };
 
     const fetchMessagesMethod = (data) => {
-        console.log('FETCHED');
         let curr_chat_id = window.location.pathname.split('/')[3];
         if(data.ok){
             if(curr_user_data.id){
@@ -663,7 +662,6 @@ const CustomMessenger = forwardRef((props, ref) => {
     };
 
     const addMessageMethod = (data) => {
-        console.log('NEW');
         let curr_chat_id = window.location.pathname.split('/')[3];
         let flags = data.flags;
         let delete_flag = flags['d_flag'];
