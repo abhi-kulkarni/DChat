@@ -1,1 +1,3 @@
-# django-react-chat
+# DChat 
+
+Django React based chat application.
